@@ -1,0 +1,4 @@
+# Local reference copy of stablyai/orca, not part of this project
+orca/
+# Personal Claude setup bundle
+claude-portable-*.zip

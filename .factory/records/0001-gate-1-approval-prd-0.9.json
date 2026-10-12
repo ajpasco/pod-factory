@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "approval",
+  "gate": 1,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23: no pinned release exists yet)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "approvedAt": "2026-10-12T17:17:02-04:00",
+  "approver": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "source": "approver account; git user.name and user.email were not configured on this machine at approval time"
+  },
+  "approvalPath": "manual; the approve command does not exist yet (bootstrap exception)",
+  "binds": {
+    "docs/PRD.md": {
+      "version": "0.9 simplified",
+      "sha256": "5b8cbc0f58a70f4fb429f0d60ef15393a6b68d12aeced44be33c27c7d33e6fc2",
+      "lines": 119
+    },
+    "docs/PRD-reference.md": {
+      "version": "0.8 as reference",
+      "sha256": "d26bc153717e9e9bc8c7818872ff1b84fbabbf66f01ab498b85032f85ce29dc3",
+      "role": "preserves prior reasoning; not binding on its own"
+    },
+    "requirements": {
+      "REQ-01": "9889fd1ab4a2ff14b15b2f2f8e1aeb0b7fcdf1676b405031c08482a0ee461027",
+      "REQ-02": "0915d8398bc0d7405eb74879e45477d0ed5ad99916f99a1ab7b997cf471dac06",
+      "REQ-03": "cf60f1bbf5b7226b7f6c985f591a2df06daee627f347a5999f5b19671e295b04",
+      "REQ-04": "5550b6a0375a9b8f2e4a7478ffbb915639617b7517e2481bb7707824c11d4d7d",
+      "REQ-05": "1478985b1767ce9feec04a1c5202557a4d7e5de4740ad4e07c032016f1a19cdd",
+      "REQ-06": "6110dcba432eb764a68b01ca60b86469ab21a5e10db16f229daef20ed2d98f35",
+      "REQ-07": "a46315bc2a2f7ceae8cd0a8ace75fdee7e830263bf0c9c7d8542ff0348fa16d4",
+      "REQ-08": "bd0879d32a9ae63e10410a5e9ce18676648c85136abd648b68b3a94855dd1ed3",
+      "REQ-09": "df55b3b9c2f3c8e3221b257a3396c07cbd7788d9969fa06b145894a56f05e20f",
+      "REQ-10": "45357b647a1c587fca1f9a62556b49085e91440ba63d608fcb52fd8b724933df",
+      "REQ-11": "7261fc8ba6c9697f6a14f379b7789bbeb4763d33f34d9d1fc30e6a6f546c2924",
+      "REQ-12": "e2481725cfc5ae69da93734ff1eeaa606743575bd18b566d597da875a0a4486d",
+      "REQ-13": "615c247c517a89e91fc51ee4ece6a68f2e3e2adcd789ad2d94def639ed4270d8",
+      "REQ-14": "8c758aa74f7181ee4d59571f91b65304fb398b86827b21d814f5cdc1117c6679",
+      "REQ-15": "5f541c1ea801e26106ca421df4b85cbd20b5b3538bfff2d4162ee15c08525129",
+      "REQ-16": "92de1f707844accf1fa7d56e7f8583944b6d0a6b09b256a8079d2276fc12429e",
+      "REQ-17": "9ef3fb4de507c2398d19a104c2bf1a3322b3666d7679f9d6ee6d84dc833d5a6c",
+      "REQ-18": "d128e14c525d7ecab0916d4fbcd034d6a1945abc65b1e216b4188f025958d4ec",
+      "REQ-19": "ce8f4a14943723cd9adfc3bab485c3adc658b00fe358c038666c5bf7fc6bcfde",
+      "REQ-20": "c22e4328ac59429b515fd5bc638d6465f6583eae26c4b339792f699d61f59830",
+      "REQ-21": "c93d8a3de1219402179f29f092112858491afae1338d2bd7e5ccd8a541658544",
+      "REQ-22": "5d4a79dae1a3e71f5918b38953b796f1ebc5b4d606cce159954267d2d9fecee0",
+      "REQ-23": "4753e83acb8e62883d03c6adfff4e384435875e65dec1848af26cf91c552a911",
+      "REQ-24": "5ec78e3f0093b6c4bbf9fd73755e9d49324eb474c200f158663de4da42a5009c"
+    }
+  },
+  "redTeam": {
+    "log": "docs/reviews/prd-red-team-2026-10-12.md",
+    "reviewers": [
+      "skeptical founder",
+      "security",
+      "operations",
+      "Orca feasibility"
+    ],
+    "verificationPasses": 3,
+    "independentReviews": 2,
+    "undispositionedFindings": 0,
+    "dismissedFindings": 0,
+    "acceptedRisks": [
+      "S1: file-based approvals forgeable by a malicious same-machine agent (decision 13)"
+    ]
+  },
+  "mockup": {
+    "status": "not provided",
+    "reason": "bootstrap exception: version one of pod-factory has a CLI, Orca commands and a generated status page, no interactive application UI to click through; REQ-23 applies to projects built with pod-factory and to any later pod-factory UI"
+  },
+  "bootstrapExceptions": [
+    "manual record instead of the approve command",
+    "no CI validation of this record yet",
+    "no mockup click-through",
+    "record written to the working tree, not yet to a records branch",
+    "approver identity taken from the account, not from a configured git identity"
+  ],
+  "expires": "when pod-factory 0.1 ships (decision 23); the first release must re-verify this record under the real approval path or re-approve",
+  "outcome": "approved",
+  "note": "Approver said \"ok we are good\" after reading PRD 0.9 with the three corrections applied."
+}

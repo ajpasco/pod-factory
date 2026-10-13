@@ -46,10 +46,16 @@ export function lockRecord(approvalId: string): LockRecord {
   return {
     ...recordBase(HUMAN),
     recordType: 'lock',
-    binds: { tree: null, files: { 'packages/cli/test/a.test.ts': SHA_A } },
+    binds: { tree: TREE, files: { 'packages/cli/test/a.test.ts': SHA_A } },
     outcome: 'locked',
     refs: [approvalId],
-    lock: { testCommand: 'npm test --workspaces' },
+    lock: {
+      patterns: ['packages/*/test/**', 'docs/eval-plan.md'],
+      testCommands: [
+        'npm ci',
+        'npm exec --workspace packages/cli -- vitest run --config vitest.config.ts',
+      ],
+    },
   };
 }
 

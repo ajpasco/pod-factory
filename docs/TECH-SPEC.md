@@ -41,7 +41,7 @@ Nothing in a later phase is implemented early to make a test fail. Later tests a
 ### 3.2 What each piece does
 
 - `approve` shows the artifact's hash and a plain-language line, asks the human to type the gate and the first eight characters of the hash, writes the approval record, pushes it. At gate 4 it binds the story branch's head tree. `approve bootstrap <pull request>` is the merge authority before the first lock exists. `approve amendment <paths>` authorizes a change to locked paths by binding before and after hashes.
-- `lock` writes the lock record from the approved eval plan: locked paths with hashes and the exact test command.
+- `lock` writes the lock record from the approved eval plan: the locked patterns, every matching path with its hash, the approved tree, and the exact test commands in order, starting with the install line.
 - `revoke` writes a revocation record, triggers `records-validate` at once, and reports **pending** until CI confirms that every affected open pull request shows a failing gate-check; only then does it report enforced.
 - `story start` requires a valid gate-3 approval for the current plan, writes the in-progress transition with a lease, and prints the builder's inputs with hashes. `story finish` writes the verifying transition after the builder's handoff note is recorded.
 - `status` prints every story, its stage, what it waits on, and the exact rule or record blocking it. It is the tool for "what went wrong."
@@ -52,7 +52,7 @@ Nothing in a later phase is implemented early to make a test fail. Later tests a
 
 1. Scaffold and the gate-2 tests land through bootstrap pull requests, each under `approve bootstrap`. Branch protection with the required checks and administrator enforcement is set by hand and confirmed by `doctor`.
 2. The gate-2 tests run once. Scaffold behavior passes as baselines; story-one tests fail on assertions because `status` does not exist. No placeholder code.
-3. `approve 2` binds the main tree, the PRD, the design, the eval plan, the mapping and the classification output; `lock` follows at once. `lock-guard` is live from here.
+3. `approve 2` binds the main tree, the PRD, the design, the eval plan, the mapping and the classification output; `lock` follows at once. In milestone zero the bound files are fixed in the command: `docs/PRD.md`, `docs/TECH-SPEC.md`, every `docs/spec/*.md` (the design sections, including `docs/spec/criterion-to-control-mapping.md`), `docs/eval-plan.md` and the classification report `.factory/work/classification/gate-2.json`; `docs/adr/` is history and is not bound. `--classification` names the bootstrap classification record, which must bind that report's hash. `lock-guard` is live from here.
 4. `approve 3` on the one-story build plan. `story start`. A builder subagent in its own worktree implements `status` against the locked tests and writes its handoff note. `story finish`.
 5. The pull request runs `lock-guard`, `verify` and `gate-check`; gate-check fails until the approver acts.
 6. The approver reads the evidence bundle and the diff, runs `approve story-1`, re-runs gate-check, merges.
@@ -64,11 +64,11 @@ Everything in phases 1b to 5. In milestone zero every question goes to the appro
 
 ## 4. Records
 
-- **Store.** Branch `pod-factory/records`, linear, never force-pushed, protected. One JSON file per record, `<utc-timestamp>-<type>-<subject>-<id>.json`, UTF-8, LF, two-space indent, fixed key order. Common fields: schema version, record type, factory version, hash algorithm (SHA-256 over LF-normalized UTF-8), created at, actor (name, email, kind human or check-runner), binds, outcome, refs.
+- **Store.** Branch `pod-factory/records`, linear, never force-pushed, protected. One JSON file per record, `<utc-timestamp>-<type>-<subject>-<id>.json`, UTF-8, LF, two-space indent, fixed key order. Common fields: schema version, record type, factory version, hash algorithm (SHA-256 over LF-normalized UTF-8), created at, actor (name, email, kind human, check-runner or agent; agent is allowed on transition records only), binds, outcome, refs. `refs` and, from slice 5, `revocation.revokes` name a record by its 12-hex ID or a bootstrap record by its file name under `records/bootstrap/`. A lock record holds `lock.patterns` (the locked globs, so a file added under one is a change) and `lock.testCommands` (ordered, the install line first); its `binds.files` holds every matched path and `binds.tree` the approved tree.
 - **IDs and retries.** The ID is generated once per command invocation and written to a local journal before the first push. A retry after a failed or uncertain push fetches first; if the ID is already on the branch the command reports success; otherwise it pushes again. Concurrent writers never conflict: each record is its own file, and a rejected push rebases and retries.
 - **Validity at point of use.** Every consumer, `gate-check`, `lock-guard`, `status`, the hook, validates each record it reads: schema, writer rule for its type, hashes. An invalid record is ignored and flagged, never blocks a later valid one, and is never repaired in place. There is no validated pointer. `records-validate` is the alerting job and the revocation relay, not a gate.
 - **Writers.** Human records (approval, lock, revocation) through the human commands; status transitions through the story commands; check results through CI's record-writing job. CI rejects a human record whose actor is not human.
-- **Bootstrap records 0001 to 0004** keep their field names under schema `bootstrap-0` and move to the records branch when it is created; the exception ends at release 0.1.
+- **Bootstrap records** keep their field names under schema `bootstrap-0` (record types approval, amendment and classification) and live under `records/bootstrap/` on the records branch: 0001 to 0004 move there when it is created, and the gate-2 classification record 0005 is added by hand before `approve 2`. The exception ends at release 0.1.
 - **Branch creation.** The approver creates `pod-factory/records` by hand, once, after slice 2 lands and before slice 3 makes gate-check required; its root commit holds the four bootstrap records under `records/bootstrap/`, and the CLI never creates the branch.
 
 ## 5. Merge rules

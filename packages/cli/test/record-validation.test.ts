@@ -3,6 +3,7 @@ import {
   loadRecords,
   recordFileName,
   serializeRecord,
+  validateBootstrapRecord,
   validateRecord,
   writeRecord,
   type FactoryRecord,
@@ -224,5 +225,64 @@ describe('record validation', () => {
     const bytes = serializeRecord(record);
     const result = validateRecord(name, bytes.slice(0, Math.floor(bytes.length / 2)));
     expect(reason(result)).toBe(`${name} is not complete JSON, so it may be half-written`);
+  });
+
+  it('requires a lock to bind its tree and hold its patterns and commands', () => {
+    const lock = lockRecord('0123456789ab');
+    expect(validate(lock)).toMatchObject({ ok: true });
+    expect(reason(validate({ ...lock, binds: { ...lock.binds, tree: null } }))).toMatch(
+      /a lock must bind the approved tree/,
+    );
+    expect(reason(validate({ ...lock, lock: { ...lock.lock, patterns: [] } }))).toMatch(
+      /field "lock.patterns" must be a non-empty list/,
+    );
+    expect(reason(validate({ ...lock, lock: { ...lock.lock, testCommands: [] } }))).toMatch(
+      /field "lock.testCommands" must be a non-empty list/,
+    );
+    expect(
+      reason(validate({ ...lock, lock: { ...lock.lock, patterns: ['docs/x.md', 'docs/x.md'] } })),
+    ).toMatch(/repeats a pattern/);
+    expect(
+      reason(
+        validate(
+          lockRecord('0123456789ab'),
+          (r) => ((r.lock as Record<string, unknown>).testCommand = 'npm test'),
+        ),
+      ),
+    ).toMatch(/unexpected field "lock.testCommand"/);
+  });
+
+  it('accepts a record ID or a bootstrap record file name in refs, and nothing else', () => {
+    const approval = gateApproval();
+    approval.refs = [
+      '0123456789ab',
+      '0005-classification-gate-2.json',
+      '0001-gate-1-approval-prd-0.9.json',
+    ];
+    expect(validate(approval)).toMatchObject({ ok: true });
+    for (const bad of ['records/bootstrap/0005-x.json', '5-x.json', 'not-an-id', '0005-X.json']) {
+      approval.refs = [bad];
+      expect(reason(validate(approval)), bad).toMatch(
+        /must be a record ID or a bootstrap record's file name/,
+      );
+    }
+  });
+
+  it('reads a bootstrap classification record', () => {
+    const record = {
+      schemaVersion: 'bootstrap-0',
+      recordType: 'classification',
+      factoryVersion: 'bootstrap (decision 23)',
+      hashAlgorithm: 'sha256 over LF-normalized UTF-8',
+      createdAt: '2026-10-20T12:00:00-04:00',
+      actor: { name: 'Test Human', email: 'human@example.test', kind: 'human' },
+      binds: { '.factory/work/classification/gate-2.json': { sha256: 'a'.repeat(64) } },
+      outcome: 'approved',
+    };
+    const path = 'records/bootstrap/0005-classification-gate-2.json';
+    expect(validateBootstrapRecord(path, JSON.stringify(record))).toMatchObject({ ok: true });
+    expect(
+      validateBootstrapRecord(path, JSON.stringify({ ...record, recordType: 'verdict' })),
+    ).toMatchObject({ ok: false });
   });
 });

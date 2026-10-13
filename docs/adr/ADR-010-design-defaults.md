@@ -9,7 +9,7 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver for items marked (a
 ## A. Decisions the approver made ("yes to all", 2026-10-12)
 
 1. **Delegation policy timing.** A new or changed delegation policy takes effect only after CI has validated it. Answers and acknowledgments take effect immediately and are validated afterwards. (approver)
-2. **Work-zone changes reach main through work-only pull requests** that a main-defined job auto-merges when the diff touches only `.factory/work/**` and `docs/**`, with no human review, because nothing in the work zone is binding until a record binds it. (approver)
+2. **Work-zone changes reach main through work-only pull requests** that a main-defined job auto-merges when the diff touches only `.factory/work/**` and `docs/**`, with no human review, because nothing in the work zone is binding until a record binds it; the lock guard of ADR-013 runs on these pull requests like every other. (approver)
 3. **The release executor runs on the approver's machine**, with credentials in the operating-system keychain or a secret manager. A CI-hosted executor with trusted publishing is a later option. (approver)
 4. **Hook failure behavior.** A hook that cannot decide denies writes to locked, protected and declared secret paths and allows everything else, logging the failure. (approver)
 5. **Tests are written and classified per phase.** Phase zero's and milestone zero's tests before gate 2 closes; each later phase's tests before that phase's build plan, as human-written amendments to the lock. (approver)

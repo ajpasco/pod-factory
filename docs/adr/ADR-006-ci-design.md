@@ -10,11 +10,15 @@ The check runner is a plain command, `pod-factory ci <job>`, with no provider-sp
 
 ## Jobs in the project template
 
-1. **records-validate**, on every push to `pod-factory/records`: record-only paths, schema per record type, legal status transition, writer identity per record type, no modified or deleted records, linear history. (Superseded by ADR-010 item 11: validation runs from main on a schedule and on demand; an invalid record lands, is flagged and never reaches the validated ref.)
+1. **records-validate**, scheduled and on demand, defined on main (ADR-010 item 11): record-only paths, schema per record type, legal status transition and its preconditions, writer identity per record type, no modified or deleted records, linear history. A passing run advances `pod-factory/records-validated`; an invalid record lands, is flagged and never reaches the validated ref.
 2. **story-verify**, on every `story/*` pull request (classes per ADR-012): fail if the diff touches `.factory/` or files outside the story's declared file scope; run the locked test command exactly as locked; run restraint checks (traceability, inverted coverage, size and complexity tripwires, unused code, duplication); run secret and dependency scans; write check-result records; publish the evidence bundle bound to the branch head tree.
-3. **gate-check**, required for merge: a CI-validated gate-4 record bound to the pull request head tree, with no newer content change; the locked suite green on the merge result when main has moved; active waivers listed in the check summary.
+3. **gate-check**, required for merge of `story/*` (and in its amendment, rules and story forms for `locked/*`, `rules/*` and `release/*`, ADR-013): a CI-validated gate-4 record bound to the pull request head tree, with no newer content change; for a delegated approval, the human's acknowledgment record; the story branch's dispatch file matching the validated plan hash; the locked suite green on the merge result when main has moved; active waivers listed in the check summary.
 4. **release-gate**, on a release request: a CI-validated gate-5 record whose hashes match the built artifact digest, environment, configuration and migration set, runbook and rollback plan; the artifact is built in this job before gate 5 and its digest published for the checklist.
-5. **doctor**, scheduled and on demand: branch protection on main and on the records branch, CODEOWNERS over the protected paths, required checks configured, plugin version pinned per project, active waivers.
+5. **doctor**, scheduled and a required check on main (ADR-011 item 5): the seven layers of ADR-011 item 8, including protection of `pod-factory/records`, `pod-factory/records-validated` and `pod-factory/evidence`, required checks configured per pull-request class, plugin version pinned per project, the Node range, active waivers.
+6. **lock-guard**, required on every pull request to main (ADR-013 item 1): no locked path changed without a validated amendment record bound to the head tree.
+7. **class-check**, required on every pull request to main (ADR-013 item 2): the branch matches exactly one class and the diff stays inside its allowed paths.
+8. **work-only**, on `work/*` and `rules/*`: only the class's allowed paths changed; auto-merge on green for `work/*` (ADR-012 item 2).
+9. **artifact-check** and **classify** as ADR-011 items 2 and 3 define them.
 
 ## pod-factory's own CI
 

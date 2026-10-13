@@ -20,7 +20,7 @@ Ordered per PRD section 3. Each phase lists the requirement IDs it delivers.
 
 | Phase | Delivers | Requirement IDs | Exit |
 |---|---|---|---|
-| 0. Bootstrap scaffold (by hand, bootstrap records) | approve and reject, lock, record store and records branch, `story start` and `story attach`, minimal `migrate` for the bootstrap records, lock and protected-zone hooks, CI records-validate, minimal story-verify and gate-check, minimal `doctor` | REQ-03, REQ-06, REQ-19 (minimal), REQ-20 (schema version, pin, bootstrap migration) | `doctor` reports the scaffold components present |
+| 0. Bootstrap scaffold (by hand, bootstrap records) | approve and reject, lock, record store and records branch, `story start`, `story attach` and `story wait`, minimal `migrate` for the bootstrap records, lock and protected-zone hooks, CI records-validate, lock-guard, class-check, work-only, minimal story-verify and gate-check, minimal `doctor` | REQ-03, REQ-06, REQ-19 (minimal), REQ-20 (schema version, pin, bootstrap migration) | `doctor` reports the scaffold components present |
 | 1a. Milestone zero | story one, `pod-factory status`, through the whole loop on the inline backend; the three refusals; kill-and-resume | REQ-07, REQ-08, REQ-10, REQ-13, REQ-19 | ADR-009 exit test |
 | 1b. Complete gates 1 to 4 (its place before the Orca backend is pending the approver, ADR-012 section D) | start interview and presets, discovery, mockup, red team and dispositions, guided design, eval plan classification and renderings, full approval path, delegation policy and decisions, full verify step (restraint checks, scans, security reviewer, simplicity reviewer, QA), exceptions, `explain`, Claude Code plugin and skills install | REQ-01, REQ-02, REQ-04, REQ-05, REQ-09, REQ-16 (except the Orca entry), REQ-17, REQ-19 (`explain`), REQ-20 (upgrades), REQ-22, REQ-23 | every gate 1 to 4 criterion measured on pod-factory itself; release 0.1 ships at the end of this phase through the manual runbook under a bootstrap record, ending the bootstrap exception (ADR-010 item 7; decision 23) |
 | 2. Orca backend | supervised parallel builders, board statuses, bugs routed to the same worker, receipts persisted | REQ-08 (Orca bullets), REQ-07 (worktree per story), REQ-16 (Orca marketplace entry) | a feature built with parallel stories under Orca |
@@ -52,7 +52,7 @@ ADR-005: delivered by the Claude Code plugin, installed per machine, silent outs
 
 ### 4.5 Check runner and CI
 
-ADR-006 as amended by ADR-011 and ADR-012: `pod-factory ci <job>` is provider-agnostic; version one ships a GitHub Actions template whose jobs are records-validate (scheduled, from main), story-verify (`story/*`), gate-check (required for `story/*`), work-only (`work/*`, `rules/*`), artifact-check, classify (`locked/*`), release-gate (build and verify triggers) and doctor (scheduled and required). Pull-request classes and their required checks are ADR-012 item 1. The pre-commit hook runs the fast subset and is advisory. pod-factory's own CI adds the hook and lock suite on three operating systems and the Orca plugin branch check.
+ADR-006 as amended by ADR-011 to ADR-013: `pod-factory ci <job>` is provider-agnostic; version one ships a GitHub Actions template whose jobs are records-validate (scheduled, from main), lock-guard and class-check (required on every pull request), story-verify (`story/*`), gate-check (required for `story/*` and in its other forms), work-only (`work/*`, `rules/*`), artifact-check, classify (`locked/*`), release-gate (build on the merge commit, verify on the executor's request) and doctor (scheduled and required). Pull-request classes and their checks are ADR-013 item 3. The pre-commit hook runs the fast subset and is advisory. pod-factory's own CI adds the hook and lock suite on three operating systems and the Orca plugin branch check.
 
 ### 4.6 Full interfaces
 
@@ -81,13 +81,14 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 - ADR-003 Inline backend and the builder contract: Claude Code subagents, sequential by default, parallel for independent stories in their own worktrees; stories full stack per requirement; evals define done; builder tests must earn their place.
 - ADR-004 Record storage defaults: branch `pod-factory/records`, one JSON file per record, SHA-256.
 - ADR-005 Hooks ship in the Claude Code plugin: six hooks, advisory layer, silent outside a project.
-- ADR-006 CI design: provider-agnostic check runner, GitHub Actions template with five jobs, pre-commit as the advisory subset.
+- ADR-006 CI design: provider-agnostic check runner, GitHub Actions template (job set as amended by ADR-011 to ADR-013), pre-commit as the advisory subset.
 - ADR-007 Default budgets, caps and budget modes: generous starting defaults, calibrated after milestone zero; modes hard-stop, tripwire, off (extends decision 12; PRD amended to 0.9.1 by record 0002).
 - ADR-008 Stack presets in version one: web-default, node-tool, custom.
 - ADR-009 Milestone zero and the bootstrap scaffold: hand-written approve, lock, records, hooks, CI; story one is `pod-factory status`; three refusals exercised.
 - ADR-010 Design defaults settled after the drafting pass: the approver's nine answers, CI authority pattern, records and stages, hooks, evidence, notifications, release and distribution.
 - ADR-011 Resolutions from the mapping: every builder in its own worktree, artifact-check and classify jobs, pull-request classes, definitions and defaults for 35 open items, adopted reference mechanisms, verification register.
 - ADR-012 Resolutions from the spec verification pass: canonical merge rules and classes, work-only job, CODEOWNERS scope, seven layers, thirteen commands and fourteen record types, builder worktree mechanism and V18, citation answers versus delegated decisions, the register of approved decisions the design touches.
+- ADR-013 Lock guard, class rules and the builder mechanism: one lock guard on every pull request, default deny for unclassified branches, bootstrap class, the single builder mechanism, gate-2 bindings and canonical counts.
 
 ## 10. Eval plan
 
@@ -99,7 +100,7 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 
 ## 11a. Verification register
 
-ADR-011 section F: seventeen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
+ADR-011 section F: eighteen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
 
 ## 11c. Plain-language summary
 

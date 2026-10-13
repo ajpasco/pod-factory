@@ -4,7 +4,7 @@ Tech spec sections 4 (Interfaces) and 5 (Non-goals for this design), 2026-10-12.
 
 Authority, in order: `docs/PRD.md` 0.9.1 (records 0001 and 0002), then ADR-001 to ADR-009. Mechanisms taken from `docs/PRD-reference.md` are cited as "reference" and used only where they fit the PRD. Orca command names come from Orca's own docs and CLI specs (`orca/docs/site/content/docs/cli/orchestration.mdx`, `orca/src/cli/specs/`). Where the documents do not decide something, this draft writes OPEN-n and lists it at the end instead of deciding.
 
-This draft extends TECH-SPEC 4.1 and 4.3 to 4.5 and fills 4.6 ("Still pending"). The builder contract (TECH-SPEC 4.2) is unchanged.
+This file extends TECH-SPEC 4.1 and 4.3 to 4.6. The builder contract (TECH-SPEC 4.2) is unchanged. Where ADR-012 or ADR-013 states a merge rule, class or count differently from a passage below, the ADR wins; the resolutions table at the end maps each open item.
 
 ## 4. Interfaces
 
@@ -32,7 +32,7 @@ Each command shows a plain-language summary and the hashes it will bind, then as
 | `answer` | `<question ID>` and an option, or `--text <answer>` | answer bound to the question's hash | the question is closed, or changed since it was asked |
 | `amend` | `<locked path>... --reason <text>`, or `--upgrade <factory version>` (REQ-20) | amendment with before and after hashes; for a locked test, first the acknowledgment of the regenerated before-and-after renderings (REQ-06) | a path is not locked; renderings are unacknowledged; the policy's amendment count for the phase is used up (reference REQ-22) |
 | `waive` | `<check or layer> --for <story or gate> --until <date> --reason <text>` | waiver | no expiry, target or reason |
-| `revoke` | `<record ID> --reason <text>` | revocation; the gate reopens and later gates' records are suspended until it is re-approved (reference invalidation graph). Reverting a merged story is `revoke` of its gate-4 record (OPEN-13) | the target is not an approval, or is already revoked |
+| `revoke` | `<record ID> --reason <text>` | revocation; the gate reopens and later gates' records are suspended until it is re-approved (reference invalidation graph). Reverting a merged story is `pod-factory revert <story>`, which writes the revocation of its gate-4 record and opens the revert pull request (ADR-010 item 19) | the target is not an approval, or is already revoked |
 | `delegate` | none; opens the current policy, or the default-deny template, in the human's editor | delegation policy | a grant names a gate other than 4, grants by free text instead of category ID, or fails the schema (REQ-17) |
 | `migrate` | `[--to <schema version>] [--dry-run]` | migration record (form: OPEN-5); first use carries records 0001 to 0003 to the records branch (ADR-004; ADR-012 item 26) | no tested migration exists to the target (REQ-20) |
 
@@ -44,7 +44,7 @@ What `approve` binds and checks, per gate. The check runner evaluates the precon
 |---|---|---|
 | discovery | discovery report, proposed project-rules diff | a section is missing; coverage was not measured by the test tool; a secret is present; a refactoring is proposed (REQ-02) |
 | 1 | PRD, a hash per requirement ID, red-team log; for a UI, the mockup snapshot | a red-team role reports neither findings nor "none found"; a finding has no disposition; a dismissal is unacknowledged; for a UI, no click-through acknowledgment, or a flow without a reachable screen; an enforcement layer is missing without a waiver (REQ-01, REQ-03, REQ-23) |
-| 2 | design, eval plan, release runbook, rollback plan; for a UI, the refreshed mockup | a required section is missing; a criterion has no control kind; a requirement is in no phase; a decision has no decider; a test is unclassified or misclassified; a rendering is unacknowledged; a founder-only project lacks the technical review (REQ-04 to REQ-06) |
+| 2 | the PRD at its current hash, the criterion-to-control mapping, design, eval plan, the runbook narrative and step file, rollback plan; for a UI, the refreshed mockup (ADR-013 item 8) | a required section is missing; a criterion has no control kind; a requirement is in no phase; a decision has no decider; a test is unclassified or misclassified; a rendering is unacknowledged; a founder-only project lacks the technical review (REQ-04 to REQ-06) |
 | 3 | build plan and every story file | a story lacks a required field; a gap check reports neither findings nor "none found"; a finding has no disposition or a dismissal no acknowledgment; tokens and days are not estimated; a requirement has no story (REQ-07) |
 | 4 | story branch head tree and review packet; `refs` name the check results relied on | the packet was not written by a fresh-context agent from that tree, misses a section, or lacks the four closing lines, which are shown before confirmation; no passing CI story-verify for that tree; an unresolved blocking security finding; QA without evidence (REQ-09, REQ-10) |
 | 5 | source revision, artifact digest, environment, configuration and migration set, verification evidence, runbook, rollback plan | the artifact was not built and verified by CI; a checklist item lacks evidence; no rollback rehearsal evidence; the security condition is unmet (REQ-11) |
@@ -80,6 +80,18 @@ Names decided in ADR-010 item 17: `story set-status` (was `transition`), `decide
 
 `decide --cite` records a citation answer, a question the documents already settle, with the quoted clause, and needs no policy. `decide` for an open question records a delegated decision and refuses, reporting a question that should have been asked, when there is no policy (deny-all), the category is not granted or is reserved, or the quote is not found verbatim in the cited source at its approved hash (ADR-012 item 13). Builders never decide (REQ-17); how the CLI knows the caller is a builder is OPEN-8.
 
+#### Commands decided after this file was drafted
+
+| Command | Who | Purpose |
+|---|---|---|
+| `story start <id>`, `story attach <id>`, `story wait <id>`, `story fix <id>`, `story set-status` | orchestrator and builders through the CLI; set-status any actor | the four backend verbs and the status transition (ADR-010 item 17; ADR-013 item 6) |
+| `revert <story>` | human only | revocation of the story's gate-4 record and the revert pull request (ADR-010 item 19) |
+| `incident` | human only | an incident record for REQ-14 (ADR-010 item 14) |
+| `secret set <name>` | human only | hidden prompt into the keychain or secret manager (ADR-010 item 38) |
+| `artifact submit <path>` | any actor | moves a draft into the work zone with redaction and hashing (ADR-011 item 12) |
+| `mockup serve` | any actor | serves a mockup, refusing an archived one (ADR-011 item 21) |
+| `decide --cite` | orchestrator, design skill | a citation answer needing no policy (ADR-012 item 13) |
+
 ### Records
 
 One JSON file per record on `pod-factory/records`, named `<UTC compact timestamp>-<recordType>-<subject>.json`; UTF-8, LF line endings, two-space indentation, keys in a fixed order (ADR-004).
@@ -103,7 +115,7 @@ Common fields (ADR-004):
 | `acknowledgment` | human, `acknowledge` or `amend` | `acknowledges`: a kind (`dismissal`, `rendering`, `click-through`, `delegated-merge`, `feedback-change`) and the item ID; binds the item | `acknowledged` |
 | `answer` | human, `answer` | `question` (ID), `answer` (option or text); binds the question file | `answered` |
 | `delegation-policy` | human, `delegate` | the policy itself: `categories` (ID, scope, limits), `reserved` (IDs), `gate4Conditions` (check and required result), `amendmentsPerPhase`. The latest validated policy is in force; none means deny-all | `granted` |
-| `delegated-decision` | check runner, `decide` | `decider` (`orchestrator` or `design-skill`), `question`, `category`, `clause` (source path and exact quote), `decision`; binds the source and the question | `decided`, or `refused` (a question that should have been asked) |
+| `delegated-decision` | check runner, `decide` | `kind` (`citation` or `delegated`, ADR-012 item 13), `decider` (`orchestrator` or `design-skill`), `question`, `category` (delegated only), `clause` (source path and exact quote), `decision`; binds the source and the question | `decided`, or `refused` (a question that should have been asked) |
 | `waiver` | human, `waive` | `waives` (check or layer), `scope` (story or gate), `expires`, `reason` | `granted` |
 | `amendment` | human, `amend` | `amends` (record), `kind` (`locked-test`, `enforcement-code`, `requirement`, `upgrade`), `reason`; a locked test adds `testIds` and the renderings acknowledgment; enforcement code adds the factory version change and the diff hash. `binds` holds the after hashes, `before` the before hashes | `approved`, as in record 0002 |
 | `revocation` | human, `revoke` | `revokes` (record), `reopens` (gate), `reason`; binds the revoked record | `revoked` |
@@ -204,6 +216,8 @@ Outputs of every job:
 | `release-gate` | a release request | before gate 5: build the artifact from the merged revision, publish its digest, run the regression suite (the locked suite plus regression tests added since) against it, attach the rollback rehearsal evidence. After gate 5: a validated gate-5 record whose hashes match the digest, environment, configuration and migration set, runbook and rollback plan | check results; an evidence bundle with the digest |
 | `doctor` | schedule and on demand | branch protection on main and on the records branch; CODEOWNERS over the protected paths; required checks; plugin version pinned per project; active waivers (ADR-006). Host facts: OPEN-12 | none |
 | `precommit` | the pre-commit hook, installed by `doctor` or `setup` | locked and protected paths untouched; file scope respected; secrets in staged files. Advisory and bypassable | none |
+| `lock-guard` | every pull request to main | no locked path changed without a validated amendment record bound to the head tree; before the first lock, the gate-2 record (ADR-013 item 1) | check result |
+| `class-check` | every pull request to main | the branch matches exactly one class and the diff stays inside its allowed paths; unmatched branches fail (ADR-013 item 2) | check result |
 | `work-only` | `work/*` and `rules/*` pull requests | only the class's allowed paths changed; no locked path changed; the lock comparison; auto-merge on green (ADR-012 items 1, 2) | check result |
 | `artifact-check <gate>` | a `work/*` pull request changing a gate 1 to 3 artifact; locally before `approve` | required sections, tags, dispositions and acknowledgments, plain-language lint, secret scan, flow IDs, against the pinned checklists (ADR-011 item 2) | check result bound to the artifact hash |
 | `classify` | a `locked/*` pull request adding tests; locally before `approve 2` or a lock amendment | runs the locked suite and classifies every test per REQ-05 (ADR-011 item 3) | one check result per test plus a summary bound to the tree |

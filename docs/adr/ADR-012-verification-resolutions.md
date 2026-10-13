@@ -1,5 +1,7 @@
 # ADR-012: Resolutions from the spec verification pass
 
+> Note (2026-10-12, ADR-013): item 1's class table and item 10's builder mechanism are superseded by ADR-013 sections A and B; item 17 reads phase 0 for the bootstrap migration.
+
 Date: 2026-10-12. Status: accepted as technical defaults, reported to the approver; two items in section D need the approver. Source: `docs/reviews/spec-verification-2026-10-12.md` (one blocker, eleven majors, thirteen minors, seven decision-integrity findings) and the plain-language summary writer's six notes. This ADR states the canonical rule wherever files disagreed; the files are corrected to match it.
 
 ## A. Merge rules, canonical

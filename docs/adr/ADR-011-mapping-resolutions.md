@@ -6,13 +6,13 @@ Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in th
 
 ## A. One design change that closes the REQ-13 conflict
 
-1. **Every builder runs in its own git worktree, in every mode.** Sequential inline builders no longer share the orchestrator's directory; the start verb creates a worktree per story through Claude Code's worktree isolation and writes the dispatch file there. Hooks therefore always tell a builder from the orchestrator by working directory, hook 4 enforces C-13-1 in every mode, and the sequential-inline gap in ADR-010 item 23 is withdrawn. Merges back to main stay serialized. (Amends ADR-010 item 23 and ADR-003's sequential-in-one-worktree reading; REQ-13 needs no mode exception.)
+1. **Every builder runs in its own git worktree, in every mode.** Sequential inline builders no longer share the orchestrator's directory; each runs in a worktree Claude Code's worktree isolation creates and registers it with `story attach` (mechanism: ADR-013 item 6). Hooks therefore always tell a builder from the orchestrator by working directory, hook 4 enforces C-13-1 in every mode, and the sequential-inline gap in ADR-010 item 23 is withdrawn. Merges back to main stay serialized. (Amends ADR-010 item 23 and ADR-003's sequential-in-one-worktree reading; REQ-13 needs no mode exception.)
 
 ## B. Two CI jobs added (amends ADR-006)
 
 2. **`ci artifact-check <gate>`** runs on every work-only pull request that adds or changes a gate 1 to 3 artifact and checks its content against the pinned checklists: required sections, requirement and test tags, dispositions and acknowledgments, the plain-language lint, a secret scan, flow IDs for mockups. `approve` runs the same code locally and requires a passing CI artifact-check record for the artifact's hash. (O1)
-3. **`ci classify`** runs the locked suite and classifies every test per REQ-05, writing one check-result record per test and a classification summary bound to the tree. It runs on the work-only pull request that adds a phase's tests and locally before `approve 2` or a lock amendment. (the four C-05 rows with no job)
-4. **gate-check** also requires the human acknowledgment record for a delegated gate-4 approval (O20), compares every locked path's hash with the lock record explicitly (O30), and checks the story branch's dispatch record against the validated plan hash as a backstop for builders started outside the CLI (O31).
+3. **`ci classify`** runs the locked suite and classifies every test per REQ-05, writing one check-result record per test and a classification summary bound to the tree. It runs on the `locked/*` pull request that adds a phase's tests (ADR-012 item 3) and locally before `approve 2` or a lock amendment. (the four C-05 rows with no job)
+4. **gate-check** also requires the human acknowledgment record for a delegated gate-4 approval (O20), compares every locked path's hash with the lock record explicitly (O30), and checks the story branch's dispatch file against the validated plan hash as a backstop for builders started outside the CLI (O31).
 5. **`doctor`** is a required check on main as well as a scheduled job, so a failing doctor blocks merges. (O22)
 6. **release-gate** has two triggers: `release-gate build` on the merge of a `release/*` pull request, from the merge commit gate 5 binds (ADR-012 item 25), and `release-gate verify` on the executor's start request after gate 5. (O23)
 7. **records-validate** re-evaluates each status-transition record's preconditions and each approval's preconditions (artifact-check result, dispositions, acknowledgments) from the records available at that point, not only the transition graph. (O2)
@@ -79,10 +79,11 @@ Platform assumptions to verify, each pinned by a test or a documented check befo
 | V11 | Host API exposure of plan and protections | phase 1b |
 | V12 | Orca: statuses as board columns settable by the plugin, notifications on turn end, quick actions into a human shell | phase 2 |
 | V13 | Orca dispatch command names and status probe at the relied-on version | phase 2 |
-| V14 | An "experimental" label in pod-factory's own Orca marketplace index | phase 3 |
+| V14 | An "experimental" label in pod-factory's own Orca marketplace index | phase 2 |
 | V15 | `npx skills add` from a release tag in one command | phase 1b |
 | V16 | Keychain access from Node on all three operating systems and a hidden prompt | phase 3 |
 | V17 | Where Claude Code stores session and subagent transcripts | phase 0 |
+| V18 | A hook event's working directory reflects the subagent's isolated worktree (ADR-012 item 11) | phase 0 |
 
 ## Consequences
 

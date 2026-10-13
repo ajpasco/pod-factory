@@ -9,7 +9,7 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended
 - **Naming:** `<timestamp>-<type>-<subject>.json`, timestamp in UTC compact ISO form, so concurrent writers never collide and `ls` reads as a timeline. Example: `20261012T211702Z-approval-gate-1.json`.
 - **Hash:** SHA-256 over LF-normalized UTF-8 content, written as lowercase hex, named in every record as `hashAlgorithm` so a future change is per record, not global (REQ-20).
 - **Common fields:** `schemaVersion`, `recordType`, `factoryVersion`, `hashAlgorithm`, `createdAt`, `actor` (name, email, kind: human or check-runner), `binds` (paths to hashes), `outcome`, and type-specific fields.
-- **Writers:** human records through the approval path; check results, status transitions, delegated decisions and delegated gate-4 records through the check runner. CI rejects a push that violates the writer rule for a record type, changes an existing record, or touches anything outside the record paths.
+- **Writers:** human records through the approval path; check results, status transitions, delegated decisions and delegated gate-4 records through the check runner. CI flags, and never validates, a record that violates the writer rule for its type, changes an existing record, or touches anything outside the record paths (ADR-010 item 11).
 
 ## Why
 

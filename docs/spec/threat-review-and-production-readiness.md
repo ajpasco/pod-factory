@@ -32,7 +32,7 @@ Agents are untrusted. Factory code is trusted to do its job, but it runs as the 
 | Component | Trust | May write | Held in place by |
 |---|---|---|---|
 | Human approver | Sole source of authority | Human records, only through the approval path | Packets written fresh-context; engineers also get the diff |
-| Approval path: `approve`, `reject`, `acknowledge`, `answer`, `amend`, `waive`, `revoke`, `delegate`, `migrate` | Trusted code, when a human runs it in a human-owned terminal | Human record types | The hook denies it to agents; CI checks the writer of each record type (ADR-004) |
+| Approval path: `approve`, `reject`, `acknowledge`, `answer`, `amend`, `waive`, `revoke`, `delegate`, `migrate`, `lock`, `revert`, `incident`, `secret set` (ADR-012 item 8) | Trusted code, when a human runs it in a human-owned terminal | Human record types | The hook denies it to agents; CI checks the writer of each record type (ADR-004) |
 | Check runner | Trusted non-model code; anyone may invoke it | Check results, status transitions, delegated decisions, delegated gate-4 records | Local results are operational facts only; gates 4 and 5 count only CI-produced results |
 | Release executor | Trusted non-model code; holds credentials | Release state, step logs, release records | Refuses any input or step not bound at gate 5; redacts output before an agent reads it |
 | Hooks, in the Claude Code plugin | Trusted code, advisory layer | Denials, logged | Bypassable by design; CI is the authority (ADR-005, ADR-006) |
@@ -51,7 +51,7 @@ Crossings, and what checks each one:
 - **Agent to human.** Agents send questions and packets. Only the human crosses back, through the approval path. An agent cannot run it (hook), and a human record with an agent actor fails CI.
 - **Agent to file system.** Tool calls pass the hooks, under Claude Code only. Shell matching is a heuristic. CI catches what the hooks miss.
 - **Local to CI.** Local results are facts to validate, never verification. Gates 4 and 5 count only what CI produced.
-- **Branch to main.** Only pull requests that pass gate-check. A story branch never changes `.factory/`.
+- **Branch to main.** Only pull requests that pass lock-guard, class-check and their class's own checks (ADR-013). A story branch never changes `.factory/`.
 - **Pushed record to counted record.** A record counts only after records-validate has passed on it (OPEN-2).
 - **Release agent to executor.** The agent asks. The executor checks the request against the bound runbook, injects credentials itself and returns redacted output.
 - **Orca to human shell.** Orca commands type only into a shell the human owns, with control characters stripped. The CLI confirms the hash and the decision.
@@ -96,7 +96,7 @@ Only jobs that run no branch code reference repository secrets. Until OPEN-1 is 
 
 **pod-factory's own dependencies.**
 
-- Exact versions in every workspace `package.json`, no ranges. One committed `package-lock.json`. CI installs with `npm ci` and install scripts disabled.
+- Exact versions in every workspace `package.json`, no ranges. One committed `package-lock.json`, and the published `npm-shrinkwrap.json` (ADR-010 item 34), both locked. CI installs with `npm ci` and install scripts disabled.
 - The lockfile is locked at gate 2 (REQ-06). A dependency change needs a human-written amendment. Adding a dependency is a significant decision by definition, so it is asked, never assumed.
 - Dependency and secret scans run on pod-factory's own stories (NFR-07). The executor and the redaction code keep the fewest dependencies, because they handle credentials.
 - Third-party CI actions are pinned by full commit SHA, never by tag.

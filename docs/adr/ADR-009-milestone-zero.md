@@ -15,7 +15,8 @@ Approved as records marked bootstrap, expiring when pod-factory 0.1 ships (decis
 3. The record store: records branch creation, record writing, hashing, reading.
 4. The lock hook and the protected-zone hook (ADR-005, hooks 1 and 2).
 5. CI (ADR-006): records-validate, story-verify in its minimal form (file scope, locked command run exactly as locked, evidence bundle bound to the branch head tree), and gate-check (validated gate-4 record bound to the head tree).
-6. A minimal `doctor` that reports the five layers above as present or missing.
+6. A minimal `doctor` that reports the scaffold components above as present or missing.
+7. `story start`, `story attach` and `story wait` in their minimal forms, the lock-guard, class-check and work-only CI jobs, and a minimal `migrate` for the bootstrap records (ADR-012 item 26, ADR-013 item 4).
 
 Everything else in the first phase is built through the loop.
 

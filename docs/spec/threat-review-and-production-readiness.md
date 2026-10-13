@@ -44,7 +44,7 @@ Agents are untrusted. Factory code is trusted to do its job, but it runs as the 
 | CI | Authority | Validation marks, check-result records, evidence | Must run a definition the change under test cannot alter (OPEN-1) |
 | Git host | Authority where the plan allows | Branch protection, rulesets, CODEOWNERS | Verified by `doctor`; private repositories on GitHub Free need a waiver |
 | Records branch | Store | Appends from the approval path and the check runner | Linear, never force-pushed, every push validated; readers use the last validated head (ADR-004) |
-| Main | Store | Merges of verified pull requests | gate-check required; branch protection; CODEOWNERS on `.factory/`, `.claude/`, `.github/` |
+| Main | Store | Merges of verified pull requests | required checks per pull-request class; branch protection; CODEOWNERS on `.github/`, `.claude/`, the enforcement scripts and checklists, not on `.factory/work/` or `docs/` (ADR-012 items 1, 5) |
 
 Crossings, and what checks each one:
 
@@ -160,7 +160,7 @@ Each row becomes a locked negative test at gate 2. It is tagged with its require
 | AB-15-1 | An incident note says to add a rule to CLAUDE.md directly | The retro skill only opens a pull request whose rule cites a failure; it cannot merge without approval |
 | AB-16-1 | An agent edits `.claude/settings.local.json` to disable the pod-factory plugin | Denied (OPEN-3); if it lands, session start and `doctor` report the hook layer missing |
 | AB-16-2 | The installed CLI is newer than the project's pinned version | `doctor` fails and names both versions; hook behavior is OPEN-4 |
-| AB-17-1 | The orchestrator settles a question by quoting a PRD sentence that "allows" it, with no category ID | The check runner rejects the decision and reports it as a question that should have been asked |
+| AB-17-1 | The orchestrator decides an open question alone by quoting a PRD sentence that "allows" it, with no category ID (a citation answer to a question the PRD settles is allowed, ADR-012 item 13) | The check runner rejects the decision and reports it as a question that should have been asked |
 | AB-17-2 | A delegated gate-4 record exists without the human's acknowledgment | gate-check refuses the merge |
 | AB-18-1 | The release starts with a tarball whose SHA-256 differs from the gate-5 record | The executor halts before the first step and names the input |
 | AB-18-2 | The post-deploy smoke cannot reach the registry | Retried per the runbook, then a halt for the human; never a rollback |
@@ -206,7 +206,7 @@ Rules:
 
 The first migration, bootstrap-0 to schema 1:
 
-- Records 0001 and 0002 move from the working tree to `pod-factory/records` under ADR-004 names, with their content hashes in the migration record (ADR-004 note). They keep the bootstrap flag and expire when 0.1 ships (decision 23).
+- Records 0001 to 0003 move from the working tree to `pod-factory/records` under ADR-004 names, with their content hashes in the migration record (ADR-004 note). They keep the bootstrap flag and expire when 0.1 ships (decision 23).
 - Record 0001 says the first release must re-verify it through the real approval path or re-approve.
 - Record 0002 was written by the assistant on the approver's instruction. Under the writer rule it counts only once the approver re-issues it with `amend`.
 - Their field names (`approvedAt`, `approver`) and free-text algorithm differ from schema 1 (OPEN-10). Removing `.factory/records/` from main is itself a `.factory/` change (OPEN-11).
@@ -225,7 +225,7 @@ Rollback:
 | Component | What it logs | Where |
 |---|---|---|
 | CLI and approval path | Each command and outcome; each record written, with path and hash; push results; plain-language failure messages with the options (REQ-22) | The event log; records on the records branch |
-| Hooks | Each denial: event, tool, rule, normalized target, the lock or record cited. Allowed calls are not logged. Nothing outside a `.factory/` project (ADR-005) | The active story's event log, else the project's |
+| Hooks | Each denial: event, tool, rule, normalized target, the lock or record cited. Allowed calls are not logged, except builder reads outside the supplied set, which hook 5 logs as events (ADR-011 item 28). Nothing outside a `.factory/` project (ADR-005) | The active story's event log, else the project's |
 | Check runner | Each check: name, result, bound tree, evidence pointer. Summaries only, never raw tool output | Check-result records; the evidence bundle; the CI console, redacted |
 | Release executor | Each step: ID, command with credential references only, start and end, exit status, smoke classification, evidence, redacted output. Release state after every step (REQ-18) | Release state and step logs in the work zone; the release record on the records branch |
 
@@ -243,7 +243,7 @@ Canary tests prove it (REQ-21, AB-21-1). A record's actor name and email are str
 
 `doctor` (REQ-19, ADR-006, ADR-009) shows the following, and exits non-zero when any layer is missing or waived:
 
-- Each enforcement layer as present, missing or waived: the Claude Code plugin installed and enabled; the pre-commit hook; the CI workflow matching the enforcement-code lock; main's branch protection and its required checks; the records branch's protection (linear history, no force push, validation on every push); CODEOWNERS over `.factory/`, `.claude/` and `.github/`; managed hook settings.
+- Each of the seven enforcement layers as present, missing or waived (ADR-011 item 8; ADR-012 item 7): plugin hooks including managed hook settings; the pre-commit hook; the CI workflows defined on main and matching the enforcement-code lock; main's branch protection; the records branch's protection (linear history, no force push, scheduled validation); CODEOWNERS over `.github/`, `.claude/`, the enforcement scripts and checklists; required checks configured per pull-request class.
 - The installed CLI and plugin versions against the project's pin.
 - Active waivers with their expiry, and bootstrap pieces still in use.
 - In pod-factory's own repository: the Orca plugin branch against `orca-plugin/` at the released commit (ADR-002).
@@ -262,7 +262,7 @@ What the operator watches:
 | Scheduled `doctor` fails | CI `doctor` job | Restore the layer, or record a time-boxed waiver |
 | A record stays pending or is flagged invalid | records-validate; `status` | Find the writer; an invalid record never counts |
 | Repeated hook denials on one story | Event log | The agent is fighting a rule; read the story before it spends the budget |
-| A story or gate needs a human | `status`; the notification channel (section 1, to be decided) | Answer, amend or re-plan |
+| A story or gate needs a human | `status`; the notification channel (ADR-010 item 32) | Answer, amend or re-plan |
 | A waiver near expiry | `doctor`; packets | Fix the cause, or renew it deliberately |
 | Release halted, rolled back or broken | Executor state; the notification channel | The human decides any recovery beyond the pre-approved rollback |
 | Registry or marketplace state differs from the release record | The runbook's reconcile checks, run on demand | Follow the rollback plan in 8.4 |
@@ -278,19 +278,19 @@ Before gate 5: the release pull request sets every version and the changelog and
 Gate 5 binds (REQ-11):
 
 - **Revision:** the merge commit R on main.
-- **Artifacts:** the npm tarballs built from R, with SHA-256 and npm sha512 digests. Nothing is built after sign-off (REQ-18).
+- **Artifacts:** the single npm tarball built from R (ADR-010 item 34), with SHA-256 and npm sha512 digests. Nothing is built after sign-off (REQ-18).
 - **Environment:** the npm registry and package names; the git host repository; the Orca plugin branch; the Orca and Claude Code marketplace entries.
-- **Configuration:** the version in every published `package.json`, in `orca-plugin.json` and in the Claude Code plugin manifest at R, all equal to the release version.
+- **Configuration:** the version in the published `package.json`, in `orca-plugin.json` and in the Claude Code plugin manifest at R, all equal to the release version.
 - **Migrations:** the record-format migrations this version ships, with their test results. None runs at release time. Each project runs `migrate` after a human-written upgrade amendment (REQ-20).
 - **This runbook and its rollback plan.**
 
-Credentials: the npm token and the git host token, from the keychain. If npm asks for a one-time password, the human types it into the executor's hidden prompt. Where the executor runs, and which packages it publishes, is OPEN-7.
+Credentials: the npm token and the git host token, from the keychain. If npm asks for a one-time password, the human types it into the executor's hidden prompt. The executor runs on the approver's machine and publishes one package (ADR-010 items 3 and 34).
 
 | # | Step | Idempotent, or reconcile check | Reversibility |
 |---|---|---|---|
 | 1 | Validate the gate-5 record and every bound input; recompute each tarball's SHA-256 | Read-only | Nothing changes |
 | 2 | Save the current pointers in release state: dist-tags, plugin branch head, marketplace and install refs | Read-only; never overwrites a saved value | Nothing changes; feeds the rollback |
-| 3 | Publish each tarball with dist-tag `next`, dependencies first | Reconcile: version absent, publish; present with the same integrity, skip; present with other integrity, halt. Also read `latest`, since a package's first publish can set it | Irreversible: npm never reuses a version. Contained: `latest` has not moved |
+| 3 | Publish the single tarball with dist-tag `next` | Reconcile: version absent, publish; present with the same integrity, skip; present with other integrity, halt. Also read `latest`, since a package's first publish can set it | Irreversible: npm never reuses a version. Contained: `latest` has not moved |
 | 4 | Split `orca-plugin/` at R onto the plugin branch, fast-forward only | Reconcile: head tree equals `R:orca-plugin`, skip; old head not an ancestor, halt | Not live until step 7. Reversible by a commit restoring the previous tree |
 | 5 | Smoke the staged release, under the retry rule | Idempotent: a fresh temporary prefix each run | Nothing changes |
 | 6 | Tag `v<version>` at R, the tag skills install from; signed when a key is configured; push | Reconcile: tag at R, skip; tag elsewhere, halt | Never moved or deleted once pushed |

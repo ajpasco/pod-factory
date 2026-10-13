@@ -22,7 +22,7 @@ Conventions for every command:
 
 #### The approval path (human only)
 
-Each command shows a plain-language summary and the hashes it will bind, then asks the human to confirm. It re-hashes at confirmation and refuses if anything changed. Each refuses when no git identity is configured, because every record carries the actor's git identity (reference NFR-08). Hook 2 denies all nine to agents (reference: "the hook denies every command in the family to agents"). CI rejects a human record type that a human did not write (ADR-004). How a command recognizes a human-owned terminal, and how CI recognizes a human writer, is OPEN-2.
+Each command shows a plain-language summary and the hashes it will bind, then asks the human to confirm. It re-hashes at confirmation and refuses if anything changed. Each refuses when no git identity is configured, because every record carries the actor's git identity (reference NFR-08). Hook 2 denies all thirteen human-only commands to agents, these nine plus `lock`, `revert`, `incident` and `secret set` (ADR-010 item 29b; ADR-012 item 8). CI rejects a human record type that a human did not write (ADR-004). How a command recognizes a human-owned terminal, and how CI recognizes a human writer, is OPEN-2.
 
 | Command | Arguments | Writes | Refuses when |
 |---|---|---|---|
@@ -34,7 +34,9 @@ Each command shows a plain-language summary and the hashes it will bind, then as
 | `waive` | `<check or layer> --for <story or gate> --until <date> --reason <text>` | waiver | no expiry, target or reason |
 | `revoke` | `<record ID> --reason <text>` | revocation; the gate reopens and later gates' records are suspended until it is re-approved (reference invalidation graph). Reverting a merged story is `revoke` of its gate-4 record (OPEN-13) | the target is not an approval, or is already revoked |
 | `delegate` | none; opens the current policy, or the default-deny template, in the human's editor | delegation policy | a grant names a gate other than 4, grants by free text instead of category ID, or fails the schema (REQ-17) |
-| `migrate` | `[--to <schema version>] [--dry-run]` | migration record (form: OPEN-5); first use carries records 0001 and 0002 to the records branch (ADR-004) | no tested migration exists to the target (REQ-20) |
+| `migrate` | `[--to <schema version>] [--dry-run]` | migration record (form: OPEN-5); first use carries records 0001 to 0003 to the records branch (ADR-004; ADR-012 item 26) | no tested migration exists to the target (REQ-20) |
+
+`approve rules <pull request>` is a further gate value: it binds a `rules/*` pull request's tree after the retrospective's citation check passes, and gate-check in its rules form requires it (ADR-012 item 23).
 
 What `approve` binds and checks, per gate. The check runner evaluates the preconditions, with the same code CI uses. Every approval also lists the active waivers it showed (REQ-22).
 
@@ -64,11 +66,11 @@ What `approve` binds and checks, per gate. The check runner evaluates the precon
 
 #### Commands the documents imply but do not name
 
-Names are proposals (OPEN-23).
+Names decided in ADR-010 item 17: `story set-status` (was `transition`), `decide`, `ask`, `metrics`, `audit`, `open`, `secret set`, plus `revert` and `incident`.
 
 | Proposed name | Who | Purpose | Writes |
 |---|---|---|---|
-| `transition <subject> <stage>` | any actor | the only way a status changes; enforces the ready rule, required records and caps (reference "status transitions"); stages per OPEN-4 | status transition |
+| `story set-status <subject> <stage>` | any actor | the only way a status changes; enforces the ready rule, required records and caps (reference "status transitions"); stages per OPEN-4 | status transition |
 | `decide <question ID> --category <ID> --source <path> --quote <text>` | the orchestrator; the design skill before gate 2 | records a delegated decision. For gate 4, evaluates the policy's conditions from validated check results and writes the delegated gate-4 approval (REQ-17) | delegated decision, or delegated approval |
 | `ask <subject> --question <text>` | the orchestrator | the "ask the human" verb | status transition to needs human |
 | `metrics` | any actor | REQ-14 figures from records, offline | nothing |
@@ -76,7 +78,7 @@ Names are proposals (OPEN-23).
 | `open <item>` | any actor | shows an artifact, in Orca when present (reference REQ-12) | nothing |
 | credential entry | human only | hidden prompt into the keychain or secret manager (REQ-21; OPEN-15) | nothing |
 
-`decide` refuses, and reports a question that should have been asked, when there is no policy (deny-all), the category is not granted or is reserved, or the quote is not found verbatim in the cited source at its approved hash. Builders never decide (REQ-17); how the CLI knows the caller is a builder is OPEN-8.
+`decide --cite` records a citation answer, a question the documents already settle, with the quoted clause, and needs no policy. `decide` for an open question records a delegated decision and refuses, reporting a question that should have been asked, when there is no policy (deny-all), the category is not granted or is reserved, or the quote is not found verbatim in the cited source at its approved hash (ADR-012 item 13). Builders never decide (REQ-17); how the CLI knows the caller is a builder is OPEN-8.
 
 ### Records
 
@@ -84,8 +86,8 @@ One JSON file per record on `pod-factory/records`, named `<UTC compact timestamp
 
 Common fields (ADR-004):
 
-- `schemaVersion`: the record schema version. Records 0001 and 0002 are `bootstrap-0`.
-- `recordType`: one of the eleven types below.
+- `schemaVersion`: the record schema version. Records 0001 to 0003 are `bootstrap-0`.
+- `recordType`: one of fourteen types: the eleven below plus `lock`, `migration` and `incident` (ADR-010 item 14; ADR-012 item 8).
 - `factoryVersion`: the enforcing version pinned in the project profile (REQ-20).
 - `hashAlgorithm`: names the content hash used in `binds`: SHA-256 over LF-normalized UTF-8, lowercase hex. Each record is verified with the algorithm it names (reference REQ-20).
 - `createdAt`: ISO 8601 with offset.
@@ -105,14 +107,14 @@ Common fields (ADR-004):
 | `waiver` | human, `waive` | `waives` (check or layer), `scope` (story or gate), `expires`, `reason` | `granted` |
 | `amendment` | human, `amend` | `amends` (record), `kind` (`locked-test`, `enforcement-code`, `requirement`, `upgrade`), `reason`; a locked test adds `testIds` and the renderings acknowledgment; enforcement code adds the factory version change and the diff hash. `binds` holds the after hashes, `before` the before hashes | `approved`, as in record 0002 |
 | `revocation` | human, `revoke` | `revokes` (record), `reopens` (gate), `reason`; binds the revoked record | `revoked` |
-| `status-transition` | check runner, `transition` and the backend verbs | `from`, `to` (OPEN-4), `rule` (checks passed), `cause` (for example a cap), `leaseToken` (entering in progress), `invokedBy`; binds the story file and any receipt | `applied` |
+| `status-transition` | check runner, `story set-status` and the backend verbs | `from`, `to` (OPEN-4), `rule` (checks passed), `cause` (for example a cap), `leaseToken` (entering in progress), `invokedBy`; binds the story file and any receipt | `applied` |
 | `check-result` | check runner, `ci <job>`, `start`, `discover` | `job`, `check`, `controlKind` (`measured` or `reviewed`), `where` (`ci` or `local`), `run` (ID and link), `findings` (blocking and total); binds `tree` or the release inputs, and `evidence` | `pass`, `fail`, or `error` (the check could not run) |
 
 Rules:
 
 - No record is modified or deleted. A later record changes an earlier one's effect: a revocation, an amendment, a newer policy.
 - Every gate, story CI, the executor and hook 3 rely only on validated records (reference decision 28). A `where: local` check result never counts for gate 4 or 5 (reference: a local run never substitutes).
-- Records 0001 and 0002 keep their bootstrap form: `approvedAt` and `approver` in 0001, a descriptive `hashAlgorithm`, nested `binds`. Validators accept `bootstrap-0` until the bootstrap exception expires. `migrate` carries them to the records branch under ADR-004 names and binds their original content hashes (ADR-004 note).
+- Records 0001 to 0003 keep their bootstrap form: `approvedAt` and `approver` in 0001, a descriptive `hashAlgorithm`, nested `binds`. Validators accept `bootstrap-0` until the bootstrap exception expires. `migrate` carries them to the records branch under ADR-004 names and binds their original content hashes (ADR-004 note).
 
 Two short examples; version values are illustrative. A human approval at gate 4:
 
@@ -169,7 +171,7 @@ Rules on both backends:
 
 | Verb | Inline backend (ADR-003) | Orca backend |
 |---|---|---|
-| Start a story | the Claude Code subagent tool: builder role, the story's model, only the recorded context. Stories marked independent at gate 3 may run in parallel, each in its own worktree through Claude Code's worktree isolation; merges are serialized | once per plan: `run-create --objective <plan>` (`run-use --id <run>` after a restart). Per story: `task-create --spec <context> --task-title <story ID> [--deps <json>]`; `worker-start --task <task> --worktree new-child --name <story ID> --agent <agent> [--model <id>] --setup run`; then `worktree set --worktree <story worktree> --workspace-status <first stage>`. The dispatch ID is the lease token |
+| Start a story | the Claude Code subagent tool: builder role, the story's model, only the recorded context. every builder runs in its own worktree through Claude Code's worktree isolation and attaches its dispatch file there with `story attach` (ADR-011 item 1; ADR-012 item 10); stories marked independent at gate 3 may run in parallel; merges are serialized | once per plan: `run-create --objective <plan>` (`run-use --id <run>` after a restart). Per story: `task-create --spec <context> --task-title <story ID> [--deps <json>]`; `worker-start --task <task> --worktree new-child --name <story ID> --agent <agent> [--model <id>] --setup run`; then `worktree set --worktree <story worktree> --workspace-status <first stage>`. The dispatch ID is the lease token |
 | Wait for done | the subagent call returns; the orchestrator reads its result and usage | `check --wait --types worker_done,escalation,question --timeout-ms <n>`; process every message in the Delivery, then `check --ack <delivery>`. `worker_done` carries `--outcome succeeded` or `failed`, `--task-id` and `--dispatch-id` |
 | Send a fix back to the same worker | OPEN-7 | while the dispatch is live: `send --to dispatch:<dispatch> --subject <fix> --body <fix task>`. After `worker_done`: keep the worker with `worker-retain` until the story leaves verification; then `task-create --spec <fix task> --parent <story task>` and `worker-start --task <fix task> --terminal <worker terminal> --worktree <story worktree>`; `worker-release` once the story passes. A failed attempt is retried with `worker-start --task <task> --retry-of <dispatch>` and explicit placement; retries stay at or below Orca's breaker of three consecutive failures per task (reference REQ-08) |
 | Ask the human | a builder cannot prompt (hook 4); it ends its run with the question in its handoff note. The orchestrator settles it with `decide` when a clause does; otherwise `ask` records the question with its hash, moves the subject to needs human, notifies, and stops. The human runs `pod-factory answer` in their own terminal; the orchestrator resumes once the answer record exists (OPEN-3) | a builder asks with `ask --question <text> [--options <csv>] --timeout-ms <n>`, resuming with `--resume <message>` after a timeout; the orchestrator answers with `reply --id <message> --body <answer, with its clause or answer record>`. For the human, the same `ask` flow, plus `gate-create --task <task> --question <plain-language question> --options <json>` so the board shows the block; the orchestrator ends its turn so Orca notifies; once the answer record exists, `gate-resolve --id <gate> --resolution <answer record>`. Orca's gate is display only; the answer record is the authority |
@@ -196,12 +198,15 @@ Outputs of every job:
 
 | Job | Trigger | Checks | Records |
 |---|---|---|---|
-| `records-validate` | every push to `pod-factory/records` | only record paths (`.factory/records/`, `.factory/policy/`, `.factory/locks/`); schema per type and version; legal status transitions; writer identity per type; nothing modified or deleted; linear history | none; marks the pushed records validated (OPEN-1) |
-| `story-verify` | every pull request to main | nothing under `.factory/` and nothing outside the story's file scope (OPEN-10); no locked path changed without a validated amendment; the locked test command, run exactly as locked from the records branch, not from the branch; restraint checks (traceability of new files, endpoints and public functions; code no requirement test exercises; size and complexity tripwires per budget mode; unused code; duplication); secret and dependency scans | a check result per check; one evidence bundle bound to the head tree |
-| `gate-check` | required for merge | a validated gate-4 approval bound to the head tree, with no newer content change; a passing story-verify for that tree; a delegated approval only with the human's acknowledgment (REQ-17); when main moved, the locked suite green on the merge result; no expired waiver relied on | none |
+| `records-validate` | schedule and dispatch, defined on main (ADR-010 item 11) | only record paths (`.factory/records/`, `.factory/policy/`, `.factory/locks/`); schema per type and version; legal status transitions; writer identity per type; nothing modified or deleted; linear history | none; advances `pod-factory/records-validated` to the last good commit; an invalid record lands, is flagged and never counts (ADR-010 item 11) |
+| `story-verify` | `story/*` pull requests (classes: ADR-012 item 1) | nothing under `.factory/` and nothing outside the story's file scope (OPEN-10); no locked path changed without a validated amendment; the locked test command, run exactly as locked from the records branch, not from the branch; restraint checks (traceability of new files, endpoints and public functions; code no requirement test exercises; size and complexity tripwires per budget mode; unused code; duplication); secret and dependency scans | a check result per check; one evidence bundle bound to the head tree |
+| `gate-check` | required for merge of `story/*` | a validated gate-4 approval bound to the head tree, with no newer content change; a passing story-verify for that tree; a delegated approval only with the human's acknowledgment record (REQ-17); every locked path's hash equal to the lock record; the branch's dispatch record matching the validated plan hash; when main moved, the locked suite green on the merge result; no expired waiver relied on (ADR-011 item 4) | none |
 | `release-gate` | a release request | before gate 5: build the artifact from the merged revision, publish its digest, run the regression suite (the locked suite plus regression tests added since) against it, attach the rollback rehearsal evidence. After gate 5: a validated gate-5 record whose hashes match the digest, environment, configuration and migration set, runbook and rollback plan | check results; an evidence bundle with the digest |
 | `doctor` | schedule and on demand | branch protection on main and on the records branch; CODEOWNERS over the protected paths; required checks; plugin version pinned per project; active waivers (ADR-006). Host facts: OPEN-12 | none |
 | `precommit` | the pre-commit hook, installed by `doctor` or `setup` | locked and protected paths untouched; file scope respected; secrets in staged files. Advisory and bypassable | none |
+| `work-only` | `work/*` and `rules/*` pull requests | only the class's allowed paths changed; no locked path changed; the lock comparison; auto-merge on green (ADR-012 items 1, 2) | check result |
+| `artifact-check <gate>` | a `work/*` pull request changing a gate 1 to 3 artifact; locally before `approve` | required sections, tags, dispositions and acknowledgments, plain-language lint, secret scan, flow IDs, against the pinned checklists (ADR-011 item 2) | check result bound to the artifact hash |
+| `classify` | a `locked/*` pull request adding tests; locally before `approve 2` or a lock amendment | runs the locked suite and classifies every test per REQ-05 (ADR-011 item 3) | one check result per test plus a summary bound to the tree |
 
 **Evidence bundle.** One directory per job run: harness and scanner output (redacted), check reports, and runner-captured screenshots for UI. A `manifest.json` lists the job, the subject, `tree` or the release inputs, the run ID and link, start and finish times, the redaction pattern set version, and every file with its SHA-256. The manifest hash identifies the bundle; the check-result record binds it as `evidence` beside `tree`. Agent-written text never enters a bundle (reference "evidence"). A packet's "tests passed" counts only when it cites a bundle bound to the same tree (ADR-009, refusal 3). Storage: OPEN-11.
 
@@ -240,11 +245,11 @@ The decision is allow, with no output, or deny with a plain-language reason that
 | 1 | pre-tool-use: edit, write, multi-edit, notebook edit | the target is locked, in the protected zone, or a declared secret path | the lock or record, and `amend` |
 | 2 | pre-tool-use: shell | the text plainly writes to a locked or protected path (redirection, in-place edit, move, delete, checkout), or runs an approval-path command. A heuristic, advisory by design | the same; approvals are human only |
 | 3 | pre-tool-use: shell, and the inline start verb (OPEN-8) | `orchestration worker-start` or `dispatch` under any resolved Orca CLI name, or the inline start, without a CI-validated gate-3 record matching the current plan hash | gate 3 |
-| 4 | pre-tool-use: the question tool | the caller is a dispatched worker (OPEN-8) | `orca orchestration ask` under Orca; the handoff note inline |
+| 4 | pre-tool-use: the question tool | the caller is a dispatched worker, recognized by the live dispatch file in its own worktree (ADR-011 item 1; ADR-012 item 10) | `orca orchestration ask` under Orca; the handoff note inline |
 | 5 | pre-tool-use: read and search tools | the target is a declared secret path; shell reads per OPEN-18 | REQ-21 |
 | 6 | session start | never denies; prints the stage, open gates and active waivers | none |
 
-REQ-01's block on application code while gate 1 is open has no hook among these six: OPEN-17.
+REQ-01's block on application code while gate 1 is open is hook 1's stage rule: it denies creating files under the preset's application source roots while no validated gate-1 record exists (ADR-010 item 24).
 
 ## 5. Non-goals for this design
 

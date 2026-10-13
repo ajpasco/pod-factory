@@ -1,10 +1,12 @@
 # ADR-011: Resolutions from the criterion-to-control mapping
 
-Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in the spec and reported to the approver, open to being overruled; nothing here changes an approver decision. Resolves the 35 open items, adopts the reference mechanisms the mapping found only in `docs/PRD-reference.md`, and records the 17 platform assumptions to verify. Amends ADR-006, ADR-009 and ADR-010 as noted.
+> Note (2026-10-12): ADR-012 supersedes section C's table with per-class required checks and a `locked/*` class, defines `ci work-only`, excludes `.factory/work/` and `docs/` from CODEOWNERS, and adds V18. Alternatives rejected for each item: the inverse choice, or the next-nearest option the mapping listed.
+
+Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in the spec and reported to the approver, open to being overruled; nothing here changes an approver decision. Resolves the 35 open items, adopts the reference mechanisms the mapping found only in `docs/PRD-reference.md`, and records the 17 platform assumptions to verify. Amends ADR-003, ADR-006, ADR-009 and ADR-010 as noted.
 
 ## A. One design change that closes the REQ-13 conflict
 
-1. **Every builder runs in its own git worktree, in every mode.** Sequential inline builders no longer share the orchestrator's directory; the start verb creates a worktree per story through Claude Code's worktree isolation and writes the dispatch file there. Hooks therefore always tell a builder from the orchestrator by working directory, hook 4 enforces C-13-1 in every mode, and the sequential-inline gap in ADR-010 item 23 is withdrawn. Merges back to main stay serialized. (Amends ADR-010 item 23 and ADR-003's "same worktree" wording; REQ-13 needs no mode exception.)
+1. **Every builder runs in its own git worktree, in every mode.** Sequential inline builders no longer share the orchestrator's directory; the start verb creates a worktree per story through Claude Code's worktree isolation and writes the dispatch file there. Hooks therefore always tell a builder from the orchestrator by working directory, hook 4 enforces C-13-1 in every mode, and the sequential-inline gap in ADR-010 item 23 is withdrawn. Merges back to main stay serialized. (Amends ADR-010 item 23 and ADR-003's sequential-in-one-worktree reading; REQ-13 needs no mode exception.)
 
 ## B. Two CI jobs added (amends ADR-006)
 
@@ -12,7 +14,7 @@ Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in th
 3. **`ci classify`** runs the locked suite and classifies every test per REQ-05, writing one check-result record per test and a classification summary bound to the tree. It runs on the work-only pull request that adds a phase's tests and locally before `approve 2` or a lock amendment. (the four C-05 rows with no job)
 4. **gate-check** also requires the human acknowledgment record for a delegated gate-4 approval (O20), compares every locked path's hash with the lock record explicitly (O30), and checks the story branch's dispatch record against the validated plan hash as a backstop for builders started outside the CLI (O31).
 5. **`doctor`** is a required check on main as well as a scheduled job, so a failing doctor blocks merges. (O22)
-6. **release-gate** has two triggers: `release-gate build` on a `release/*` pull request before gate 5, and `release-gate verify` on the executor's start request after gate 5. (O23)
+6. **release-gate** has two triggers: `release-gate build` on the merge of a `release/*` pull request, from the merge commit gate 5 binds (ADR-012 item 25), and `release-gate verify` on the executor's start request after gate 5. (O23)
 7. **records-validate** re-evaluates each status-transition record's preconditions and each approval's preconditions (artifact-check result, dispositions, acknowledgments) from the records available at that point, not only the transition graph. (O2)
 
 ## C. Pull-request classes (O3)
@@ -56,7 +58,7 @@ Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in th
 
 ## E. Adopted mechanisms from the reference (list 2)
 
-The spec adopts, as its own, the thirty mechanisms the mapping found only in `docs/PRD-reference.md` (its section 5 definitions and its per-requirement acceptance bullets as listed in the mapping's list 2), in the binding form the interfaces section gives them. Where an ADR overrides a reference mechanism, the ADR wins. The two criteria with no mechanism anywhere, fresh-context provenance of reviewers (C-04-9, C-10-2), are met by item 12's dispatch files: a reviewer is started through the CLI with a recorded input set, and its dispatch file names the inputs; the reworded criteria in the 0.9.2 proposal state exactly that.
+The spec adopts, as its own, the thirty mechanisms the mapping found only in `docs/PRD-reference.md` (its section 5 definitions and its per-requirement acceptance bullets as listed in the mapping's list 2), in the binding form the interfaces section gives them. Where an ADR overrides a reference mechanism, the ADR wins. The two criteria with no mechanism anywhere, fresh-context provenance of reviewers (C-04-9, C-10-2), are met by item 1's dispatch files: a reviewer is started through the CLI with a recorded input set, and its dispatch file names the inputs; the reworded criteria in the 0.9.2 proposal state exactly that.
 
 ## F. Verification register (list 3)
 

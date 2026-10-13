@@ -4,7 +4,7 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended
 
 ## Decision
 
-- **Branch:** `pod-factory/records`, linear history, never force-pushed, every push validated by CI.
+- **Branch:** `pod-factory/records`, linear history, never force-pushed, every new commit validated by CI after it lands (ADR-010 item 11).
 - **Format:** one human-readable JSON file per record, UTF-8, LF line endings, two-space indentation, keys in a fixed order so diffs are stable.
 - **Naming:** `<timestamp>-<type>-<subject>.json`, timestamp in UTC compact ISO form, so concurrent writers never collide and `ls` reads as a timeline. Example: `20261012T211702Z-approval-gate-1.json`.
 - **Hash:** SHA-256 over LF-normalized UTF-8 content, written as lowercase hex, named in every record as `hashAlgorithm` so a future change is per record, not global (REQ-20).

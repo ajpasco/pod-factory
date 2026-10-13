@@ -1,5 +1,7 @@
 # ADR-010: Design defaults settled after the drafting pass
 
+> Note (2026-10-12): answer A5 changes the lock timing stated by REQ-05 and REQ-06; amendment 0.9.2 row 14 carries it. The technical defaults in sections B to F were authorized by the approver on 2026-10-12 and the active PRD's REQ-04 admits a recorded default as a decider; every default is open to overrule (ADR-012 section D). Alternatives rejected for each default: the inverse choice named in its item, or the next-nearest option the drafts listed.
+
 > Amended 2026-10-12 by ADR-011: item 23's sequential-inline limitation is withdrawn; every builder runs in its own worktree, so hook 4 enforces in every mode.
 
 Date: 2026-10-12. Status: accepted. Decided by: the approver for items marked (approver); the rest are technical defaults decided in the spec, reported to the approver, and open to being overruled. PRD basis: decision 20 (technical decisions without product consequence take recommended defaults and are recorded), decision 28, NFR-01, REQ-06 to REQ-22. Resolves the open items raised by the interface, threat-review, production-readiness and eval-plan drafts of 2026-10-12.
@@ -43,10 +45,10 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver for items marked (a
 26. **Drift protection on settings.** Hook 1 also denies agent edits to `.claude/settings.local.json`, user-level Claude settings and the plugin's install directory. Deliberate tampering stays an accepted risk.
 27. **Version mismatch between installed CLI or plugin and the project pin:** hooks warn and allow; `doctor` fails; CI is the authority.
 28. **Node range:** the current LTS and the previous LTS at release time, named in the package manifest and checked by `doctor`. Windows uses npm's generated command shim; hooks invoke `pod-factory hook <event>` through it.
+29. **Agent-written artifacts** (handoff notes, packets, reports) enter the work zone only through the CLI (`story record-handoff` and friends), which runs redaction; CI's packet check scans for secret patterns as a second pass.
 29a. **Human-terminal recognition and confirmation.** Approval-path commands require an interactive terminal, refuse when an agent-session marker is present in the environment (Claude Code's and Orca's agent-terminal markers; verify the exact variable names during implementation), and confirm by having the human type the gate number and the first eight characters of the hash shown. CI additionally checks a human record's actor against the approver list in the bound project profile.
 29b. **Hook 2 also denies the approval-path command family** (approve, reject, acknowledge, answer, amend, waive, revoke, delegate, migrate, lock, revert, incident, secret set) when run from an agent session, in addition to writes to locked and protected paths.
 29c. **The not-implemented skeleton.** Before the gate-2 classification run, phase zero provides unlocked skeletons of every CLI, hook and job entry point and every function the unit tests import, answering "not implemented" so tests fail on assertions rather than setup errors (eval plan, section 1 rule 4). Hooks in the skeleton answer with a non-blocking error that Claude Code treats as allow.
-29. **Agent-written artifacts** (handoff notes, packets, reports) enter the work zone only through the CLI (`story record-handoff` and friends), which runs redaction; CI's packet check scans for secret patterns as a second pass.
 
 ## E. Evidence, notifications and operations
 
@@ -68,4 +70,4 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver for items marked (a
 
 - The threat review's two findings are closed by B: a pull request cannot alter the workflow that judges it, and no job that runs branch code holds a token that can write records.
 - Validation latency is minutes, and nothing operational waits for it; only gates, merges and releases read the validated ref.
-- The sequential inline backend has one stated gap (item 23), which the parallel and Orca modes do not.
+- Item 23's sequential-inline gap was withdrawn by ADR-011 item 1; every builder runs in its own worktree.

@@ -1,5 +1,7 @@
 # ADR-003: Inline backend and the builder contract
 
+> Note (2026-10-12): the parallel option extends PRD decision 2 (stories one at a time without Orca) at the approver's direction; the PRD wording change is amendment 0.9.2 row 13 (ADR-012 section D).
+
 > Amended 2026-10-12 by ADR-011: sequential stories also run each builder in its own worktree (ADR-011 item 1); 'one at a time' is unchanged.
 
 Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended option taken with additions). PRD basis: decision 2 (inline backend is the same workflow in one session), decision 24 (milestone zero sequential), REQ-07, REQ-08, REQ-09, REQ-05.

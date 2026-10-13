@@ -1,6 +1,6 @@
-# Draft: threat review and production readiness
+# pod-factory: threat review and production readiness
 
-Tech spec sections 7 and 8, for pod-factory itself. Assignment B. Draft of 2026-10-12, not yet reviewed.
+Tech spec sections 7 and 8, for pod-factory itself, 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010, and the resolution is listed at the end of this file.
 
 - Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001, amendment 0002). REQ-04 requires both sections in every design.
 - Consistent with ADR-001 to ADR-009. This draft changes no ADR.
@@ -346,3 +346,23 @@ Decisions this draft needs that the documents do not make. None changes an ADR.
 11. OPEN-11: How does a change under `.factory/` reach main, whether a layout migration or ordinary work-zone writes? story-verify fails any pull request that touches `.factory/` (ADR-006), and main accepts only verified pull requests. The first migration needs this to remove the bootstrap records from main.
 12. OPEN-12: Where are CI evidence bundles kept so they outlive the CI host's artifact retention, given that records and the audit view cite them?
 13. OPEN-13: Where does pod-factory rehearse its own release and rollback outside production (REQ-11)? For example, a local registry in CI and a scratch plugin branch. Either choice adds a dependency or an environment.
+
+## Resolutions (ADR-010)
+
+| Open item | Resolved by |
+|---|---|
+| OPEN-1 workflow the change cannot alter | item 10: authoritative jobs defined on main via `pull_request_target`; branch code only in read-only jobs; record writes in jobs that run no branch code |
+| OPEN-2 how a record becomes validated | item 11: scheduled validation from main, validated ref; hooks read the last fetch |
+| OPEN-3 three missing refusals | items 24, 25 and 26 |
+| OPEN-4 version mismatch | item 27: warn and allow; doctor fails |
+| OPEN-5 binding the project profile | item 15 |
+| OPEN-6 transitive dependencies and Node range | items 34 and 28 |
+| OPEN-7 published packages and where publishing runs | item 34 and item 3 |
+| OPEN-8 install references and marketplace | item 35 |
+| OPEN-9 release 0.1 before the executor | item 7 |
+| OPEN-10 binary hashing and migrated records | item 20 |
+| OPEN-11 `.factory/` changes reaching main | item 2 |
+| OPEN-12 evidence retention | item 30 |
+| OPEN-13 rehearsal location | item 37 |
+
+Findings closed: a pull request cannot edit the workflow that judges it (item 10); no job that runs branch code holds a record-writing token (item 10); record 0002 is re-issued by the approver with `amend` when the command exists (bootstrap exception already recorded).

@@ -1,6 +1,6 @@
-# pod-factory: Interfaces and non-goals (spec draft)
+# pod-factory: Interfaces and non-goals
 
-Draft for `docs/TECH-SPEC.md` section 4 (Interfaces) and section 5 (Non-goals for this design), 2026-10-12. Not yet reviewed or merged.
+Tech spec sections 4 (Interfaces) and 5 (Non-goals for this design), 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010, and the resolution is listed at the end of this file. Where the body text says OPEN-n, read the resolution.
 
 Authority, in order: `docs/PRD.md` 0.9.1 (records 0001 and 0002), then ADR-001 to ADR-009. Mechanisms taken from `docs/PRD-reference.md` are cited as "reference" and used only where they fit the PRD. Orca command names come from Orca's own docs and CLI specs (`orca/docs/site/content/docs/cli/orchestration.mdx`, `orca/src/cli/specs/`). Where the documents do not decide something, this draft writes OPEN-n and lists it at the end instead of deciding.
 
@@ -335,3 +335,31 @@ Other:
 - **OPEN-21 Signatures.** Does version one build optional signature verification (reference NFR-08: signed tags that CI verifies when present), or defer it? The PRD says only that signatures are optional.
 - **OPEN-22 Notifications.** The channels and the notify interface (TECH-SPEC section 1: to be decided). `ask`, release halts and stop-work messages depend on it.
 - **OPEN-23 Command names.** Names for the commands the documents imply: `transition`, `decide`, `ask`, `metrics`, `audit`, `open`, and the credential command.
+
+## Resolutions (ADR-010)
+
+| Open item | Resolved by |
+|---|---|
+| OPEN-1 validated state | ADR-010 item 11: scheduled records-validate from main advances `pod-factory/records-validated`; invalid records land and are flagged |
+| OPEN-2 human writer | item 29a: interactive terminal, agent-session markers refused, typed confirmation of gate and hash, approver list in the bound profile; CI identity per item 12 |
+| OPEN-3 pending records | item 1: answers and acknowledgments act at once; a policy only after validation |
+| OPEN-4 stages | item 16 |
+| OPEN-5 extra record types | items 14 and 15: lock, migration, incident; profile bound by amendment |
+| OPEN-6 where the verbs live | item 17: CLI commands `story start|wait|fix|ask` |
+| OPEN-7 inline same worker | item 22 |
+| OPEN-8 recognizing a dispatched worker | item 23 |
+| OPEN-9 work-zone outputs | item 2: auto-merged work-only pull requests |
+| OPEN-10 pull request to story | item 18 |
+| OPEN-11 evidence storage | item 30 |
+| OPEN-12 host facts for doctor | item 31 |
+| OPEN-13 reverting a merged story | item 19 |
+| OPEN-14 where the executor runs | item 3; rehearsal per item 37 |
+| OPEN-15 credential entry | item 38 |
+| OPEN-16 runbook format | item 36 |
+| OPEN-17 no code before gate 1 | item 24 |
+| OPEN-18 shell reads of secrets | item 25 |
+| OPEN-19 hook failure mode | item 4 |
+| OPEN-20 Node range and Windows shim | item 28 |
+| OPEN-21 signatures | item 33 |
+| OPEN-22 notifications | item 32 |
+| OPEN-23 command names | item 17 |

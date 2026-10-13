@@ -12,7 +12,7 @@ How this document is written: one question at a time to the approver, only about
 - Runtime backend order: inline first, Orca after milestone zero (decision 24).
 - Stack for the tooling: TypeScript on Node (decision 21); pod-factory uses the node-tool preset (ADR-008).
 - Enforcing factory version: bootstrap (decision 23).
-- Notification channels: to be decided.
+- Notification channels: desktop notifier from the CLI, optional webhook, Orca when present (ADR-010 item 32).
 
 ## 2. Phases
 
@@ -54,13 +54,13 @@ ADR-005: delivered by the Claude Code plugin, installed per machine, silent outs
 
 ADR-006: `pod-factory ci <job>` is provider-agnostic; version one ships a GitHub Actions template with five jobs: records-validate on every records-branch push, story-verify on every pull request, gate-check required for merge, release-gate on a release request, and doctor on schedule. The pre-commit hook runs the fast subset and is advisory. pod-factory's own CI adds the hook and lock suite on three operating systems and the Orca plugin branch check.
 
-### 4.6 Still pending
+### 4.6 Full interfaces
 
-The CLI command family and the release executor.
+The CLI command family, record schemas, backend verb mapping, check-runner jobs, release executor and hook protocol are specified in `docs/spec/interfaces-and-non-goals.md`, with its open items resolved by ADR-010.
 
 ## 5. Non-goals for this design
 
-Pending. Starts from PRD section 5.
+Listed in `docs/spec/interfaces-and-non-goals.md`, section 5: exclusions from the PRD, exclusions from each ADR, limits the interfaces do not claim to close, and what is not measured.
 
 ## 6. Budgets and caps
 
@@ -68,11 +68,11 @@ ADR-007: per story, hard stops at 5,000,000 tokens, 8 hours, 3 fix rounds, 3 reo
 
 ## 7. Threat review
 
-Pending. Trust-boundary map treating agents as untrusted; untrusted-text entry points; credentials and network access per role; pinned supply chain; abuse cases per requirement that become locked negative tests.
+In `docs/spec/threat-review-and-production-readiness.md`, section 7: trust-boundary map of 14 components, 10 untrusted-text entry points, credentials and network per role, pinned supply chain, 46 abuse cases AB-01-1 to AB-24-2 that become locked negative tests, and the accepted risks. Open items resolved by ADR-010.
 
 ## 8. Production readiness
 
-Pending. Migrations and rollback for the records format, logging, monitoring, the release runbook for pod-factory itself, retry rule, reversibility per step.
+In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only migrations and rollback, one shared redaction library, `doctor` and `status` as monitoring with an operator watch list, and the ten-step release runbook for pod-factory itself with reconcile checks, the smoke retry rule, reversibility per step and the rollback plan.
 
 ## 9. Architecture decision records
 
@@ -85,10 +85,11 @@ Pending. Migrations and rollback for the records format, logging, monitoring, th
 - ADR-007 Default budgets, caps and budget modes: generous starting defaults, calibrated after milestone zero; modes hard-stop, tripwire, off (extends decision 12; PRD amended to 0.9.1 by record 0002).
 - ADR-008 Stack presets in version one: web-default, node-tool, custom.
 - ADR-009 Milestone zero and the bootstrap scaffold: hand-written approve, lock, records, hooks, CI; story one is `pod-factory status`; three refusals exercised.
+- ADR-010 Design defaults settled after the drafting pass: the approver's nine answers, CI authority pattern, records and stages, hooks, evidence, notifications, release and distribution.
 
 ## 10. Eval plan
 
-Pending. One positive and one negative test per PRD requirement, tagged by ID, with plain-English renderings; classification before approval per REQ-05; milestone-zero scenarios.
+`docs/eval-plan.md`: 207 tests (98 positive, 109 negative) across REQ-01 to REQ-24, milestone zero's ten end-to-end tests first, Given/When/Then renderings, classification before approval per REQ-05, the seven locked test commands, the lock set for pod-factory itself, four AI behavior evals for the security and simplicity reviewers, and the builder-written test rules. Written and classified per phase (ADR-010 item 5).
 
 ## 11. Criterion-to-control mapping
 

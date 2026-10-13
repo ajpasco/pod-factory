@@ -1,6 +1,6 @@
 # pod-factory: Eval plan
 
-Draft for TECH-SPEC section 10, written 2026-10-12. Status: **draft, gate 2 open.** Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001 as amended by record 0002) and ADR-001 to ADR-009; `docs/PRD-reference.md` informed some wording and binds nothing. Per REQ-05 and REQ-06 this plan turns every acceptance criterion in PRD section 4 into tagged positive and negative tests, states how each is classified before approval, pins the test commands, and lists what the gate-2 lock covers for pod-factory itself.
+Tech spec section 10, written 2026-10-12. Status: **gate 2 open; locked at gate 2 approval.** Home: `docs/eval-plan.md` (ADR-010 item 8). Tests are written as code and classified per phase (ADR-010 item 5): phase zero's and milestone zero's before gate 2 closes, each later phase's before that phase's build plan, as lock amendments. Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001 as amended by record 0002) and ADR-001 to ADR-009; `docs/PRD-reference.md` informed some wording and binds nothing. Per REQ-05 and REQ-06 this plan turns every acceptance criterion in PRD section 4 into tagged positive and negative tests, states how each is classified before approval, pins the test commands, and lists what the gate-2 lock covers for pod-factory itself.
 
 ## 1. Conventions
 
@@ -462,3 +462,9 @@ Each criterion is quoted from PRD section 4. The plan tests what is observable a
 - By classification before approval: NB 89, PN 101, PR+ 7, PR 8, RB 2.
 - Positive and negative per requirement: REQ-01 6/3, REQ-02 3/5, REQ-03 5/6, REQ-04 2/5, REQ-05 3/7, REQ-06 8/7, REQ-07 4/6, REQ-08 6/5, REQ-09 8/10, REQ-10 4/6, REQ-11 2/3, REQ-12 3/2, REQ-13 3/3, REQ-14 2/2, REQ-15 3/2, REQ-16 4/2, REQ-17 5/6, REQ-18 5/5, REQ-19 4/5, REQ-20 6/4, REQ-21 2/4, REQ-22 3/5, REQ-23 4/4, REQ-24 3/2.
 - Ten criteria are untestable as written (section 9); seven gaps need a design decision before gate 2 (section 8).
+
+## 11. Resolutions of the gaps (ADR-010)
+
+1. No code before gate 1: item 24. 2. Approval commands denied to agents: item 29b. 3. Shell reads of secrets: item 25. 4. Redaction of agent-written artifacts: item 29. 5. Reference-hash binding: corrected by record 0003; bootstrap field names accepted per item 21. 6. Layout: item 8. 7. Not-implemented skeleton: item 29c. AI-eval model credential: item 39.
+
+The ten criteria in section 9 are reworded by the proposed PRD amendment 0.9.2 (`docs/spec-drafts/prd-amendment-0.9.2-proposal.md`), pending the approver's wording approval; once applied, this section's list reads "closed by amendment 0004".

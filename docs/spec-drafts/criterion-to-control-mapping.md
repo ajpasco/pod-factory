@@ -133,7 +133,7 @@ Draft for `docs/TECH-SPEC.md` section 11, assignment D, 2026-10-12. Status: draf
 |---|---|---|---|---|---|
 | C-09-1 | A story cannot reach gate 4 with a failing check | Enforced | story-verify fails on restraint and security checks; gate-check required for merge (ADR-006) | CI/host rule (story-verify) | L2 (part): the transition block is ref REQ-09 b1; story-verify must be a required check (doctor, ADR-006); tripwire flags are not failures (ADR-007); V11 |
 | C-09-2 | A story cannot reach gate 4 with an unresolved blocking security finding | Enforced | transition to gate 4 refused while a security-reviewer finding marked blocking is unresolved (ref REQ-09 b1) | command | L2; the finding is a Reviewed input and the reviewer is in no ADR; O2 |
-| C-09-3 | A story cannot reach gate 4 with QA without evidence | Enforced | a QA pass without evidence bound to the tree is rejected (ref REQ-09 b5; ADR-009 refusal 3) | command | the QA verdict itself is Reviewed; evidence per ref §5 |
+| C-09-3 | A story cannot reach gate 4 with QA without evidence | Enforced | a QA pass without evidence bound to the tree is rejected (ref REQ-09 b5; ADR-009 refusal 3) | command | L2 (part): ADR-009 refusal 3 covers a packet's unsupported "tests passed", while the QA evidence rule is ref REQ-09 b5; the QA verdict itself is Reviewed |
 | C-09-4 | Untraced code is reported by path | Measured | story-verify's traceability check writes the paths of untraced new files and endpoints (ADR-006) | CI/host rule (story-verify) | trace-tag convention O17; V11 |
 | C-09-5 | Fixes go to the originating worker | Measured | the fix-task record names the worker of the originating dispatch (backend verb, ADR-003, TECH-SPEC §4.1) | command | inline backend V7; with Orca, the same dispatch terminal (ref REQ-09 b3) |
 | C-09-6 | Budget and cap overruns park the story | Enforced | the CLI moves the story to needs human on a cost, time or loop-cap overrun in hard-stop mode (ADR-007) | command | inline token usage per story V8; size and complexity are always tripwires (ADR-007) |
@@ -213,7 +213,7 @@ Draft for `docs/TECH-SPEC.md` section 11, assignment D, 2026-10-12. Status: draf
 |---|---|---|---|---|---|
 | C-16-1 | Skills install with one command | Measured | install smoke test in pod-factory's CI (ADR-006; `npx skills add`, ADR-002) | CI/host rule (pod-factory CI) | V18 |
 | C-16-2 | The Claude Code plugin adds hooks and commands | Measured | plugin install smoke test (ADR-006); the preflight verifies them (ref REQ-16 b2) | CI/host rule (pod-factory CI) | V4, V5 |
-| C-16-3 | The Orca entry is labeled experimental | Measured | check of the entry on the published Orca plugin branch (ADR-002 branch split; ADR-006 branch check) | CI/host rule (pod-factory CI) | V17 |
+| C-16-3 | The Orca entry is labeled experimental | Measured | check of the entry on the published Orca plugin branch (ADR-002 branch split; ADR-006 branch check) | CI/host rule (pod-factory CI) | L2 (part): ADR-006 verifies the branch split, but neither document names a check of the label; V17 |
 | C-16-4 | The whole workflow runs with Claude Code alone | Measured | recorded end-to-end run with Orca absent; milestone zero covers gates 1 to 4 (ADR-009) | command | model-driven, so not a deterministic CI test; no planned run covers gate 5 without Orca; ref REQ-16 b5 adds docs for both paths |
 
 ### REQ-17 Delegation
@@ -260,3 +260,156 @@ Draft for `docs/TECH-SPEC.md` section 11, assignment D, 2026-10-12. Status: draf
 | C-20-2 | A migration command has tests | Measured | check that every migration has a test, run in pod-factory's CI (ref REQ-20 b3) | CI/host rule (pod-factory CI) | L2; the first migration moves record 0001 to the records branch (ADR-004) |
 | C-20-3 | The enforcing version is pinned per project | Measured | profile field (TECH-SPEC §1) checked by doctor's "plugin version pinned per project" (ADR-006) | CI/host rule (doctor) | pod-factory pins "bootstrap" (ref decision 23); V5 |
 | C-20-4 | An upgrade is a human-written amendment | Enforced | a change to the pinned version or the enforcement code without an amendment record fails story-verify under the enforcement-code lock (C-06-4, C-06-6) | CI/host rule (story-verify) | L2 (part): the amendment record is reference-only (ref REQ-20 b4, ref REQ-22 b2); O30; V11 |
+
+### REQ-21 Credentials
+
+| ID | Criterion | Kind | Mechanism (source) | Authoritative | Notes |
+|---|---|---|---|---|---|
+| C-21-1 | Deployment credentials enter only through a hidden prompt, the keychain or a secret manager | Enforced | the executor reads credentials only from those channels and refuses any other source (ref REQ-21 flow, b2) | command | L2; a value pasted into chat is outside any control (PRD §5); secret managers O25; V19 |
+| C-21-2 | Canary tests prove credentials never appear in any transcript, log or artifact | Measured | canaries planted in the keychain, a `.env` file and tool output, scanned in transcripts, logs, artifacts, records and reports (ref REQ-21 b3) | CI/host rule (factory test) | L2; shows absence only for the planted channels (PRD §5); V20 |
+| C-21-3 | Declared secret files are unreadable to agents | Enforced | h5 denies reads and h1 denies edits (ADR-005) | hook | the only layer, no CI equivalent for reads; shell reads (`cat`, scripts) are not covered by h2's write heuristic; V1, V2, V4, V22 |
+
+### REQ-22 Exceptions
+
+| ID | Criterion | Kind | Mechanism (source) | Authoritative | Notes |
+|---|---|---|---|---|---|
+| C-22-1 | Revocations exist as records | Measured | revocation record type with a human writer, validated by records-validate (ref REQ-22 b1; ADR-004 writers) | CI/host rule (records-validate) | L2; schema O9; V10 |
+| C-22-2 | Human-written amendments exist as records | Measured | amendment record bound to before and after hashes, human writer (ref REQ-22 b2; record 0002 is the bootstrap example) | CI/host rule (records-validate) | L2; V10 |
+| C-22-3 | Time-boxed waivers exist as records | Measured | waiver record naming a check or layer, a story or gate, and an expiry; expired waivers fail again (ref REQ-22 b3) | CI/host rule (records-validate) | L2; V10 |
+| C-22-4 | Every active waiver is visible on every packet | Measured | packet check against active waiver records (ref REQ-22 b3); gate-check lists them in its summary (ADR-006) | command | L2; doctor also lists them (ADR-006) |
+| C-22-5 | Every failure that stops work produces a plain-language message with your options | Measured | each stop point (hook denial, check failure, refusal, park, halt) emits a message that passes the plain-language lint; one factory test per stop point (ref REQ-22 b5) | CI/host rule (factory test) | L2; needs an enumerated catalog of stop points (O27); ref also sends it on the independent channel (O8) |
+
+### REQ-23 Mockup
+
+| ID | Criterion | Kind | Mechanism (source) | Authoritative | Notes |
+|---|---|---|---|---|---|
+| C-23-1 | Every user-facing flow has a reachable screen | Measured | flow-to-screen map checked against the PRD's flows; reachability by a runner-driven crawl from the entry screen (ref REQ-23 b1) | command | L2; PRD flows need IDs (O18); whether a screen fits its flow is the approver's click-through |
+| C-23-2 | A flow without a reachable screen blocks gate 1 | Enforced | approve refuses gate 1 with an unmapped or unreachable flow (ref REQ-23 b1) | command | L2; O2; no interactive UI in pod-factory itself |
+| C-23-3 | The mockup lives apart from application code | Measured | path check: the mockup only under `.factory/work/mockups/`, and restraint checks ignore it (ref REQ-23 b2) | command | L2; story branches cannot touch `.factory/` (ADR-006) |
+| C-23-4 | Builders see only its screenshots | Measured | the context bundle holds only the listed screenshots captured at gate 2; the mockup source is archived before dispatch (ref REQ-23 b3) | command | L2; h5 does not cover mockup paths and git history still holds the source; O18, O28 |
+| C-23-5 | The mockup is archived after gate 2 | Measured | archive step at gate-2 approval; a check that it cannot be served from the repository afterwards (ref REQ-23 b4) | command | L2; archive mechanism O18 |
+
+### REQ-24 Managed setup (phase two)
+
+| ID | Criterion | Kind | Mechanism (source) | Authoritative | Notes |
+|---|---|---|---|---|---|
+| C-24-1 | After setup on a supported host and plan, `doctor` passes with no waiver | Measured | doctor result after setup (ADR-006; TECH-SPEC phase 5 exit) | CI/host rule (doctor) | GitHub first (ADR-006); V13, V14 |
+| C-24-2 | On an unsupported plan, setup offers public, upgrade or a visible waiver | Measured | factory test with a stubbed unsupported plan: setup stops and records the chosen option (ref REQ-24 b2) | CI/host rule (factory test) | L2; ref b5 re-verifies host-plan rules per build; V14 |
+| C-24-3 | Setup is idempotent | Measured | factory test: a second run changes nothing (ref REQ-24 b3) | CI/host rule (factory test) | L2 |
+| C-24-4 | Setup never prints a credential | Measured | canary test on setup output (ref REQ-24 b4) | CI/host rule (factory test) | L2; ref also forbids storing one outside the keychain or secret manager |
+
+## List 1: criteria that cannot be mapped as written
+
+1. **C-08-3** (REQ-08): "Builder context is exactly what the orchestrator supplied". Read literally it is either always true, since whatever was supplied was supplied, or false, since a builder must read the files in its scope and nothing records what else it reads. No block, recorded result or review can establish it. Proposed rewording, keeping PRD §2's meaning ("only their story, the spec sections it names, the project rules and the mockup screens"): "The documents supplied to a builder are exactly its story file, the spec sections it names, the project rules and the mockup screenshots it lists, and the supplied set is recorded by hash at dispatch." That is Measured against the story file's lists, together with C-08-4. Whether reads beyond that set are logged or denied stays O28. If the approver prefers not to reword, drop the clause before gate 2 and keep C-08-4.
+
+Mapped, but only in a bounded form the approver should confirm before gate 2: C-13-4 (a default taken without ever raising the question is unobservable); C-18-6 and C-21-2 (absence is shown only for the planted channels); C-21-3 (shell reads); C-22-5 (needs the stop-point catalog, O27); C-04-6 and C-13-2 (a decision with no record at all is invisible).
+
+## List 2: criteria whose mechanism exists only in the reference
+
+The spec must adopt or replace each mechanism below; none is in an accepted ADR. "(part)" marks a criterion whose remaining mechanism is in an ADR; "no mechanism" marks one the reference does not supply either. Each criterion appears once.
+
+1. Start-completion checks and interview recording (ref REQ-01; ref §5 project profile and `answer`): C-01-1, C-01-2, C-01-3, C-01-4, C-01-5.
+2. Stage-aware block on application paths while gate 1 is open (no mechanism): C-01-6.
+3. Preflight report (ref REQ-01 flow 2): C-01-7.
+4. Approval-time refusals for gates 1 to 3 (ref REQ-01 b5, REQ-03 b6, REQ-04 b12, REQ-05 b2 and b4, REQ-07 b3, REQ-23 b1): C-01-8, C-03-6, C-03-7, C-04-8, C-05-4, C-05-10, C-07-3, C-23-2.
+5. Discovery report checks, review and approval (ref REQ-02): C-02-1, C-02-2, C-02-3, C-02-4, C-02-5, C-02-6, C-02-7, C-02-8.
+6. Agent denial of the approval-path commands and refusal inside an agent session (ref §5 approval path; ref REQ-12 flow 4): C-03-1 (part), C-12-5.
+7. Per-requirement PRD hashing and mockup snapshot binding (ref REQ-03 b1, b2): C-03-2 (part), C-03-3.
+8. Status-transition preconditions, ready rule, gate-4 entry and the needs-human exit (ref §5 status transitions; ref REQ-07 b6, REQ-09 b1 and b5, REQ-17 b4): C-03-4, C-07-6, C-08-1 (part), C-09-1 (part), C-09-2, C-09-3 (part), C-13-4.
+9. Red-team and gap report structure (ref REQ-03 b5; ref REQ-07 b3): C-03-5, C-07-2.
+10. Invalidation graph and revocation effects (ref §5 invalidation graph): C-03-8.
+11. Design section and decision-record checks, settled-question review (ref REQ-04): C-04-1, C-04-2, C-04-3, C-04-4, C-04-5, C-04-6, C-04-7.
+12. Fresh-context provenance of reviewers (no mechanism): C-04-9, C-10-2.
+13. Eval-plan tagging, renderings and pre-approval classification (ref REQ-05): C-05-1, C-05-2, C-05-3, C-05-5, C-05-6, C-05-7, C-05-8, C-05-9, C-05-11.
+14. Lock coverage beyond ADR-009's scaffold lock (ref REQ-06 b2): C-06-3, C-06-4.
+15. Amendment records, renderings and acknowledgment (ref REQ-06 b7; ref REQ-20 b4; ref REQ-22 b2): C-06-6 (part), C-06-8, C-06-9, C-20-4 (part), C-22-2.
+16. Story-file schema and gate-3 packet fields (ref REQ-07 b1, b4): C-07-1, C-07-4.
+17. Handoff notes, builder context records and builder canaries (ref REQ-08 b4, b5; ref REQ-21 b3): C-08-2, C-08-4, C-08-5.
+18. Redaction filter on every artifact write (ref REQ-09 b7; ref REQ-21 b4): C-09-11.
+19. Gate-4 packet checks and the plain-language lint (ref REQ-10 b3 to b5; ref §5 plain-language section): C-10-3, C-10-4, C-10-5, C-10-6.
+20. Delegation policy, delegated decisions and the delegated-merge acknowledgment (ref REQ-17; ref REQ-13 b2): C-10-8 (part), C-13-3, C-17-1, C-17-2, C-17-3, C-17-4, C-17-5, C-17-6, C-17-7 (part), C-17-8.
+21. Gate-5 verification, checklist, rehearsal and security condition (ref REQ-11): C-11-2 (part), C-11-3, C-11-4, C-11-5.
+22. Orca board, status page, notifications and Orca approvals (ref REQ-12): C-12-1, C-12-2, C-12-3, C-12-4.
+23. Decision log beyond delegated decisions (ref REQ-13 b2): C-13-2 (part).
+24. Metrics command and its inputs (ref REQ-14): C-14-1, C-14-2, C-14-3, C-14-4, C-14-6, C-14-7.
+25. Retrospective proposals and the optional question (ref REQ-15): C-15-1, C-15-2 (part), C-15-3, C-15-4.
+26. Release executor behaviour (ref REQ-18; executor pending, O10): C-18-2, C-18-3, C-18-4, C-18-5, C-18-6, C-18-7.
+27. `explain`, the event log and the audit view (ref REQ-19): C-19-2, C-19-5, C-19-6.
+28. Migration tests (ref REQ-20 b3): C-20-2.
+29. Credential channels and canary tests (ref REQ-21): C-21-1, C-21-2.
+30. Revocation and waiver records, waiver display and stop messages (ref REQ-22): C-22-1, C-22-3, C-22-4, C-22-5.
+31. Mockup flow map, location, screenshots and archive (ref REQ-23): C-23-1, C-23-3, C-23-4, C-23-5.
+32. Managed-setup behaviour (ref REQ-24): C-24-2, C-24-3, C-24-4.
+33. Check of the experimental label on the published Orca entry (no mechanism; ADR-006's branch check covers publication only): C-16-3 (part).
+
+## List 3: criteria that depend on an unverified platform capability
+
+Each item is a capability the mapping assumes and no document has confirmed. Criteria are listed after the colon.
+
+- V1, verify: Claude Code's pre-tool-use hook can deny, with a reason the agent sees, the file-edit tools, the shell tool, the read tool, the question tool and the subagent tool; ADR-005 defers exact event and field names to the hook tests: C-01-6, C-06-5, C-07-5, C-13-1, C-21-3.
+- V2, verify: the session's hooks fire for every subagent tool call, as ADR-003 asserts: C-06-5, C-07-5, C-13-1, C-21-3.
+- V3, verify: hook input tells a dispatched worker, inline subagent or Orca worker, apart from the orchestrator: C-13-1.
+- V4, verify: an agent cannot disable or edit the plugin's hooks, given that the plugin directory is writable by the same OS user and an uncommitted local settings file may disable a plugin; and whether managed settings (ref NFR-01) can force it on: C-06-5, C-07-5, C-13-1, C-16-2, C-19-4, C-21-3.
+- V5, verify: a Claude Code plugin version can be pinned per project and read by `doctor`: C-16-2, C-20-3.
+- V6, verify: a hook on the subagent tool sees the full prompt and whether the subagent starts fresh or inherits context, and the subagent's output can be captured: C-04-9, C-05-3, C-08-4, C-10-2.
+- V7, verify: the inline backend can send a fix back to the same subagent with its context (TECH-SPEC §4.1 verb): C-09-5.
+- V8, verify: Claude Code exposes per-subagent token usage to the orchestrator or a hook (ADR-003 consequence): C-09-6, C-14-5.
+- V9, verify: an approval-path command can detect that it runs inside an agent session, by an environment marker or process ancestry: C-03-1, C-12-5.
+- V10, verify: how GitHub treats a direct push to a branch whose rule requires a status check. ADR-004 has the CLI push records directly and ADR-006 expects only failing pushes to be rejected; if the rule requires the check to have passed on the commit first, every direct push is refused and a staging ref is needed: C-03-1, C-03-2, C-03-3, C-03-4, C-06-1, C-06-2, C-06-3, C-06-4, C-07-5, C-10-1, C-10-7, C-10-8, C-11-6, C-13-2, C-13-3, C-15-2, C-17-1, C-17-2, C-17-3, C-17-4, C-17-6, C-17-8, C-18-1, C-20-1, C-22-1, C-22-2, C-22-3.
+- V11, verify: the required checks run the workflow definition from the base branch, since a pull request can change `.github/` and a workflow taken from the pull request could pass a check of the same name (options such as base-branch triggers or ruleset-required workflows, and their availability per plan): C-02-6, C-06-6, C-06-7, C-08-1, C-08-6, C-09-1, C-09-4, C-10-1, C-10-7, C-10-8, C-15-2, C-17-8, C-20-4.
+- V12, verify: a way to re-run a pull request's required gate-check after a record lands on the records branch, since a push to another branch does not by itself re-run the pull request's checks: C-10-1, C-17-8.
+- V13, verify: required CODEOWNERS review can be satisfied on a single-maintainer repository, where an author cannot approve their own pull request: C-19-4, C-24-1.
+- V14, verify: how setup detects the host plan and which protections each plan allows (ref REQ-24 b5 re-verifies this per build): C-24-1, C-24-2.
+- V15, verify in Orca: workspace statuses usable as board columns and settable by the plugin; notifications when the orchestrator ends its turn; quick actions that run a command in a human-owned shell terminal with a confirming click: C-12-1, C-12-3, C-12-4, C-12-5.
+- V16, verify: Orca's dispatch command names (`orca orchestration worker-start`, `dispatch`) and status probe in the Orca version relied on (ADR-002 cites 1.4.214): C-07-5.
+- V17, verify: an Orca marketplace entry can carry an "experimental" label, or where the label must live: C-16-3.
+- V18, verify: `npx skills add` installs the skills from the repository in one command (ADR-002): C-16-1.
+- V19, verify: OS keychain access from Node on macOS, Windows and Linux, and a hidden-input prompt in a human-owned terminal: C-21-1.
+- V20, verify: where Claude Code stores session and subagent transcripts, so canary tests can scan all of them: C-08-5, C-18-6, C-21-2.
+- V21, verify: a pre-tool-use hook can deny or rewrite a write whose content matches a secret or personal-data pattern, for artifacts agents write directly: C-09-11.
+- V22, verify: whether Claude Code permission rules or its sandbox can stop shell reads of declared secret paths, which h2's write heuristic does not cover: C-21-3.
+
+## OPEN items
+
+Left open by the PRD, the ADRs and the tech spec; this draft does not decide them.
+
+- O1: No ADR-006 job checks gate 1 to 3 artifacts (PRD draft, discovery report, design, eval plan and its classification, build plan). Open whether those checks run only in the approve command, in records-validate when the approval record is pushed, or in a new CI job.
+- O2: Whether records-validate's "legal status transition" (ADR-006) re-evaluates preconditions (ready rule, required records, dispositions, caps) or checks only the transition graph.
+- O3: How a pull request that is not a story (gate 1 to 3 work-zone artifacts, the discovery report, retrospective proposals) passes story-verify's file-scope rule and the required gate-check.
+- O4: The canonical list of enforcement layers: ref §5 (agent hook, pre-commit, CI, plus branch protection and CODEOWNERS where a host exists), ref REQ-19 b4 (adds records-branch protection and managed hook settings), and ADR-009's "five layers", which are scaffold components.
+- O5: Whether the preflight is `doctor` run before installation or a separate command.
+- O6: Required-section and check lists for the design, the discovery report, the gap report and the gate-4 packet; the reference lists them and no ADR pins them.
+- O7: Where criterion IDs live. The PRD has none; IDs added to the PRD change its per-requirement hashes, and IDs kept in the spec can drift after a PRD amendment.
+- O8: Notification channels (TECH-SPEC §1: "to be decided").
+- O9: Record types and schemas beyond ADR-004's common fields: acknowledgment, answer, waiver, revocation, amendment, policy, discovery approval, click-through, incident, test baseline (TECH-SPEC §4.3 defers schemas to the check runner).
+- O10: The CLI command family and the release executor (TECH-SPEC §4.6), and the pending sections on non-goals, threat review, production readiness and the eval plan (TECH-SPEC §5, §7, §8, §10).
+- O11: How interview answers are recorded: human `answer` records against question hashes (ref §5) or entries the start skill writes.
+- O12: What counts as application code for the gate-1 block: the preset folder structure (ADR-008) and its equivalent for custom stacks.
+- O13: How an existing codebase is recognized for REQ-02.
+- O14: Where findings, dispositions and dismissals are stored for red-team, gap and reviewer reports.
+- O15: How a test declares its expected failure reason and what a real rejection looks like, and where existing-test baselines are recorded (REQ-05).
+- O16: How AI features and their scenario sets are identified.
+- O17: The trace-tag convention linking files, endpoints and public functions to requirement IDs.
+- O18: Mockup snapshot, click-through record, flow IDs in the PRD, the archive mechanism and the "cannot be served" check.
+- O19: Whether a review that rejects a settled design question blocks gate 2; the PRD gives blocking rules only for gate-1 and gate-3 findings.
+- O20: Where the human acknowledgment of a delegated merge is checked; ADR-006's gate-check names only the gate-4 record.
+- O21: Definitions of "issues caught" and "rework rate", and who writes incident records.
+- O22: Whether a failing `doctor` blocks anything; ADR-006 runs it on schedule and on demand, not as a required check.
+- O23: release-gate's two phases: ADR-006 job 4 both builds the artifact before gate 5 and validates the gate-5 record; the trigger for each is unstated.
+- O24: Reproducible builds per preset, which the rebuild comparison in C-18-2 assumes.
+- O25: Which secret managers are supported (REQ-21).
+- O26: What the enforcement-code lock covers for adopters, whose hooks live in the plugin (ADR-005), and for pod-factory, whose enforcement code is story code under bootstrap (ref decision 23).
+- O27: The catalog of stop points that REQ-22's plain-language messages must cover.
+- O28: Whether builder reads outside the supplied documents and the file scope are logged, denied or accepted.
+- O29: Which agent performs the discovery "no refactoring" review and the design "settled question" review.
+- O30: Whether story-verify compares locked paths explicitly; ADR-006 job 2 lists `.factory/` and file scope, while ADR-009 refusal 1 requires CI to reject a changed locked test.
+- O31: A CI backstop for dispatch without a matching gate-3 record, such as story-verify checking the dispatch receipt's plan hash.
+- O32: How a requirement's text is delimited for its per-requirement hash.
+- O33: What shows open gates, questions and the budget mode before the status page arrives in phase 4.
+
+## Counts
+
+- Criteria: 157 across the 24 requirements.
+- Control kind: Enforced 46, Measured 108, Reviewed 2, Unmapped 1.
+- Authoritative layer: CI/host rule 67 (factory tests 20, records-validate 19, story-verify 8, gate-check 5, doctor 4, pod-factory CI 4, release-gate 2, and 5 with no CI job yet), command 81, hook 6, agent review 2, none 1.
+- List 1: 1 criterion, plus 7 mapped only in a bounded form. List 2: 125 criteria under 33 mechanisms (109 wholly reference-only, 13 partly, 3 with no mechanism in either document). List 3: 22 capabilities, 62 distinct criteria. OPEN: 33 items.

@@ -111,3 +111,5 @@ PRD 0.8 (2026-10-12): approver chose the records branch for open question 9 (dec
 PRD 0.9 (2026-10-12): at the approver's direction the PRD was split. `docs/PRD-reference.md` holds the full 0.8 text (definitions, mechanisms, 28 decisions, invalidation graph). `docs/PRD.md` is the simplified active PRD: who and problem, end-to-end workflow, first usable release, observable acceptance criteria by the same requirement IDs, limitations and deferred capabilities. Approval boundaries, evidence requirements and locked-test protection are kept in the active PRD; mechanisms move to the tech spec via the reference.
 
 **Gate 1 approved** (2026-10-12) on PRD 0.9 simplified with three corrections. Record: `.factory/records/0001-gate-1-approval-prd-0.9.json` (bootstrap: manual record, no CI validation, no mockup click-through, working tree only). Next: tech spec (gate 2).
+
+**2026-10-13.** The approver approved the simplified milestone-zero direction and scope changes; PRD amended to 0.9.2 (record 0004); `docs/TECH-SPEC.md` 1.0 written as the single current design, with ADR-001 to ADR-014 kept as history and the section files as subordinate reference.

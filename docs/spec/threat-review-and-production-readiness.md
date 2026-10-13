@@ -1,5 +1,7 @@
 # pod-factory: threat review and production readiness
 
+> Reference document (2026-10-13): `docs/TECH-SPEC.md` 1.0 is the current design and wins where this file differs. This file keeps the detail for phases 1b onward.
+
 Tech spec sections 7 and 8, for pod-factory itself, 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010 to ADR-014, and the resolution is listed at the end of this file.
 
 - Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001, amendment 0002). REQ-04 requires both sections in every design.

@@ -1,5 +1,7 @@
 # ADR-011: Resolutions from the criterion-to-control mapping
 
+> History (2026-10-13): superseded by `docs/TECH-SPEC.md` 1.0 where the two differ; kept as decision rationale.
+
 > Note (2026-10-12): ADR-012 supersedes section C's table with per-class required checks and a `locked/*` class, defines `ci work-only`, excludes `.factory/work/` and `docs/` from CODEOWNERS, and adds V18. Alternatives rejected for each item: the inverse choice, or the next-nearest option the mapping listed.
 
 Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in the spec and reported to the approver, open to being overruled; nothing here changes an approver decision. Resolves the 35 open items, adopts the reference mechanisms the mapping found only in `docs/PRD-reference.md`, and records the platform assumptions to verify (register in section F, extended by later ADRs). Amends ADR-003, ADR-006, ADR-009 and ADR-010 as noted.

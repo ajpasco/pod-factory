@@ -1,5 +1,7 @@
 # pod-factory: Eval plan
 
+> Reference document (2026-10-13): `docs/TECH-SPEC.md` 1.0 is the current design and wins where this file differs. This file keeps the detail for phases 1b onward.
+
 Tech spec section 10, written 2026-10-12. Status: **gate 2 open; locked at gate 2 approval.** Home: `docs/eval-plan.md` (ADR-010 item 8). Tests are written as code and classified per phase (ADR-010 item 5): phase zero's and milestone zero's before gate 2 closes, each later phase's before that phase's build plan, as lock amendments. Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001 as amended by record 0002) and ADR-001 to ADR-009; `docs/PRD-reference.md` informed some wording and binds nothing. Per REQ-05 and REQ-06 this plan turns every acceptance criterion in PRD section 4 into tagged positive and negative tests, states how each is classified before approval, pins the test commands, and lists what the gate-2 lock covers for pod-factory itself.
 
 ## 1. Conventions
@@ -517,3 +519,41 @@ IDs continue each requirement's numbering. Phase tags: every test title carries 
 | T-03-P7 | Given pod-factory's three bootstrap records, when today's PRD and reference are compared with them, then record 0001 as amended by 0002 and 0003 matches: the PRD whole and per requirement, and the reference as a traceability note. | integration | check-runner | RB: passes today |
 
 Section 10's counts exclude these twenty-six; with them the plan holds 233 tests (ADR-014 item 13). Section 9's untestable list is closed by amendment 0.9.2 once approved.
+
+## 13. Milestone-zero test set (TECH-SPEC 1.0 section 10; supersedes the gate-2 list in section 1)
+
+These are the tests that must exist as code and be classified before gate 2 closes. Scaffold behavior passes as baselines (RB); story-one behavior fails on assertions (NB). Where an earlier row named a mechanism milestone zero no longer has, the row is read as written here.
+
+| ID | Reading for milestone zero | Class |
+|---|---|---|
+| T-06-P1, T-06-N1 | hook 1 allows an in-scope edit and denies a locked-test edit | RB |
+| T-06-P2, T-06-N2 | `verify` passes a clean commit with evidence; a locked-test change without an amendment fails `lock-guard` | RB |
+| T-10-P1, T-10-N1 | `gate-check` passes with an approval bound to the head tree; fails after one more commit | RB |
+| T-10-P2, T-10-N2 | a packet citing a bundle for this tree is accepted; one with no bundle is rejected | RB |
+| T-08-P1, T-08-N1 | kill-and-resume at each record write; a half-written record is refused by name | RB |
+| T-03-P2, T-03-N4 | a read-only command runs from an agent session; `approve` refuses from an agent session (by environment marker) | RB |
+| T-03-P4, T-03-N6 | `revoke` writes a revocation and the gate shows open; a revoked approval no longer satisfies gate-check | RB |
+| T-03-P5, T-03-P7 | bootstrap records 0001 to 0004 match today's documents | RB |
+| T-06-P3 | the gate-2 approval binds the main tree, PRD, design, eval plan, mapping and classification output; the lock lists every locked path | RB |
+| T-06-N3, T-06-P4, T-06-N4 | other locked files protected; the locked command runs exactly as locked; a branch's own test script is ignored | RB |
+| T-06-P6 | line-ending-normalized hashing | RB |
+| T-06-P7, T-06-N6 | an amendment approval lets a locked change pass; without one it fails | RB |
+| T-06-P10, T-06-N9 | `lock-guard` passes an unlocked change on any branch and fails a locked change without an amendment | RB |
+| T-07-P3, T-07-N5 | `story start` proceeds with a valid gate-3 approval for the current plan and refuses without one, with an invalid one, or with one for an older plan | RB |
+| T-07-P4, T-07-N6 | ready rule: in-progress needs locked tests | RB |
+| T-08-P2, T-08-N2 | verifying needs the handoff note; done needs the approval and the merge | RB |
+| T-08-P3, T-08-N3 | handoff note recorded; missing note refused | RB |
+| T-08-P5, T-08-N5 | diff inside file scope passes `verify`; outside fails naming the file | RB |
+| T-09-P9, T-09-N12 | the record-writing job can push a check result; test code in the verify job cannot | RB |
+| T-10-N3, T-10-P3 | no, invalid, or foreign approval blocks merge; a moved main re-runs tests without re-review | RB |
+| T-19-P1, T-19-N1 | `status` prints every story with stage, owner, waiting-on and the blocking rule; a story file claiming an unjustified stage is flagged | NB (story one) |
+| T-19-N2 | an approval record that fails validation shows as invalid, never as approved | NB (story one) |
+| T-19-P3, T-19-N3 | `doctor` passes with every layer; fails naming a missing one | RB |
+| T-19-N6 | a modified existing record is flagged and ignored | RB |
+| T-20-P1, T-20-N1, T-20-P2, T-20-N5 | schema fields present; a record missing them is flagged; bootstrap records readable; an unknown algorithm or newer schema is invalid and readers fail closed | RB |
+| T-22-P1 | a revocation record is written with the human as actor | RB |
+| T-22-N6 | `revoke` reports pending until CI confirms every affected open pull request is blocked, and never claims enforcement earlier | RB |
+| T-22-N7 | a gate-check run that started before a revocation landed cannot report a pass after it | RB |
+| T-05-P2, T-05-N3, T-05-N4 | the classification script classes a fixture suite; setup errors, skips and already-passing new tests block; a negative passing on an unavailable operation blocks | RB |
+
+Sixty-three tests. T-22-N6 and T-22-N7 are new; T-22-N6 pairs with T-22-P1 and T-22-N7 with T-10-P1. Tests of mechanisms milestone zero defers (class-check, dispatch files, the question-tool hook, waivers, the validated ref, backend choice) are not in this set and are rewritten with their phase.

@@ -1,5 +1,7 @@
 # pod-factory: Interfaces and non-goals
 
+> Reference document (2026-10-13): `docs/TECH-SPEC.md` 1.0 is the current design and wins where this file differs. This file keeps the detail for phases 1b onward.
+
 Tech spec sections 4 (Interfaces) and 5 (Non-goals for this design), 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010 to ADR-014, and the resolution is listed at the end of this file. Where the body text says OPEN-n, read the resolution.
 
 Authority, in order: `docs/PRD.md` 0.9.1 (records 0001 and 0002), then ADR-001 to ADR-009. Mechanisms taken from `docs/PRD-reference.md` are cited as "reference" and used only where they fit the PRD. Orca command names come from Orca's own docs and CLI specs (`orca/docs/site/content/docs/cli/orchestration.mdx`, `orca/src/cli/specs/`). Where the documents do not decide something, this draft writes OPEN-n and lists it at the end instead of deciding.

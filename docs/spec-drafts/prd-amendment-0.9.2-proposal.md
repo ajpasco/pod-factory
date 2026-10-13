@@ -1,5 +1,7 @@
 # Proposed PRD amendment 0.9.1 to 0.9.2: sixteen rewordings across twelve requirements and section 2
 
+> Applied 2026-10-13 as PRD 0.9.2 by amendment record 0004, together with the approver's scope changes of that day (parallel builders after phase 1b, environments, asynchronous revocation, no automatic merging in milestone zero). Kept for the audit trail.
+
 For the approver's wording approval (ADR-010 item 6). Each row quotes the current criterion in `docs/PRD.md` section 4 and proposes a replacement that names what is observable. Rows 1 to 12 state criteria in terms the eval plan can test, as the PRD's section 4 introduction requires before gate 2; rows 4, 6, 8, 9 and 12 narrow a guarantee to what is observable, and the approver should read them as such. Rows 13 to 16 carry two changes the approver initiated on 2026-10-12 (ADR-012 section D): the parallel inline option and per-phase test locking. Applying it reopens gate 1 only for the requirements listed, and the gate-1 record stays valid for the other twelve.
 
 | # | Requirement | Current wording | Proposed wording |

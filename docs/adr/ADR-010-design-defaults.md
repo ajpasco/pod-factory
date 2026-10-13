@@ -1,5 +1,7 @@
 # ADR-010: Design defaults settled after the drafting pass
 
+> History (2026-10-13): superseded by `docs/TECH-SPEC.md` 1.0 where the two differ; kept as decision rationale.
+
 > Note (2026-10-12): answer A5 changes the lock timing stated by REQ-05 and REQ-06; amendment 0.9.2 row 14 carries it. The technical defaults in sections B to F were authorized by the approver on 2026-10-12 and the active PRD's REQ-04 admits a recorded default as a decider; every default is open to overrule (ADR-012 section D). Alternatives rejected for each default: the inverse choice named in its item, or the next-nearest option the drafts listed.
 
 > Amended 2026-10-12 by ADR-011: item 23's sequential-inline limitation is withdrawn; every builder runs in its own worktree, so hook 4 enforces in every mode.

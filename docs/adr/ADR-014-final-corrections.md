@@ -1,5 +1,7 @@
 # ADR-014: Final design corrections before the approver's read
 
+> History (2026-10-13): superseded by `docs/TECH-SPEC.md` 1.0 where the two differ; kept as decision rationale.
+
 Date: 2026-10-12. Status: accepted as technical defaults, reported to the approver. Source: `docs/reviews/spec-verification-3-2026-10-12.md` and the regenerated summary's notes. Supersedes ADR-013 items 1 (the first-lock special case), 3 (the bootstrap and release rows) and 6 (the builder mechanism), and settles the doctor tension. Where any earlier ADR or section disagrees with this one, this one wins.
 
 ## A. One required merge check

@@ -1,5 +1,7 @@
 # ADR-013: Lock guard, class rules and the builder mechanism, after the second verification
 
+> History (2026-10-13): superseded by `docs/TECH-SPEC.md` 1.0 where the two differ; kept as decision rationale.
+
 > Note (2026-10-12, ADR-014): items 1 (first-lock special case), 3 (bootstrap and release rows) and 6 (builder mechanism) are superseded by ADR-014.
 
 Date: 2026-10-12. Status: accepted as technical defaults, reported to the approver. Source: `docs/reviews/spec-reverification-2026-10-12.md`. Supersedes ADR-012 item 1 (the class table) and item 10 (the builder mechanism); amends ADR-006, ADR-009, ADR-011 and ADR-012 as noted below.

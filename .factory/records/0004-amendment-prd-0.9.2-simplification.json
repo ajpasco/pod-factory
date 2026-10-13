@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "amendment",
+  "gate": 1,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "2026-10-13T08:10:59-04:00",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human",
+    "source": "approver message of 2026-10-13: \"I approve the simplified milestone-zero direction and the changes below. Please incorporate them into the current PRD and tech spec, with concise amendments where an approved decision changes.\" Rows 1 to 16 of the 0.9.2 proposal were approved in principle on 2026-10-12 (yes to item 6) and in wording by that message."
+  },
+  "amends": [
+    "0001-gate-1-approval-prd-0.9.json",
+    "0002-amendment-prd-0.9.1-budget-off-mode.json"
+  ],
+  "subject": "PRD 0.9.1 to 0.9.2: sixteen rewordings making criteria checkable; parallel builders after phase 1b (two by default, plan-defined groups, isolation, merge one at a time); design selects deployment target and environment with Docker Compose recommended for web applications; new REQ-25 environment setup and local-deployment parity; asynchronous revocation with a pending state; automatic merging disabled in milestone zero; phase 1b before parallel execution.",
+  "binds": {
+    "docs/PRD.md": {
+      "before": {
+        "version": "0.9.1",
+        "sha256": "dbd72a26185d2655598f4e7a2386b42f026632c306d2fc46165e97ad3a28caf0"
+      },
+      "after": {
+        "version": "0.9.2",
+        "sha256": "69ec90c4786e6df3f7e87563d9d8cf287f6ea6c45e3aafe0947df4443af4c431"
+      }
+    },
+    "requirementsChanged": {
+      "REQ-02": {
+        "before": "0915d8398bc0d7405eb74879e45477d0ed5ad99916f99a1ab7b997cf471dac06",
+        "after": "842cbad591c201c91eb61b3eba1bf5e0fddf6cb404aa193be0f2589ce20d3744"
+      },
+      "REQ-04": {
+        "before": "5550b6a0375a9b8f2e4a7478ffbb915639617b7517e2481bb7707824c11d4d7d",
+        "after": "f307d402c6a369dd3e103c28421c608fa2a0d8b44f72c4a1e08c6fa53f96e864"
+      },
+      "REQ-05": {
+        "before": "1478985b1767ce9feec04a1c5202557a4d7e5de4740ad4e07c032016f1a19cdd",
+        "after": "3cff8f9a60335ae2ca1e95aa56987179cbec011256b78638cdce4290a74ca017"
+      },
+      "REQ-06": {
+        "before": "6110dcba432eb764a68b01ca60b86469ab21a5e10db16f229daef20ed2d98f35",
+        "after": "b5431ad63cbc42e687182b03c8b289a3b052fe88bae50bb3aa07730f08ca0d98"
+      },
+      "REQ-07": {
+        "before": "a46315bc2a2f7ceae8cd0a8ace75fdee7e830263bf0c9c7d8542ff0348fa16d4",
+        "after": "4a4258d22b9f2e200db89e2cdb66c08447680af5a3e4e3efdb1bd9bd3cbaef36"
+      },
+      "REQ-08": {
+        "before": "bd0879d32a9ae63e10410a5e9ce18676648c85136abd648b68b3a94855dd1ed3",
+        "after": "05a335b58ab57bf0b04e5eee7de11a0d8df01f11be57750e9299f87a472e213b"
+      },
+      "REQ-10": {
+        "before": "45357b647a1c587fca1f9a62556b49085e91440ba63d608fcb52fd8b724933df",
+        "after": "ffda5aa25f45b221fbc5fac426086b49f1b4a24fcde7f4f61b2a87f6a3d6287b"
+      },
+      "REQ-12": {
+        "before": "e2481725cfc5ae69da93734ff1eeaa606743575bd18b566d597da875a0a4486d",
+        "after": "fcce21c64a7b7d7ecee092c554a6db8d29f38d4b898906df86f8011ed48df2d5"
+      },
+      "REQ-13": {
+        "before": "615c247c517a89e91fc51ee4ece6a68f2e3e2adcd789ad2d94def639ed4270d8",
+        "after": "f17872660db9efcd0e36aa32781f7d2a123852d93a983a7875fe9e63cfa8df77"
+      },
+      "REQ-16": {
+        "before": "92de1f707844accf1fa7d56e7f8583944b6d0a6b09b256a8079d2276fc12429e",
+        "after": "1c41c4f31566b1a28bf4695c4a387ff5ca0a07bf7ce264799691b343459c6af9"
+      },
+      "REQ-18": {
+        "before": "d128e14c525d7ecab0916d4fbcd034d6a1945abc65b1e216b4188f025958d4ec",
+        "after": "180803ec81ac74fa2d9d78045cdccfffb12efbe055686ac3c8d82cceef862d1b"
+      },
+      "REQ-21": {
+        "before": "c93d8a3de1219402179f29f092112858491afae1338d2bd7e5ccd8a541658544",
+        "after": "eafa28fe4d61a8d59355b02e88a0fdf56d2fd2aa5f5248361c172ae783f4c717"
+      },
+      "REQ-22": {
+        "before": "5d4a79dae1a3e71f5918b38953b796f1ebc5b4d606cce159954267d2d9fecee0",
+        "after": "edab126fe1a8080ea60e0e44e29bad9897773bec79fb80873b0468d785acfd3e"
+      },
+      "REQ-25": {
+        "before": null,
+        "after": "a5a5576a2a8ef09649691cb026f9233052ca3869fc9863252288031c7b09948c"
+      }
+    },
+    "requirementsUnchanged": 11,
+    "sectionsChanged": [
+      "2 Build and verify",
+      "2 Gate 2",
+      "3 Milestone zero",
+      "5 Limitations",
+      "header"
+    ]
+  },
+  "scope": "The gate-1 record 0001 remains valid for every unchanged requirement; this amendment is the re-approval of the changed ones, as record 0002 was for REQ-09.",
+  "bootstrapExceptions": [
+    "written by the assistant on the approver's written approval; the amend command does not exist yet",
+    "no CI validation yet",
+    "working tree, not yet the records branch"
+  ],
+  "outcome": "approved"
+}

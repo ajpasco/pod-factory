@@ -1,5 +1,7 @@
 # Criterion-to-control mapping
 
+> Reference document (2026-10-13): `docs/TECH-SPEC.md` 1.0 is the current design and wins where this file differs. This file keeps the detail for phases 1b onward.
+
 Tech spec section 11, 2026-10-12. Integrated into the spec; every OPEN item, list 2 mechanism and list 3 assumption below is resolved or registered in ADR-011, and the body text's references to them read through that ADR. It maps every acceptance criterion in `docs/PRD.md` 0.9.1 section 4 to one control kind, as the PRD's section 4 introduction and REQ-04 require. Sources: the PRD (governing), the accepted ADRs in `docs/adr/` (ADR-001 to ADR-012; ADR-011 and ADR-012 resolve this file's open items), `docs/TECH-SPEC.md` 0.1, and `docs/PRD-reference.md` (proposed mechanisms, not binding on its own). The pending PRD 0.9.2 proposal is not applied; list 1 cross-references it. Nothing here changes a criterion's meaning or settles a question the documents leave open; those are marked OPEN. Counts are at the end.
 
 ## How to read the tables

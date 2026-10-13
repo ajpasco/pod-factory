@@ -1,128 +1,134 @@
-# pod-factory: Technical Design Specification
+# pod-factory: Technical Design, current statement
 
-Version 0.1, draft, started 2026-10-12. Status: **Draft, gate 2 open.** Governed by `docs/PRD.md` (0.9.1: approved at gate 1 as 0.9, record 0001; amended by records 0002 and 0003). `docs/PRD-reference.md` preserves prior reasoning and proposed mechanisms; this document selects and justifies mechanisms consistent with the PRD and names any proposed change to an approved decision.
-
-How this document is written: one question at a time to the approver, only about significant decisions the PRD, the project profile and the project rules leave open. Each answer becomes an architecture decision record in `docs/adr/`. Anything the PRD settles is cited, not re-asked.
+Version 1.0, 2026-10-13. Status: **gate 2 open.** Governed by `docs/PRD.md` 0.9.2 (gate-1 record 0001, amendments 0002 to 0004). This document states the current design directly. `docs/adr/ADR-001` to `ADR-014` are decision history and rationale; where any of them differs from this document, this document wins, and no further override records are added. The detailed section files (`docs/spec/*.md`, `docs/eval-plan.md`) are reference for later phases and are subordinate to this document in the same way.
 
 ## 1. Project profile
 
-- Engineer on the project: yes (the approver).
-- User interface in version one: CLI, Orca commands and a generated status page; no interactive application UI.
-- Budget mode: hard-stop (default of three modes: hard-stop, tripwire, off; ADR-007).
-- Runtime backend order: inline first, Orca after milestone zero (decision 24).
-- Stack for the tooling: TypeScript on Node (decision 21); pod-factory uses the node-tool preset (ADR-008).
-- Enforcing factory version: bootstrap (decision 23).
-- Notification channels: desktop notifier from the CLI, optional webhook, Orca when present (ADR-010 item 32).
+- Engineer on the project: yes (the approver). No user interface in version one beyond the CLI and a generated status page.
+- Tooling: TypeScript on Node, one published npm package `pod-factory`, requiring the current or previous Node LTS; binaries come with managed setup.
+- Budget mode: hard stop by default; tripwire and off are project settings.
+- Backend order: inline first; Orca after phase 1b.
+- Enforcing version: bootstrap until release 0.1.
+- Notification channel: desktop notifier from the CLI, optional webhook, Orca when present.
 
-## 2. Phases
+## 2. Phases and exits
 
-Ordered per PRD section 3. Each phase lists the requirement IDs it delivers.
+| Phase | Delivers | Exit |
+|---|---|---|
+| Milestone zero | Section 3 in full: one story, one builder, one approval path, locked tests, CI evidence, human-approved merge, crash recovery, `status` | the three refusals observed, kill-and-resume passed, `status` merged through the real loop |
+| 1b. Complete sequential workflow | start interview and presets, discovery, mockup, red team and dispositions, guided design, classification command, the remaining human commands (acknowledge, answer, amend, waive, delegate, migrate, revert, incident), delegation with citation records, the full verify step (restraint checks, scans, security and simplicity reviewers, QA), environment setup (REQ-25), pull-request classes with the work-only auto-merge, hooks 2 to 6, `explain`, Claude Code plugin and skills install; release 0.1 by manual runbook under a bootstrap record, ending the bootstrap exception | every gate 1 to 4 criterion measured on pod-factory itself |
+| 2. Parallel builders and Orca | independent stories in parallel (two builders by default), the Orca backend, board statuses, bugs routed to the same worker, Orca marketplace entry | a feature built with two parallel stories, once inline and once under Orca |
+| 3. Release | gate 5, the release executor, credentials channel, rollback, release state | pod-factory releases itself through gate 5 |
+| 4. Control room, metrics, retrospective | status page, Orca commands and notifications, metrics, retro | first retrospective proposes calibrated budgets |
+| 5. Managed setup | git, remote, CI, branch protection, hooks, keychain flow, plan detection | `doctor` passes with no waiver after setup on a supported plan |
 
-| Phase | Delivers | Requirement IDs | Exit |
-|---|---|---|---|
-| 0. Bootstrap scaffold (by hand, bootstrap records) | approve and reject, lock, record store and records branch, `story start`, `story attach` and `story wait`, minimal `migrate` for the bootstrap records, lock and protected-zone hooks, CI records-validate, lock-guard, class-check, work-only, minimal story-verify and gate-check, minimal `doctor` | REQ-03, REQ-06, REQ-07 and REQ-08 (minimal story commands), REQ-13 (hooks 1 to 4), REQ-19 (minimal), REQ-20 (schema version, pin, bootstrap migration), classify job | `doctor` reports the scaffold components present |
-| 1a. Milestone zero | story one, `pod-factory status`, through the whole loop on the inline backend; the three refusals; kill-and-resume | REQ-07, REQ-08, REQ-10, REQ-13, REQ-19 | ADR-009 exit test |
-| 1b. Complete gates 1 to 4 (its place before the Orca backend is pending the approver, ADR-012 section D) | start interview and presets, discovery, mockup, red team and dispositions, guided design, eval plan classification and renderings, full approval path, delegation policy and decisions, full verify step (restraint checks, scans, security reviewer, simplicity reviewer, QA), exceptions, `explain`, Claude Code plugin and skills install | REQ-01, REQ-02, REQ-04, REQ-05, REQ-09, REQ-16 (except the Orca entry), REQ-17, REQ-19 (`explain`), REQ-20 (upgrades), REQ-22, REQ-23 | every gate 1 to 4 criterion measured on pod-factory itself; release 0.1 ships at the end of this phase through the manual runbook under a bootstrap record, ending the bootstrap exception (ADR-010 item 7; decision 23) |
-| 2. Orca backend | supervised parallel builders, board statuses, bugs routed to the same worker, receipts persisted | REQ-08 (Orca bullets), REQ-07 (Orca worktree placement), REQ-16 (Orca marketplace entry) | a feature built with parallel stories under Orca |
-| 3. Gate 5 and the release executor | artifact build before gate 5, checklist, executor, credentials channel, rollback, release state | REQ-11, REQ-18, REQ-21 | pod-factory releases itself through gate 5 |
-| 4. Control room, metrics, retrospective | status page, Orca commands and notifications, metrics command, retro skill | REQ-12, REQ-14, REQ-15 | first retrospective proposes calibrated budgets |
-| 5. Managed setup (phase two of the PRD) | git, remote, CI, branch protection, hooks, keychain flow, plan detection | REQ-24 | `doctor` passes with no waiver after setup on a supported plan |
+Nothing in a later phase is implemented early to make a test fail. Later tests are written before their phase's build plan and join the lock by amendment.
 
-## 3. Repository layout and components
+## 3. Milestone zero
 
-One repository, a workspace (ADR-002): `packages/cli`, `packages/hooks`, `packages/check-runner`, `packages/release-executor`, `skills/`, `templates/`, `claude-plugin/`, `orca-plugin/`, `docs/`. The Orca plugin is published from a dedicated branch whose root holds its manifest, because Orca's installer requires the manifest at the git source root. Component responsibilities are listed in ADR-002; interfaces between them are section 4.
+### 3.1 Scope
 
-## 4. Interfaces
+**Commands.** `approve <gate|story|bootstrap|amendment>`, `lock`, `revoke <record>`, `story start`, `story finish`, `status`, `doctor`, `hook`, `ci <job>`. Nothing else.
 
-### 4.1 Runtime backends
+**Records.** approval, lock, revocation, status transition, check result. One schema, five record types.
 
-Both backends implement four verbs: start a story, wait for done, send a fix back to the same worker, ask the human. The **inline backend** (ADR-003, ADR-011 item 1, ADR-012 item 10) uses Claude Code subagents in the approver's session, every builder in its own worktree with a dispatch file: sequential by default, parallel for stories the gate-3 plan marks independent, merges serialized. The **Orca backend** uses Orca's supervised workers, tasks and dispatches. The orchestrator chooses by probing Orca's status command.
+**CI jobs, all defined on main and all required on every pull request:** `lock-guard`, `verify`, `gate-check`; plus `records-validate` on a schedule and on demand. No branch classes and no automatic merging: every pull request to main needs the approver's approval record bound to its tree.
 
-### 4.2 Builder contract
+**Stages.** ready, in progress, verifying, done. "Needs human" is a flag `status` shows.
 
-From ADR-003: a story is full stack and aligned with one requirement; the locked tests derived from the acceptance criteria are the only definition of done; builders write the minimum simple, clean code that passes them; builder-written unit tests are allowed, unlocked, and must test behavior that matters, or the simplicity reviewer flags them.
+**Hook.** One: deny agent file edits to locked and protected paths. The approval-path commands refuse to run from an agent session by environment marker, and CI rejects a human record whose writer is not human.
 
-### 4.3 Records
+### 3.2 What each piece does
 
-ADR-004: branch `pod-factory/records`, one JSON file per record named `<timestamp>-<type>-<subject>.json`, SHA-256 over LF-normalized content, common fields `schemaVersion`, `recordType`, `factoryVersion`, `hashAlgorithm`, `createdAt`, `actor`, `binds`, `outcome`. Writers per record type as the PRD reference defines; CI validates every push. Full schemas per record type are written with the check runner (section 4.5).
+- `approve` shows the artifact's hash and a plain-language line, asks the human to type the gate and the first eight characters of the hash, writes the approval record, pushes it. At gate 4 it binds the story branch's head tree. `approve bootstrap <pull request>` is the merge authority before the first lock exists. `approve amendment <paths>` authorizes a change to locked paths by binding before and after hashes.
+- `lock` writes the lock record from the approved eval plan: locked paths with hashes and the exact test command.
+- `revoke` writes a revocation record, triggers `records-validate` at once, and reports **pending** until CI confirms that every affected open pull request shows a failing gate-check; only then does it report enforced.
+- `story start` requires a valid gate-3 approval for the current plan, writes the in-progress transition with a lease, and prints the builder's inputs with hashes. `story finish` writes the verifying transition after the builder's handoff note is recorded.
+- `status` prints every story, its stage, what it waits on, and the exact rule or record blocking it. It is the tool for "what went wrong."
+- `doctor` reports each enforcement layer present or missing: the plugin hook, the CI workflows on main, main's branch protection including administrators, the records branch protection, required checks configured.
+- `ci lock-guard`: fails when any locked path changed without a valid amendment approval bound to the head tree. `ci verify`: runs the locked command exactly as locked in a job that holds a read-only token, checks the diff against the story's file scope, uploads the evidence bundle; a second job that runs no application code writes the check-result record with the bundle's manifest hash. `ci gate-check`: requires an approval record bound to this exact head tree, a passing verify for this tree and no revocation of either, evaluated against the records branch as it is at that moment. `ci records-validate`: validates every record on the branch per record, rejects nothing after the fact, flags invalid ones, and posts a failing gate-check on every open pull request that relied on a revoked record.
 
-### 4.4 Hooks
+### 3.3 The flow
 
-ADR-005: delivered by the Claude Code plugin, installed per machine, silent outside a `.factory/` project. Six hooks: deny edits to locked, protected and secret paths; deny shell commands that plainly write to them (advisory heuristic); deny dispatch without a validated gate-3 record; deny the local question tool during a dispatch; deny reads of declared secret paths; orient the session at start. Event and field names pinned by the hook tests against current Claude Code documentation.
+1. Scaffold and the gate-2 tests land through bootstrap pull requests, each under `approve bootstrap`. Branch protection with the required checks and administrator enforcement is set by hand and confirmed by `doctor`.
+2. The gate-2 tests run once. Scaffold behavior passes as baselines; story-one tests fail on assertions because `status` does not exist. No placeholder code.
+3. `approve 2` binds the main tree, the PRD, the design, the eval plan, the mapping and the classification output; `lock` follows at once. `lock-guard` is live from here.
+4. `approve 3` on the one-story build plan. `story start`. A builder subagent in its own worktree implements `status` against the locked tests and writes its handoff note. `story finish`.
+5. The pull request runs `lock-guard`, `verify` and `gate-check`; gate-check fails until the approver acts.
+6. The approver reads the evidence bundle and the diff, runs `approve story-1`, re-runs gate-check, merges.
+7. Recovery and the refusals: kill at each record write and restart from records alone; edit a locked test; approve then push one more commit; claim "tests passed" with no bundle.
 
-### 4.5 Check runner and CI
+### 3.4 What waits
 
-ADR-006 as amended by ADR-011 to ADR-013: `pod-factory ci <job>` is provider-agnostic; version one ships a GitHub Actions template whose jobs are records-validate (scheduled, from main), lock-guard and class-check (required on every pull request), story-verify (`story/*`), gate-check (required for `story/*` and in its other forms), work-only (`work/*`, `rules/*`), artifact-check, classify (`locked/*`), release-gate (build on the merge commit, verify on the executor's request) and doctor (scheduled and required). Pull-request classes and their checks are ADR-013 item 3. The pre-commit hook runs the fast subset and is advisory. pod-factory's own CI adds the hook and lock suite on three operating systems and the Orca plugin branch check.
+Everything in phases 1b to 5. In milestone zero every question goes to the approver, there is no delegation, no waiver, no class, no auto-merge, no Orca, no release automation, no environment manager.
 
-### 4.6 Full interfaces
+## 4. Records
 
-The CLI command family, record schemas, backend verb mapping, check-runner jobs, release executor and hook protocol are specified in `docs/spec/interfaces-and-non-goals.md`, with its open items resolved by ADR-010.
+- **Store.** Branch `pod-factory/records`, linear, never force-pushed, protected. One JSON file per record, `<utc-timestamp>-<type>-<subject>-<id>.json`, UTF-8, LF, two-space indent, fixed key order. Common fields: schema version, record type, factory version, hash algorithm (SHA-256 over LF-normalized UTF-8), created at, actor (name, email, kind human or check-runner), binds, outcome, refs.
+- **IDs and retries.** The ID is generated once per command invocation and written to a local journal before the first push. A retry after a failed or uncertain push fetches first; if the ID is already on the branch the command reports success; otherwise it pushes again. Concurrent writers never conflict: each record is its own file, and a rejected push rebases and retries.
+- **Validity at point of use.** Every consumer, `gate-check`, `lock-guard`, `status`, the hook, validates each record it reads: schema, writer rule for its type, hashes. An invalid record is ignored and flagged, never blocks a later valid one, and is never repaired in place. There is no validated pointer. `records-validate` is the alerting job and the revocation relay, not a gate.
+- **Writers.** Human records (approval, lock, revocation) through the human commands; status transitions through the story commands; check results through CI's record-writing job. CI rejects a human record whose actor is not human.
+- **Bootstrap records 0001 to 0004** keep their field names under schema `bootstrap-0` and move to the records branch when it is created; the exception ends at release 0.1.
 
-## 5. Non-goals for this design
+## 5. Merge rules
 
-Listed in `docs/spec/interfaces-and-non-goals.md`, section 5: exclusions from the PRD, exclusions from each ADR, limits the interfaces do not claim to close, and what is not measured.
+Milestone zero: three required checks on every pull request, `lock-guard`, `verify`, `gate-check`; merge needs the approver's approval record bound to the head tree. Main's protection binds administrators; `doctor` checks it. A direct push by an agent holding the approver's credentials is the accepted risk of PRD section 5.
 
-## 6. Budgets and caps
+Phase 1b adds the pull-request classes: `story/*`, `work/*` with the work-only auto-merge, `locked/*` under an amendment, `rules/*` under a rules approval, `release/*` under a release amendment; `class-check` joins the required set and gate-check dispatches by class. Those rules are specified in `docs/spec/interfaces-and-non-goals.md` and ADR-012 to ADR-014 as history; they are not built in milestone zero.
 
-ADR-007: per story, hard stops at 5,000,000 tokens, 8 hours, 3 fix rounds, 3 reopen cycles per plan, 2 re-reviews; tripwires at 10 files, 400 changed lines, nesting depth 3, function complexity 10. Three budget modes in the project profile: hard-stop (default), tripwire, off. Milestone zero calibrates the defaults; the first retrospective proposes new ones from measured data.
+## 6. Revocation
 
-## 7. Threat review
+A revocation is effective on the records branch the moment it lands. `revoke` triggers `records-validate` immediately and falls back to the schedule. `records-validate` posts a failing `gate-check` on every open pull request whose approval it revoked. Every `gate-check` run evaluates the records branch at its own start time and refuses to report a pass if a newer records-branch commit revoked anything it relied on, so a stale run cannot restore an obsolete green. Until CI confirms the block, `revoke` and `status` show the revocation as **pending**. A merge completed before the revocation stands as history and is undone by a revert pull request under its own approval.
 
-In `docs/spec/threat-review-and-production-readiness.md`, section 7: trust-boundary map of 14 components, 10 untrusted-text entry points, credentials and network per role, pinned supply chain, 46 abuse cases AB-01-1 to AB-24-2 that become locked negative tests, and the accepted risks. Open items resolved by ADR-010.
+## 7. Builders
 
-## 8. Production readiness
+- Each builder runs in its own git worktree with its own test data, started as a Claude Code subagent with worktree isolation. The orchestrator records the inputs it supplies with their hashes. The authoritative dispatch is the in-progress transition record; a local untracked pointer at the worktree root serves status and resumption.
+- Milestone zero and phase 1b: one builder at a time.
+- Phase 2: independent stories in parallel, two builders at a time by default. The approved plan names dependencies and the stories that may run together; shared foundations come first; stories with overlapping files, conflicting migrations or unfinished shared interfaces run sequentially. Changes merge one at a time and the combined application is verified after each merge. Parallel builders get separate ports and test databases; with Compose, distinct project names and volumes per story; cleanup touches only that story's resources. The inline and Orca backends implement the same four verbs: start a story, wait for done, send a fix back to the same worker, ask the human.
+- The builder contract: a story is full stack for one requirement; the locked tests are the only definition of done; builder-written unit tests are allowed, unlocked, and must test behavior that matters.
 
-In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only migrations and rollback, one shared redaction library, `doctor` and `status` as monitoring with an operator watch list, and the ten-step release runbook for pod-factory itself with reconcile checks, the smoke retry rule, reversibility per step and the rollback plan.
+## 8. Environments
 
-## 9. Architecture decision records
+- The design selects the deployment target and the development environment. For a web application with a backend and a database it recommends Docker Compose. A simple CLI tool needs no Docker.
+- Setup detects whether Docker is installed and running; prepares the Dockerfile, Compose configuration, startup commands and health checks when available; otherwise offers installation help or a supported local setup; records the chosen mode for every later agent; diagnoses a previously working environment that fails instead of silently switching.
+- The local setup keeps the same application architecture, database engine, runtime versions, dependency lockfiles, migrations and configuration names as deployment. SQLite never stands in for Postgres.
+- When the target is containers, CI builds and tests the deployment image even if the developer runs locally without Docker, and deployment approval binds that artifact.
+- No generalized environment manager: the smallest supported paths, extended when real use requires it.
 
-- ADR-001 Runtime and distribution for version one: npm package requiring Node LTS; binaries with phase-two managed setup.
-- ADR-002 Repository layout: one workspace repository; Orca plugin published from a dedicated branch.
-- ADR-003 Inline backend and the builder contract: Claude Code subagents, sequential by default, parallel for independent stories in their own worktrees; stories full stack per requirement; evals define done; builder tests must earn their place.
-- ADR-004 Record storage defaults: branch `pod-factory/records`, one JSON file per record, SHA-256.
-- ADR-005 Hooks ship in the Claude Code plugin: six hooks, advisory layer, silent outside a project.
-- ADR-006 CI design: provider-agnostic check runner, GitHub Actions template (job set as amended by ADR-011 to ADR-013), pre-commit as the advisory subset.
-- ADR-007 Default budgets, caps and budget modes: generous starting defaults, calibrated after milestone zero; modes hard-stop, tripwire, off (extends decision 12; PRD amended to 0.9.1 by record 0002).
-- ADR-008 Stack presets in version one: web-default, node-tool, custom.
-- ADR-009 Milestone zero and the bootstrap scaffold: hand-written approve, lock, records, hooks, CI; story one is `pod-factory status`; three refusals exercised.
-- ADR-010 Design defaults settled after the drafting pass: the approver's nine answers, CI authority pattern, records and stages, hooks, evidence, notifications, release and distribution.
-- ADR-011 Resolutions from the mapping: every builder in its own worktree, artifact-check and classify jobs, pull-request classes, definitions and defaults for 35 open items, adopted reference mechanisms, verification register.
-- ADR-012 Resolutions from the spec verification pass: canonical merge rules and classes, work-only job, CODEOWNERS scope, seven layers, thirteen commands and fourteen record types, builder worktree mechanism and V18, citation answers versus delegated decisions, the register of approved decisions the design touches.
-- ADR-013 Lock guard, class rules and the builder mechanism: one lock guard on every pull request, default deny for unclassified branches, bootstrap class, the single builder mechanism, gate-2 bindings and canonical counts.
-- ADR-014 Final design corrections: one required merge check dispatching by class, administrators bound, bootstrap class bounded by data, the first-lock sequence, release pull requests under a release amendment, the final builder mechanism, two readings of doctor, canonical counts.
+## 9. Hooks and the agent layer
 
-## 10. Eval plan
+Milestone zero ships hook 1: deny agent file edits to locked and protected paths, failing closed on those paths when it cannot decide. Phase 1b adds hooks 2 to 6: shell-command heuristic for writes and secret reads, dispatch without a gate-3 approval, the question tool in a builder worktree, reads of declared secret paths, session-start orientation. Hooks are the advisory layer; CI is authoritative. Codex and other agents are held by CI and branch protection only.
 
-`docs/eval-plan.md`: 233 tests (ADR-014 item 13) across REQ-01 to REQ-24, milestone zero's ten end-to-end tests first, Given/When/Then renderings, classification before approval per REQ-05, the seven locked test commands, the lock set for pod-factory itself, four AI behavior evals for the security and simplicity reviewers, and the builder-written test rules. Written and classified per phase (ADR-010 item 5).
+## 10. Classification and locking
 
-## 11. Criterion-to-control mapping
+Tests are written per phase and classified before the approval that locks them. Implemented scaffold behavior has passing baseline tests; unimplemented story behavior has tests that fail on their assertions; nothing working is disabled to satisfy a class. The lock covers the tests, the eval plan, runner configuration, fixtures, the exact command, lockfiles, smoke tests, runbook scripts and the enforcement code; later phases' tests join it by amendment. The milestone-zero test set is `docs/eval-plan.md` section 13.
 
-`docs/spec/criterion-to-control-mapping.md`: 157 criteria across the 24 requirements, 46 enforced, 108 measured, 2 reviewed, 1 awaiting the 0.9.2 amendment; authoritative layers CI and host rules 66, command 83, hook 5, agent review 2. Its open items, reference-only mechanisms and platform assumptions are resolved or registered in ADR-011. The gate-2 record binds this file's hash beside the PRD's.
+## 11. Evidence
 
-## 11a. Verification register
+Verification evidence is produced by the test harness or CI and bound to the tree it tested; agent prose is never evidence. Milestone zero stores bundles as CI artifacts and commits their manifest hash in the check-result record; the evidence branch with size caps arrives with phase 1b.
 
-ADR-011 section F: nineteen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
+## 12. Verification register
 
-## 11c. Plain-language summary
+Platform assumptions, each verified by the lab experiment or in the phase named. Status is updated here, nowhere else.
 
-`docs/spec/plain-language-summary.md`, written by a fresh-context agent from the final documents as REQ-04 requires; regenerated from the final hash before gate 2 closes.
+| ID | Assumption | Status |
+|---|---|---|
+| L1 | A required status check reported by a `pull_request_target` workflow counts for the pull request's merge | pending, lab |
+| L2 | A job that runs application code can hold a read-only token while a dependent job writes to the records branch | pending, lab |
+| L3 | A failing check run can be posted on an open pull request's head by a scheduled or dispatched workflow, and it blocks merge | pending, lab |
+| L4 | `workflow_dispatch` from the CLI triggers validation within a minute | pending, lab |
+| L5 | A stale in-flight run cannot overwrite a newer failing result (concurrency group plus the start-time rule) | pending, lab |
+| L6 | Branch protection can bind administrators and be read by `doctor` through the API | pending, lab |
+| L7 | Claude Code's pre-tool-use hook can deny a file edit with a reason, and fires for subagent tool calls | phase 0 |
+| L8 | A hook event's working directory reflects the subagent's isolated worktree | phase 0 |
+| L9 | An agent session is detectable by an environment marker | phase 0 |
+| L10 | Scheduled workflows keep running in an active repository at the chosen interval | phase 0 |
+| L11 | `npx skills add` from a release tag, plugin install, Orca statuses and quick actions, keychain access, transcript locations | phases 1b to 3 |
 
-## 11b. Adopted mechanisms
+## 13. Later-phase designs, by reference
 
-ADR-011 section E: the thirty mechanisms the mapping found only in the reference document are adopted in the binding form the interfaces section gives them; an ADR wins where it overrides one.
+The release executor, the Orca verb mapping, record schemas for the remaining types, the threat review and production readiness for pod-factory itself, the criterion-to-control mapping and the full eval plan are in `docs/spec/` and `docs/eval-plan.md`. They describe phases 1b onward and are subordinate to sections 1 to 12 where they differ.
 
-## 12. Open design questions
+## 14. History
 
-In the order they will be asked.
-
-1. Resolved 2026-10-12: npm package requiring Node LTS; binaries in phase two (ADR-001). Name availability checked the same day: GitHub organization, npm package and scope unregistered.
-2. Resolved 2026-10-12: one workspace repository, Orca plugin published from a branch (ADR-002).
-3. Resolved 2026-10-12: Claude Code subagents, sequential by default with a parallel option for independent stories (ADR-003).
-4. Resolved 2026-10-12: branch `pod-factory/records`, one JSON file per record, SHA-256 (ADR-004).
-5. Resolved 2026-10-12: hooks ship in the Claude Code plugin (ADR-005). The pre-commit hook is designed with CI (question 6).
-6. Resolved 2026-10-12: GitHub Actions only, provider-agnostic check runner (ADR-006).
-7. Resolved 2026-10-12: generous defaults, three modes including off (ADR-007; PRD amendment 0002).
-8. Resolved 2026-10-12: web-default, node-tool, custom (ADR-008).
-9. Resolved 2026-10-12: scaffold by hand, then `pod-factory status` as story one (ADR-009).
-
-All nine interview questions are resolved, every section is drafted, the plain-language summary is `docs/spec/plain-language-summary.md`, and the verification pass (`docs/reviews/spec-verification-2026-10-12.md`) is resolved by ADR-012. Pending before gate 2: the approver's two decisions in ADR-012 section D (phase 1b's place; record 0003), the approver's wording approval of PRD amendment 0.9.2 and record 0004, the regenerated mapping, phase zero's not-implemented skeletons, the writing of phase zero's and milestone zero's tests as code and their classification run and record, the regenerated renderings and the approver's acknowledgment of every one, the runbook narrative and step file and the rollback plan that the gate-2 record binds, the gate-2 approval, and then the lock.
+ADR-001 to ADR-014 record how each decision was reached, including three verification passes and their corrections on 2026-10-12. The approver's simplification direction of 2026-10-13 replaced the layered override rules with this single statement.

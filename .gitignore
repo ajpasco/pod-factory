@@ -2,3 +2,5 @@
 orca/
 # Personal Claude setup bundle
 claude-portable-*.zip
+# per-worktree Claude Code settings
+.claude/settings.local.json

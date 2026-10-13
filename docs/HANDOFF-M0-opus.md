@@ -47,3 +47,46 @@ One npm package, TypeScript on Node, Vitest, in this repository under `packages/
 ## How to report
 
 At the end of each session leave a handoff note in the story's work folder: done, left, open questions, next step. Send questions to the approver, never decide product or security questions alone. The design session can be asked for a read-only review of a pull request; it will not edit code.
+
+## Session setup, done by the design session on 2026-10-13
+
+- Trunk: `main` at the design tip. Bootstrap branches are `bootstrap/<nn>-<slice>` from main, one worktree each under the Orca workspace folder. The first is `bootstrap/01-record-store` at `/Users/jay/orca/workspaces/orca-software-factory/bootstrap-01-record-store`.
+- The builder worktree is a sparse checkout without the review history, the detailed section files, the reference PRD and ADR-010 to ADR-014, and it carries deny rules in `.claude/settings.local.json` for the same paths. Both are re-applied for every new bootstrap worktree:
+
+```
+git -C /Users/jay/orca/projects/orca-software-factory worktree add -b bootstrap/<nn>-<slice> /Users/jay/orca/workspaces/orca-software-factory/bootstrap-<nn>-<slice> main
+cd /Users/jay/orca/workspaces/orca-software-factory/bootstrap-<nn>-<slice>
+git sparse-checkout init --no-cone
+git sparse-checkout set '/*' '!/docs/reviews/' '!/docs/spec/' '!/docs/spec-drafts/' '!/docs/PRD-reference.md' '!/docs/HANDOFF-2026-10-12.md' '!/docs/adr/ADR-010-design-defaults.md' '!/docs/adr/ADR-011-mapping-resolutions.md' '!/docs/adr/ADR-012-verification-resolutions.md' '!/docs/adr/ADR-013-lock-guard-and-class-rules.md' '!/docs/adr/ADR-014-final-corrections.md'
+cp ../bootstrap-01-record-store/.claude/settings.local.json .claude/settings.local.json
+```
+
+- To check afterwards that a session never touched the excluded files:
+
+```
+grep -l 'docs/reviews\|PRD-reference\|spec-drafts\|docs/spec/' ~/.claude/projects/*orca-software-factory*/*.jsonl
+```
+
+- Opening prompt for the builder session (Opus; high effort for slices 1 to 3, medium afterwards; a Sonnet subagent builds story one):
+
+```
+You are the milestone-zero builder for pod-factory. The approver is Allan; you never decide product or security questions alone. The design session (Fable) reviews only and writes no code.
+
+Start by reading, in this order and nothing else first:
+1. docs/HANDOFF-M0-opus.md
+2. docs/TECH-SPEC.md, sections 3 to 12
+3. docs/eval-plan.md, section 13
+4. docs/PRD.md section 4 for REQ-03, 06, 07, 08, 10, 19, 20, 22
+5. docs/adr/ADR-002, ADR-004, ADR-008
+Everything else in docs/adr is history; where it differs from TECH-SPEC.md, TECH-SPEC.md wins.
+
+Scope: one npm package, TypeScript on Node, Vitest, under packages/cli. Nine subcommands, five record types, one hook, a GitHub Actions template with three required checks and a scheduled validator. Build nothing from phases 1b to 5 and write no placeholder code to make later tests fail.
+
+Rules you must not break: agent prose is never evidence; never disable a working check to satisfy a test class; an invalid record is ignored and flagged, never repaired in place; record IDs are generated once per invocation and journaled before the first push, and a retry fetches first; approval commands refuse to run from an agent session; when the spec does not name something you need, stop and ask me.
+
+Work in slices, each on a bootstrap/* branch with one pull request: (1) the record store and its tests, (2) approve and lock, (3) the three CI jobs and the scheduled validator, (4) the hook, (5) revoke and the relay, (6) story start and story finish, (7) doctor. Write the section 13 tests as you go: scaffold behavior passes, status tests fail on assertions. Before each pull request, tell me in a few lines what the slice does, what it verifies, and what you were unsure about. Wait for my approval in chat before merging; there is no automatic merging.
+
+Verify L7 to L10 from the handoff early in slice 4 and report what you found as verified or pending, nothing in between.
+
+End every session with a handoff note in the story's work folder: done, left, open questions, next step. Begin with slice 1 and show me the record file format before writing code.
+```

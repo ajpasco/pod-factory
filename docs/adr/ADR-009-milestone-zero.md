@@ -1,5 +1,7 @@
 # ADR-009: Milestone zero and the bootstrap scaffold
 
+> Amended 2026-10-12 by ADR-011: the scaffold's start verb creates a worktree and a dispatch file per builder in every mode; 'five layers' are renamed scaffold components.
+
 Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended option taken). PRD basis: section 3 (milestone zero as phase one's exit), decision 23 (bootstrap exception), decision 24 (sequential first), REQ-19 (`status`).
 
 ## The bootstrap scaffold, written by hand first

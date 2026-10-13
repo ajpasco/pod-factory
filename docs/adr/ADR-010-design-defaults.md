@@ -1,5 +1,7 @@
 # ADR-010: Design defaults settled after the drafting pass
 
+> Amended 2026-10-12 by ADR-011: item 23's sequential-inline limitation is withdrawn; every builder runs in its own worktree, so hook 4 enforces in every mode.
+
 Date: 2026-10-12. Status: accepted. Decided by: the approver for items marked (approver); the rest are technical defaults decided in the spec, reported to the approver, and open to being overruled. PRD basis: decision 20 (technical decisions without product consequence take recommended defaults and are recorded), decision 28, NFR-01, REQ-06 to REQ-22. Resolves the open items raised by the interface, threat-review, production-readiness and eval-plan drafts of 2026-10-12.
 
 ## A. Decisions the approver made ("yes to all", 2026-10-12)

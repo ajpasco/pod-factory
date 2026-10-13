@@ -1,5 +1,7 @@
 # ADR-003: Inline backend and the builder contract
 
+> Amended 2026-10-12 by ADR-011: sequential stories also run each builder in its own worktree (ADR-011 item 1); 'one at a time' is unchanged.
+
 Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended option taken with additions). PRD basis: decision 2 (inline backend is the same workflow in one session), decision 24 (milestone zero sequential), REQ-07, REQ-08, REQ-09, REQ-05.
 
 ## Decision

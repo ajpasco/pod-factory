@@ -86,6 +86,7 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 - ADR-008 Stack presets in version one: web-default, node-tool, custom.
 - ADR-009 Milestone zero and the bootstrap scaffold: hand-written approve, lock, records, hooks, CI; story one is `pod-factory status`; three refusals exercised.
 - ADR-010 Design defaults settled after the drafting pass: the approver's nine answers, CI authority pattern, records and stages, hooks, evidence, notifications, release and distribution.
+- ADR-011 Resolutions from the mapping: every builder in its own worktree, artifact-check and classify jobs, pull-request classes, definitions and defaults for 35 open items, adopted reference mechanisms, verification register.
 
 ## 10. Eval plan
 
@@ -93,7 +94,15 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 
 ## 11. Criterion-to-control mapping
 
-Pending. Every PRD acceptance criterion mapped to enforced, measured or reviewed.
+`docs/spec/criterion-to-control-mapping.md`: 157 criteria across the 24 requirements, 46 enforced, 108 measured, 2 reviewed, 1 awaiting the 0.9.2 amendment; authoritative layers CI and host rules 66, command 83, hook 5, agent review 2. Its open items, reference-only mechanisms and platform assumptions are resolved or registered in ADR-011. The gate-2 record binds this file's hash beside the PRD's.
+
+## 11a. Verification register
+
+ADR-011 section F: seventeen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
+
+## 11b. Adopted mechanisms
+
+ADR-011 section E: the thirty mechanisms the mapping found only in the reference document are adopted in the binding form the interfaces section gives them; an ADR wins where it overrides one.
 
 ## 12. Open design questions
 
@@ -109,4 +118,4 @@ In the order they will be asked.
 8. Resolved 2026-10-12: web-default, node-tool, custom (ADR-008).
 9. Resolved 2026-10-12: scaffold by hand, then `pod-factory status` as story one (ADR-009).
 
-All nine interview questions are resolved. Remaining sections are drafted from the PRD and the ADRs without further questions, then reviewed, then presented for gate 2.
+All nine interview questions are resolved and every section is drafted. Pending before gate 2: the approver's wording approval of PRD amendment 0.9.2, the fresh-context plain-language summary, the verification pass, and then the lock.

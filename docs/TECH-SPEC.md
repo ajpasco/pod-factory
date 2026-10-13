@@ -109,16 +109,16 @@ Verification evidence is produced by the test harness or CI and bound to the tre
 
 ## 12. Verification register
 
-Platform assumptions, each verified by the lab experiment or in the phase named. Status is updated here, nowhere else.
+Platform assumptions, each verified by the lab experiment or in the phase named. Status is updated here, nowhere else. Lab: disposable repository `ajpasco/pod-factory-lab-20261013`, archived after the runs; its two workflows are the template for milestone zero's CI.
 
 | ID | Assumption | Status |
 |---|---|---|
-| L1 | A required status check reported by a `pull_request_target` workflow counts for the pull request's merge | pending, lab |
-| L2 | A job that runs application code can hold a read-only token while a dependent job writes to the records branch | pending, lab |
-| L3 | A failing check run can be posted on an open pull request's head by a scheduled or dispatched workflow, and it blocks merge | pending, lab |
-| L4 | `workflow_dispatch` from the CLI triggers validation within a minute | pending, lab |
-| L5 | A stale in-flight run cannot overwrite a newer failing result (concurrency group plus the start-time rule) | pending, lab |
-| L6 | Branch protection can bind administrators and be read by `doctor` through the API | pending, lab |
+| L1 | A required status check reported by a `pull_request_target` workflow counts for the pull request's merge | **verified 2026-10-13** in the lab: the pull request was BLOCKED while gate-check failed and CLEAN after the approval file landed and gate-check was re-run |
+| L2 | A job that runs application code can hold a read-only token while a dependent job writes to the records branch | **verified**: the read-only job's push was refused (403, "denied to github-actions[bot]"); the record job's push succeeded |
+| L3 | A failing check run can be posted on an open pull request's head by a dispatched workflow, and it blocks merge | **verified**: the relay posted a failing `gate-check` check run on the approved head and the pull request went CLEAN to BLOCKED; the newest check run with that name decided |
+| L4 | `workflow_dispatch` from the CLI triggers validation quickly | **measured coarsely**: dispatch to completed relay run was about two minutes in one trial, queue time not isolated; the design treats the window as minutes and shows "pending" |
+| L5 | A stale in-flight run cannot overwrite a newer failing result | **observed, mechanism unclear**: re-running only the old green gate-check job produced a new success run and a new failure run carrying the relay's title, and the pull request stayed BLOCKED; keep both safeguards, the relay and gate-check's own re-evaluation at start |
+| L6 | Branch protection can bind administrators and be read through the API | **verified**: `enforce_admins` set and read back true; a direct push to main by the repository owner was rejected ("3 of 3 required status checks are expected") |
 | L7 | Claude Code's pre-tool-use hook can deny a file edit with a reason, and fires for subagent tool calls | phase 0 |
 | L8 | A hook event's working directory reflects the subagent's isolated worktree | phase 0 |
 | L9 | An agent session is detectable by an environment marker | phase 0 |

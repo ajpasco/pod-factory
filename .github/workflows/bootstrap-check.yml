@@ -1,0 +1,20 @@
+name: bootstrap-check
+# Phase-zero placeholder for branch protection: a required check that exists before the real CI
+# jobs land in slice 3. It is defined on main and runs on pull_request_target, so a pull request
+# cannot change it. Slice 3 replaces it with lock-guard, verify and gate-check.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions: {}
+jobs:
+  bootstrap-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: branch is a bootstrap branch
+        run: |
+          case "${{ github.event.pull_request.head.ref }}" in
+            bootstrap-*) echo "bootstrap branch: ${{ github.event.pull_request.head.ref }}";;
+            *) echo "only bootstrap-* branches merge before slice 3"; exit 1;;
+          esac

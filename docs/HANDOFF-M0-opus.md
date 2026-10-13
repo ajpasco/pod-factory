@@ -90,3 +90,9 @@ Verify L7 to L10 from the handoff early in slice 4 and report what you found as 
 
 End every session with a handoff note in the story's work folder: done, left, open questions, next step. Begin with slice 1 and show me the record file format before writing code.
 ```
+
+## Remote and branch protection, set on 2026-10-13
+
+- Remote: `https://github.com/ajpasco/pod-factory` (public, MIT). `main` is protected: administrators bound, no force pushes, no deletions, and one required check.
+- Until slice 3 lands, the required check is `bootstrap-check`, a placeholder workflow on main that passes for `bootstrap-*` branches and nothing else. It exists so that direct pushes to main are rejected from day one and every slice arrives as a pull request. Slice 3 replaces it: once `lock-guard`, `verify` and `gate-check` have reported on a pull request, the approver swaps the required contexts to those three (`gh api -X PATCH repos/ajpasco/pod-factory/branches/main/protection/required_status_checks -f contexts[]=lock-guard -f contexts[]=verify -f contexts[]=gate-check`) and deletes the placeholder.
+- Each slice: push the `bootstrap-<nn>-<slice>` branch, open a pull request to main, wait for the approver's approval in chat, then the approver merges from the command line or the web. No automatic merging.

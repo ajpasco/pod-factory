@@ -2,7 +2,7 @@
 
 > Note (2026-10-12): ADR-012 supersedes section C's table with per-class required checks and a `locked/*` class, defines `ci work-only`, excludes `.factory/work/` and `docs/` from CODEOWNERS, and adds V18. Alternatives rejected for each item: the inverse choice, or the next-nearest option the mapping listed.
 
-Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in the spec and reported to the approver, open to being overruled; nothing here changes an approver decision. Resolves the 35 open items, adopts the reference mechanisms the mapping found only in `docs/PRD-reference.md`, and records the 17 platform assumptions to verify. Amends ADR-003, ADR-006, ADR-009 and ADR-010 as noted.
+Date: 2026-10-12. Status: accepted. Decided by: technical defaults decided in the spec and reported to the approver, open to being overruled; nothing here changes an approver decision. Resolves the 35 open items, adopts the reference mechanisms the mapping found only in `docs/PRD-reference.md`, and records the platform assumptions to verify (register in section F, extended by later ADRs). Amends ADR-003, ADR-006, ADR-009 and ADR-010 as noted.
 
 ## A. One design change that closes the REQ-13 conflict
 
@@ -84,6 +84,7 @@ Platform assumptions to verify, each pinned by a test or a documented check befo
 | V16 | Keychain access from Node on all three operating systems and a hidden prompt | phase 3 |
 | V17 | Where Claude Code stores session and subagent transcripts | phase 0 |
 | V18 | A hook event's working directory reflects the subagent's isolated worktree (ADR-012 item 11) | phase 0 |
+| V19 | One required status check reporting per-class results satisfies main's protection for every pull request (ADR-014 item 1) | phase 0 |
 
 ## Consequences
 

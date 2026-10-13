@@ -22,4 +22,4 @@ One file per record is git-mergeable and auditable with ordinary tools. JSON val
 
 ## Note
 
-The bootstrap gate-one record (`.factory/records/0001-gate-1-approval-prd-0.9.json`) predates this naming; it is migrated to the records branch under the new name when the branch is created, with its content hash recorded in the migration record (REQ-20).
+The bootstrap records 0001 to 0003 predate this naming; they are migrated to the records branch under the new names when the branch is created, with their content hashes recorded in the migration record (REQ-20; ADR-012 item 26).

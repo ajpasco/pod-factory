@@ -1,6 +1,6 @@
 # pod-factory: threat review and production readiness
 
-Tech spec sections 7 and 8, for pod-factory itself, 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010, and the resolution is listed at the end of this file.
+Tech spec sections 7 and 8, for pod-factory itself, 2026-10-12. Integrated into the spec; every OPEN item below is resolved in ADR-010 to ADR-014, and the resolution is listed at the end of this file.
 
 - Governed by `docs/PRD.md` 0.9.1 (gate-1 record 0001, amendment 0002). REQ-04 requires both sections in every design.
 - Consistent with ADR-001 to ADR-009. This draft changes no ADR.
@@ -126,7 +126,7 @@ The Orca plugin is the one component that types into a human shell. It is pinned
 
 ### 7.6 Abuse cases per requirement
 
-Each row becomes a locked negative test at gate 2. It is tagged with its requirement ID and paired with the positive test of the operation it guards (REQ-05). Where a hook refuses, the test also asserts the CI refusal when one exists, so the case holds for agents other than Claude Code. "Hook only" marks cases that hold for Claude Code alone (decision 25).
+Each row becomes a locked negative test when its requirement's phase locks its tests (ADR-010 item 5). It is tagged with its requirement ID and paired with the positive test of the operation it guards (REQ-05). Where a hook refuses, the test also asserts the CI refusal when one exists, so the case holds for agents other than Claude Code. "Hook only" marks cases that hold for Claude Code alone (decision 25).
 
 | ID | Attempt | Expected refusal |
 |---|---|---|
@@ -198,7 +198,7 @@ What carries a version (REQ-20):
 
 Rules:
 
-1. **Append, never rewrite.** CI rejects any change to an existing record (ADR-004). A migration adds records and never edits one.
+1. **Append, never rewrite.** CI flags, and never validates, any change to an existing record (ADR-004; ADR-010 item 11). A migration adds records and never edits one.
 2. **Human-only.** `migrate` belongs to the approval path. It writes a migration record naming the source and target versions and, for each record carried forward, the old path and hash and the new path and hash.
 3. **Read every earlier schema; fail closed on a newer one.** Each release reads every schema version shipped before it. A record with a schema newer than the reader knows never counts as valid. The gate that needs it stays closed, with a plain-language message naming the version required (REQ-22).
 4. **Tests per migration.** A fixture for each earlier schema; the output passes records-validate; a second run writes nothing; no approved gate reopens.
@@ -273,7 +273,7 @@ What the operator watches:
 
 The executor runs this runbook after a validated gate-5 record, from phase 3 on (OPEN-9 covers 0.1). Its scripts are locked at gate 2 (REQ-06). Its numbers are proposals for gate-2 review.
 
-Before gate 5: the release pull request sets every version and the changelog and merges through gate 4. The release-gate job builds the tarballs from that commit and publishes their digests (ADR-006). The regression suite and a rehearsal of steps 3 to 7 and of the rollback run against those tarballs outside production (REQ-11). Where the rehearsal runs is OPEN-13.
+Before gate 5: the release pull request sets every version and the changelog and merges through gate 4. The release-gate job builds the single tarball from that commit and publishes its digest (ADR-006). The regression suite and a rehearsal of steps 3 to 7 and of the rollback run against those tarballs outside production (REQ-11). Where the rehearsal runs is OPEN-13.
 
 Gate 5 binds (REQ-11):
 

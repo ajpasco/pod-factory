@@ -20,10 +20,10 @@ Ordered per PRD section 3. Each phase lists the requirement IDs it delivers.
 
 | Phase | Delivers | Requirement IDs | Exit |
 |---|---|---|---|
-| 0. Bootstrap scaffold (by hand, bootstrap records) | approve and reject, lock, record store and records branch, `story start`, `story attach` and `story wait`, minimal `migrate` for the bootstrap records, lock and protected-zone hooks, CI records-validate, lock-guard, class-check, work-only, minimal story-verify and gate-check, minimal `doctor` | REQ-03, REQ-06, REQ-19 (minimal), REQ-20 (schema version, pin, bootstrap migration) | `doctor` reports the scaffold components present |
+| 0. Bootstrap scaffold (by hand, bootstrap records) | approve and reject, lock, record store and records branch, `story start`, `story attach` and `story wait`, minimal `migrate` for the bootstrap records, lock and protected-zone hooks, CI records-validate, lock-guard, class-check, work-only, minimal story-verify and gate-check, minimal `doctor` | REQ-03, REQ-06, REQ-07 and REQ-08 (minimal story commands), REQ-13 (hooks 1 to 4), REQ-19 (minimal), REQ-20 (schema version, pin, bootstrap migration), classify job | `doctor` reports the scaffold components present |
 | 1a. Milestone zero | story one, `pod-factory status`, through the whole loop on the inline backend; the three refusals; kill-and-resume | REQ-07, REQ-08, REQ-10, REQ-13, REQ-19 | ADR-009 exit test |
 | 1b. Complete gates 1 to 4 (its place before the Orca backend is pending the approver, ADR-012 section D) | start interview and presets, discovery, mockup, red team and dispositions, guided design, eval plan classification and renderings, full approval path, delegation policy and decisions, full verify step (restraint checks, scans, security reviewer, simplicity reviewer, QA), exceptions, `explain`, Claude Code plugin and skills install | REQ-01, REQ-02, REQ-04, REQ-05, REQ-09, REQ-16 (except the Orca entry), REQ-17, REQ-19 (`explain`), REQ-20 (upgrades), REQ-22, REQ-23 | every gate 1 to 4 criterion measured on pod-factory itself; release 0.1 ships at the end of this phase through the manual runbook under a bootstrap record, ending the bootstrap exception (ADR-010 item 7; decision 23) |
-| 2. Orca backend | supervised parallel builders, board statuses, bugs routed to the same worker, receipts persisted | REQ-08 (Orca bullets), REQ-07 (worktree per story), REQ-16 (Orca marketplace entry) | a feature built with parallel stories under Orca |
+| 2. Orca backend | supervised parallel builders, board statuses, bugs routed to the same worker, receipts persisted | REQ-08 (Orca bullets), REQ-07 (Orca worktree placement), REQ-16 (Orca marketplace entry) | a feature built with parallel stories under Orca |
 | 3. Gate 5 and the release executor | artifact build before gate 5, checklist, executor, credentials channel, rollback, release state | REQ-11, REQ-18, REQ-21 | pod-factory releases itself through gate 5 |
 | 4. Control room, metrics, retrospective | status page, Orca commands and notifications, metrics command, retro skill | REQ-12, REQ-14, REQ-15 | first retrospective proposes calibrated budgets |
 | 5. Managed setup (phase two of the PRD) | git, remote, CI, branch protection, hooks, keychain flow, plan detection | REQ-24 | `doctor` passes with no waiver after setup on a supported plan |
@@ -89,10 +89,11 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 - ADR-011 Resolutions from the mapping: every builder in its own worktree, artifact-check and classify jobs, pull-request classes, definitions and defaults for 35 open items, adopted reference mechanisms, verification register.
 - ADR-012 Resolutions from the spec verification pass: canonical merge rules and classes, work-only job, CODEOWNERS scope, seven layers, thirteen commands and fourteen record types, builder worktree mechanism and V18, citation answers versus delegated decisions, the register of approved decisions the design touches.
 - ADR-013 Lock guard, class rules and the builder mechanism: one lock guard on every pull request, default deny for unclassified branches, bootstrap class, the single builder mechanism, gate-2 bindings and canonical counts.
+- ADR-014 Final design corrections: one required merge check dispatching by class, administrators bound, bootstrap class bounded by data, the first-lock sequence, release pull requests under a release amendment, the final builder mechanism, two readings of doctor, canonical counts.
 
 ## 10. Eval plan
 
-`docs/eval-plan.md`: 207 tests (98 positive, 109 negative) across REQ-01 to REQ-24, milestone zero's ten end-to-end tests first, Given/When/Then renderings, classification before approval per REQ-05, the seven locked test commands, the lock set for pod-factory itself, four AI behavior evals for the security and simplicity reviewers, and the builder-written test rules. Written and classified per phase (ADR-010 item 5).
+`docs/eval-plan.md`: 233 tests (ADR-014 item 13) across REQ-01 to REQ-24, milestone zero's ten end-to-end tests first, Given/When/Then renderings, classification before approval per REQ-05, the seven locked test commands, the lock set for pod-factory itself, four AI behavior evals for the security and simplicity reviewers, and the builder-written test rules. Written and classified per phase (ADR-010 item 5).
 
 ## 11. Criterion-to-control mapping
 
@@ -100,7 +101,7 @@ In `docs/spec/threat-review-and-production-readiness.md`, section 8: append-only
 
 ## 11a. Verification register
 
-ADR-011 section F: eighteen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
+ADR-011 section F: nineteen platform assumptions (Claude Code hooks and subagents, GitHub scheduled validation and `pull_request_target`, Orca statuses and quick actions, keychain access, transcript locations), each pinned to the phase that must verify it before relying on it.
 
 ## 11c. Plain-language summary
 

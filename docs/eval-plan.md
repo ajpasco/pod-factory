@@ -12,7 +12,17 @@ Tech spec section 10, written 2026-10-12. Status: **gate 2 open; locked at gate 
 
 **Packages.** cli is `packages/cli`, which also hosts every e2e test because `pod-factory hook` and `pod-factory ci` are its subcommands; hooks is `packages/hooks`; check-runner is `packages/check-runner`; release-executor is `packages/release-executor`; template is `templates/`, the project template. Locked tests sit in each package's `test/` folder.
 
-**Tests before gate 2 (ADR-013 item 7).** The tests that must exist as code and be classified before gate 2 closes are: the ten milestone-zero tests of section 2; T-03-P1 to T-03-N4, T-03-P4, T-03-N6, T-03-P5, T-03-P7; T-06-P3 to T-06-N10; T-07-P3, T-07-N5, T-07-P4, T-07-N6, T-07-P5, T-07-N7, T-07-N8; T-08-P2, T-08-N2, T-08-P3, T-08-N3, T-08-P5, T-08-N5; T-10-N3, T-10-P3; T-13-P1, T-13-N1, T-13-N4; T-19-P1 to T-19-N4; T-20-P1 to T-20-N5. Every other test is written and classified before its phase's build plan.
+**Tests before gate 2 (ADR-013 item 7; ADR-014 item 15).** Seventy-seven tests must exist as code and be classified before gate 2 closes; each carries the tag `[gate-2]`:
+milestone zero: T-06-P1, T-06-N1, T-06-P2, T-06-N2, T-10-P1, T-10-N1, T-10-P2, T-10-N2, T-08-P1, T-08-N1;
+REQ-03: T-03-P1, T-03-N1, T-03-N2, T-03-N3, T-03-P2, T-03-N4, T-03-P3, T-03-N5, T-03-P4, T-03-N6, T-03-P5, T-03-P7;
+REQ-06: T-06-P3, T-06-N3, T-06-P4, T-06-N4, T-06-P5, T-06-N5, T-06-P6, T-06-P7, T-06-N6, T-06-P8, T-06-N7, T-06-P9, T-06-N8, T-06-P10, T-06-N9, T-06-N10, T-06-P11;
+REQ-07: T-07-P3, T-07-N5, T-07-P4, T-07-N6, T-07-P5, T-07-N7, T-07-N8;
+REQ-08: T-08-P2, T-08-N2, T-08-P3, T-08-N3, T-08-P4, T-08-N4, T-08-P5, T-08-N5;
+REQ-09: T-09-P9, T-09-N12; REQ-10: T-10-N3, T-10-P3;
+REQ-13: T-13-P1, T-13-N1, T-13-N4, T-13-N5;
+REQ-19: T-19-P1, T-19-N1, T-19-N2, T-19-P3, T-19-N3, T-19-N4, T-19-P5, T-19-N6;
+REQ-20: T-20-P1, T-20-N1, T-20-P2, T-20-P3, T-20-N2, T-20-P4, T-20-N5.
+Every other test carries the tag of the phase that delivers its requirement and is written and classified before that phase's build plan.
 
 **Classification before approval (REQ-05).** The locked suite that exists at that point runs once at the gate-2 approval commit; each outcome is read from Vitest's JSON report.
 
@@ -274,7 +284,8 @@ Also T-10-P1, T-10-N1, T-10-P2 and T-10-N2 in section 2; delegated approvals are
 | T-17-N1 | Given a policy granting authority in free text without a category ID, when validated, then the grant is refused. | unit | check-runner | PN (P1) |
 | T-17-N2 | Given a policy naming gate 1, 2, 3 or 5, when validated, then it is refused naming the gate. | unit | check-runner | PN (P1) |
 | T-17-P2 | Given a granted category, when the orchestrator decides within it citing the category and the quoted clause, then the decision is recorded and the status page shows it. | integration | check-runner | NB: no decision record |
-| T-17-N3 | Given no policy at all, when the orchestrator tries to decide an open question alone, then the decision is refused and the item waits for you; a citation answer to a question the documents settle is still recorded (ADR-012 item 13). | integration | check-runner | PN (P2) |
+| T-17-N3 | Given no policy at all, when the orchestrator tries to decide an open question alone, then the decision is refused and the item waits for you. | integration | check-runner | PN (P2) |
+| T-17-P6 | Given no policy at all, when the orchestrator answers a builder by citing the clause of the approved documents that settles the question, then a citation record is written and the builder continues (ADR-012 item 13). | integration | check-runner | NB: no citation record |
 | T-17-N4 | Given a delegated decision missing its category or its clause, when it is recorded, then it is rejected as a question that should have been asked. | integration | check-runner | PN (P2) |
 | T-17-P3 | Given a gate-4 delegation whose conditions the story's evidence meets, when the conditions are evaluated, then the delegated record is written by the factory's checker and announced to you with that evidence. | CI-job | check-runner | NB: no delegated record |
 | T-17-N5 | Given a condition the evidence does not meet, when evaluated, then no delegated record is written and the gate waits for you. | CI-job | check-runner | PN (P3) |
@@ -460,7 +471,7 @@ Each criterion is quoted from PRD section 4. The plan tests what is observable a
 
 ## 10. Counts
 
-- 207 tests: 98 positive and 109 negative. Every requirement has at least two of each; milestone zero has 10 (section 2) and the AI behavior evals 4 (section 6).
+- 207 tests at drafting (233 with section 12): 98 positive and 109 negative at drafting. Every requirement has at least two of each; milestone zero has 10 (section 2) and the AI behavior evals 4 (section 6).
 - By kind: integration 114, e2e 58, CI-job 22, unit 13.
 - By package: cli 91, check-runner 85, hooks 15, release-executor 12, template 4.
 - By classification before approval: NB 89, PN 101, PR+ 7, PR 8, RB 2.
@@ -480,20 +491,22 @@ IDs continue each requirement's numbering. Phase tags: every test title carries 
 | ID | Given / When / Then | Kind | Package | Before approval |
 |---|---|---|---|---|
 | T-13-N4 | Given sequential inline mode with one builder in its own worktree, when that builder opens the local question tool, then it is refused, and the orchestrator in its own directory is not. | e2e | cli | PR (T-13-P1) |
-| T-07-N7 | Given a validated gate-3 record and then a change to one story's file scope, when a builder is started for it, then the start is refused because the plan hash no longer matches, and gate 3 shows as reopened. | e2e | cli | PR (T-07-P3) |
+| T-07-N7 | Given a validated gate-3 record and then a change to one story's file scope, when a builder is started for it, then the start is refused because the plan hash no longer matches, gate 3 shows as reopened, and the plan's reopen count has risen by one. | e2e | cli | PR (T-07-P3) |
 | T-07-P5 | Given a story branch whose dispatch file names the validated plan hash, when merge is checked, then the dispatch backstop passes. | CI-job | check-runner | NB: no verdict |
 | T-07-N8 | Given a story branch whose dispatch file names an older plan hash, when merge is checked, then it is blocked naming the plan. | CI-job | check-runner | PN (P5) |
 | T-09-N11 | Given an agent edit to the project profile that sets budgets off, when a story overruns, then the overrun is handled under the mode in the last bound profile and the edit is flagged. | integration | check-runner | PN (T-09-P4) |
 | T-09-P9 | Given story-verify's record-writing job, which runs no branch code, when it writes the check results of a finished run, then the push to the records branch succeeds. | CI-job | check-runner | NB: no record written |
 | T-09-N12 | Given test code inside a story-verify run that tries to push a passing check result, when it runs, then the push fails because that job's token cannot write records. | CI-job | check-runner | PN (P9) |
 | T-12-N3 | Given an approval shown with text that carries terminal escape sequences, when the command displays and types it, then control characters are stripped, the hash shown is the one computed, and a fresh confirmation is required. | integration | cli | PN (T-12-P3) |
-| T-16-P5 | Given a human editing the local Claude settings in a human-owned session, when the edit is made, then it is allowed and doctor reports the result. | integration | hooks | PR+ |
+| T-16-P5 | Given a pre-tool-use event from a session with no agent marker targeting the local Claude settings file, when hook 1 evaluates it, then the edit is allowed. | integration | hooks | PR+ |
 | T-16-N3 | Given an agent edit to the local Claude settings that disables the plugin, when the edit is attempted, then it is refused; if it had landed, session start and doctor report the hook layer missing. | integration | hooks | PR (P5) |
 | T-19-P5 | Given a push that appends one new well-formed record to the records branch, when validation runs, then the validated ref advances to it. | CI-job | check-runner | NB: no advance |
 | T-19-N6 | Given a push that modifies an existing record on the records branch, when validation runs, then the record is flagged and readers keep the last validated head. | CI-job | check-runner | PN (P5) |
 | T-06-P10 | Given a pull request on any branch class that changes no locked path, when lock-guard runs, then it passes. | CI-job | check-runner | NB: no verdict |
 | T-06-N9 | Given a pull request on a `release/*` or `rules/*` branch that changes a locked path without an amendment, when lock-guard runs, then it fails naming the path. | CI-job | check-runner | PN (P10) |
-| T-06-N10 | Given a pull request whose branch matches no class, when class-check runs, then it fails and nothing merges. | CI-job | check-runner | PN (P10) |
+| T-06-P11 | Given a pull request whose branch matches exactly one class and whose diff stays inside that class's allowed paths, when class-check runs, then it passes. | CI-job | check-runner | NB: no verdict |
+| T-06-N10 | Given a pull request whose branch matches no class, when class-check runs, then it fails and nothing merges. | CI-job | check-runner | PN (P11) |
+| T-13-N5 | Given a builder subagent in its own worktree that never ran the attach step while its dispatch is live, when it opens the local question tool, then it is refused, because the session's working directory is a project worktree other than the main checkout (ADR-014 item 8). | e2e | cli | PR (T-13-P1) |
 | T-20-N5 | Given a record naming an unknown hash algorithm, a free-text algorithm or a schema newer than the reader, when it is validated or read, then it is invalid and readers fail closed with a plain-language message. | unit | check-runner | PN (T-20-P1) |
 | T-06-P9 | Given a `work/*` pull request touching only work-zone and documentation paths and no locked path, when the work-only job runs, then it passes and the pull request auto-merges. | CI-job | check-runner | NB: no verdict |
 | T-06-N8 | Given a `work/*` pull request that changes the locked eval plan or any other locked path, when the work-only job runs, then it fails naming the path and nothing merges. | CI-job | check-runner | PN (P9) |
@@ -503,4 +516,4 @@ IDs continue each requirement's numbering. Phase tags: every test title carries 
 | T-05-N8 | Given the same pull request without the lock amendment record, when merge is checked, then it is blocked naming the amendment. | CI-job | check-runner | PN (P4) |
 | T-03-P7 | Given pod-factory's three bootstrap records, when today's PRD and reference are compared with them, then record 0001 as amended by 0002 and 0003 matches: the PRD whole and per requirement, and the reference as a traceability note. | integration | check-runner | RB: passes today |
 
-Section 10's counts exclude these twenty-three; with them the plan holds 230 tests (ADR-013 item 10). Section 9's untestable list is closed by amendment 0.9.2 once approved.
+Section 10's counts exclude these twenty-six; with them the plan holds 233 tests (ADR-014 item 13). Section 9's untestable list is closed by amendment 0.9.2 once approved.

@@ -2,7 +2,7 @@
 
 > Note (2026-10-12): alternatives rejected: a hello-world story first (proves plumbing, delays real evidence) and the approval path as story one (circular self-approval). The scaffold also includes `story start` and `story attach` (ADR-012 item 10).
 
-> Amended 2026-10-12 by ADR-011: the scaffold's start verb creates a worktree and a dispatch file per builder in every mode; 'five layers' are renamed scaffold components.
+> Amended 2026-10-12 by ADR-011: every builder runs in its own worktree (mechanism: ADR-014 items 6 to 8); 'five layers' are renamed scaffold components.
 
 Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended option taken). PRD basis: section 3 (milestone zero as phase one's exit), decision 23 (bootstrap exception), decision 24 (sequential first), REQ-19 (`status`).
 

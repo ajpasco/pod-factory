@@ -69,6 +69,7 @@ Everything in phases 1b to 5. In milestone zero every question goes to the appro
 - **Validity at point of use.** Every consumer, `gate-check`, `lock-guard`, `status`, the hook, validates each record it reads: schema, writer rule for its type, hashes. An invalid record is ignored and flagged, never blocks a later valid one, and is never repaired in place. There is no validated pointer. `records-validate` is the alerting job and the revocation relay, not a gate.
 - **Writers.** Human records (approval, lock, revocation) through the human commands; status transitions through the story commands; check results through CI's record-writing job. CI rejects a human record whose actor is not human.
 - **Bootstrap records 0001 to 0004** keep their field names under schema `bootstrap-0` and move to the records branch when it is created; the exception ends at release 0.1.
+- **Branch creation.** The approver creates `pod-factory/records` by hand, once, after slice 2 lands and before slice 3 makes gate-check required; its root commit holds the four bootstrap records under `records/bootstrap/`, and the CLI never creates the branch.
 
 ## 5. Merge rules
 
@@ -83,6 +84,7 @@ A revocation is effective on the records branch the moment it lands. `revoke` tr
 ## 7. Builders
 
 - Each builder runs in its own git worktree with its own test data, started as a Claude Code subagent with worktree isolation. The orchestrator records the inputs it supplies with their hashes. The authoritative dispatch is the in-progress transition record; a local untracked pointer at the worktree root serves status and resumption.
+- Each session's handoff note is `.factory/work/<story or bootstrap slice>/handoff.md`, in the work zone.
 - Milestone zero and phase 1b: one builder at a time.
 - Phase 2: independent stories in parallel, two builders at a time by default. The approved plan names dependencies and the stories that may run together; shared foundations come first; stories with overlapping files, conflicting migrations or unfinished shared interfaces run sequentially. Changes merge one at a time and the combined application is verified after each merge. Parallel builders get separate ports and test databases; with Compose, distinct project names and volumes per story; cleanup touches only that story's resources. The inline and Orca backends implement the same four verbs: start a story, wait for done, send a fix back to the same worker, ask the human.
 - The builder contract: a story is full stack for one requirement; the locked tests are the only definition of done; builder-written unit tests are allowed, unlocked, and must test behavior that matters.
@@ -121,7 +123,7 @@ Platform assumptions, each verified by the lab experiment or in the phase named.
 | L6 | Branch protection can bind administrators and be read through the API | **verified**: `enforce_admins` set and read back true; a direct push to main by the repository owner was rejected ("3 of 3 required status checks are expected") |
 | L7 | Claude Code's pre-tool-use hook can deny a file edit with a reason, and fires for subagent tool calls | phase 0 |
 | L8 | A hook event's working directory reflects the subagent's isolated worktree | phase 0 |
-| L9 | An agent session is detectable by an environment marker | phase 0 |
+| L9 | An agent session is detectable by an environment marker | **verified 2026-10-13**: Claude Code sets `CLAUDECODE`, `AI_AGENT` and `CLAUDE_CODE_SESSION_ID` in the shells it starts, seen from the builder session's shell and confirmed by the design session from its own |
 | L10 | Scheduled workflows keep running in an active repository at the chosen interval | phase 0 |
 | L11 | `npx skills add` from a release tag, plugin install, Orca statuses and quick actions, keychain access, transcript locations | phases 1b to 3 |
 

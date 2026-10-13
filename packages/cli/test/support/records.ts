@@ -68,7 +68,7 @@ export function inProgress(actor: Actor = AGENT): TransitionRecord {
   return {
     ...recordBase(actor),
     recordType: 'transition',
-    binds: { tree: null, files: { 'work/story-1/story.md': SHA_A } },
+    binds: { tree: null, files: { '.factory/work/story-1/story.md': SHA_A } },
     outcome: 'in-progress',
     refs: [],
     transition: {

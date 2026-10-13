@@ -10,9 +10,16 @@ import {
 } from './format.js';
 import { git, gitText } from './git.js';
 import { contentHash, readJournal, writeJournalEntry, type JournalEntry } from './journal.js';
-import { killPoint } from './killpoint.js';
+import type { KillPointHook } from './killpoint.js';
 import { fetchRecords, remoteRecordsRef } from './store.js';
 import { validateRecord } from './validate.js';
+
+export interface WriteOptions {
+  /** The remote holding the records branch; origin by default. */
+  remote?: string;
+  /** Called at each defined kill point; only the kill-and-resume tests set it. */
+  onKillPoint?: KillPointHook;
+}
 
 /** How many fetch-and-push rounds a write makes before it stops and leaves the entry pending. */
 export const MAX_PUSH_ATTEMPTS = 5;
@@ -89,7 +96,8 @@ function commitOnTip(
  * write has succeeded; otherwise the record is committed on the fetched tip and pushed without
  * force. A rejected or uncertain push simply starts the next round.
  */
-function land(cwd: string, remote: string, entry: JournalEntry): LandResult {
+function land(cwd: string, entry: JournalEntry, options: WriteOptions): LandResult {
+  const remote = options.remote ?? 'origin';
   // The journal is a local file: what it holds is validated again before it is pushed.
   const check = validateRecord(entry.fileName, entry.content);
   if (!check.ok) {
@@ -125,11 +133,11 @@ function land(cwd: string, remote: string, entry: JournalEntry): LandResult {
       };
     }
     const commit = commitOnTip(cwd, tip, entry, blob, parsed.actor, parsed.createdAt);
-    killPoint('before-push');
+    options.onKillPoint?.('before-push');
     const push = git(cwd, ['push', '--quiet', remote, `${commit}:refs/heads/${RECORDS_BRANCH}`], {
       allowFail: true,
     });
-    killPoint('after-push');
+    options.onKillPoint?.('after-push');
     if (push.status === 0) {
       return { recordId: entry.recordId, path, commit, attempts: attempt, alreadyLanded: false };
     }
@@ -140,8 +148,17 @@ function land(cwd: string, remote: string, entry: JournalEntry): LandResult {
   );
 }
 
-function markLanded(cwd: string, entry: JournalEntry, result: LandResult): void {
-  writeJournalEntry(cwd, { ...entry, state: 'landed', landedCommit: result.commit });
+function markLanded(
+  cwd: string,
+  entry: JournalEntry,
+  result: LandResult,
+  options: WriteOptions,
+): void {
+  writeJournalEntry(
+    cwd,
+    { ...entry, state: 'landed', landedCommit: result.commit },
+    options.onKillPoint,
+  );
 }
 
 /**
@@ -153,7 +170,7 @@ export function writeRecord(
   cwd: string,
   record: FactoryRecord,
   subject: string,
-  remote = 'origin',
+  options: WriteOptions = {},
 ): LandResult {
   const fileName = recordFileName(record, subject);
   const content = serializeRecord(record);
@@ -169,21 +186,21 @@ export function writeRecord(
     landedCommit: null,
     content,
   };
-  writeJournalEntry(cwd, entry);
-  killPoint('after-journal');
-  const result = land(cwd, remote, entry);
-  markLanded(cwd, entry, result);
-  killPoint('after-record-write');
+  writeJournalEntry(cwd, entry, options.onKillPoint);
+  options.onKillPoint?.('after-journal');
+  const result = land(cwd, entry, options);
+  markLanded(cwd, entry, result, options);
+  options.onKillPoint?.('after-record-write');
   return result;
 }
 
 /** Finishes every write the journal still holds as pending, with the IDs they were given. */
-export function resumePendingRecords(cwd: string, remote = 'origin'): LandResult[] {
+export function resumePendingRecords(cwd: string, options: WriteOptions = {}): LandResult[] {
   const results: LandResult[] = [];
   for (const entry of readJournal(cwd).entries) {
     if (entry.state !== 'pending') continue;
-    const result = land(cwd, remote, entry);
-    markLanded(cwd, entry, result);
+    const result = land(cwd, entry, options);
+    markLanded(cwd, entry, result, options);
     results.push(result);
   }
   return results;

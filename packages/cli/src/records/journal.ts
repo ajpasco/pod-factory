@@ -11,7 +11,7 @@ import {
 } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { gitText } from './git.js';
-import { killPoint } from './killpoint.js';
+import type { KillPointHook } from './killpoint.js';
 
 /**
  * The local journal of record writes. It lives in the repository's common git directory, so it
@@ -44,7 +44,11 @@ export function contentHash(content: string): string {
 }
 
 /** Writes an entry whole or not at all: a temporary file, flushed, then renamed into place. */
-export function writeJournalEntry(cwd: string, entry: JournalEntry): void {
+export function writeJournalEntry(
+  cwd: string,
+  entry: JournalEntry,
+  onKillPoint?: KillPointHook,
+): void {
   const dir = journalDir(cwd);
   mkdirSync(dir, { recursive: true });
   const final = join(dir, `${entry.recordId}.json`);
@@ -54,7 +58,7 @@ export function writeJournalEntry(cwd: string, entry: JournalEntry): void {
   try {
     const half = Math.floor(text.length / 2);
     writeSync(fd, text.slice(0, half));
-    killPoint('during-journal-write');
+    onKillPoint?.('during-journal-write');
     writeSync(fd, text.slice(half));
     fsyncSync(fd);
   } finally {

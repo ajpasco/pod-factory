@@ -13,7 +13,7 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
   - `journal.ts`: the journal in `<git-common-dir>/pod-factory/journal/`, written whole through a temporary file and a rename.
   - `write.ts`: validate, journal, then in each round fetch, check whether the ID is already there, commit on the tip with git plumbing and push without force. Rejected or uncertain pushes retry. `resumePendingRecords` finishes pending entries with their original IDs and validates them again first.
   - `actor.ts`: the actor kind comes from the invocation context. `agent` if `CLAUDECODE` or `AI_AGENT` is set (the marker wins, even under Actions); `check-runner` if `GITHUB_ACTIONS=true`; `human` only when both stdin and stdout are terminals; otherwise no actor.
-  - `killpoint.ts`: the REQ-08 kill points inside a record write, triggered by `POD_FACTORY_TEST_KILL_AT`.
+  - `killpoint.ts`: the names of the five REQ-08 kill points. `writeRecord`, `resumePendingRecords` and `writeJournalEntry` take an optional `onKillPoint` hook that shipped code never sets. The test child `test/support/write-child.ts` reads `POD_FACTORY_TEST_KILL_AT` and passes a hook that sends SIGKILL, so shipped code reads no test variable.
 - Tests: 42 passing. The section-13 tests in this slice are T-06-P6, T-20-P2, T-20-N5, T-03-P5 and T-03-P7. The rest are supporting tests for the store: kill and resume at all five write points in a real child process with SIGKILL, a concurrent writer forced through a pre-push hook, an unreachable remote, a half-written record, modified, deleted and stray files, a merge, an altered journal entry, and all three actor kinds in real processes (human under `script(1)` for a pseudo-terminal).
 - Mutation check by hand: removing the fetch-first ID check fails the after-push kill test, and journaling after the push fails 6 tests.
 
@@ -24,7 +24,11 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
 - T-03-P5 and T-03-P7 never read or hash `docs/PRD-reference.md`. They only check that the records carry the reference hash field.
 - `actor.kind` is derived from the context and never from a flag. All three kinds are tested.
 - `checkResult.check` accepts `verify`, `lock-guard` and `gate-check`.
-- The real records branch is neither created nor protected in this slice. Handoff notes go in `work/<slice>/handoff.md`.
+- The real records branch is neither created nor protected in this slice. The approver creates it by hand after slice 2 lands, with the four bootstrap records under `records/bootstrap/` in its root commit. The CLI never creates it.
+- Handoff notes go in `.factory/work/<slice>/handoff.md`, the work zone.
+- The kill trigger moved out of shipped code into an optional hook (see Done).
+- Approval commands refuse under the agent marker, including `!` commands typed into Claude Code. When `approve` exists, its refusal names the marker it found and says to run the command from a terminal outside any agent session.
+- TECH-SPEC: one sentence on branch creation (section 4), one line naming the handoff path (section 7), and L9 marked verified (section 12).
 
 ## Left
 
@@ -35,10 +39,8 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
 
 ## Open questions
 
-- Who creates the real `pod-factory/records` branch, and when: by hand, `doctor`, or the first `approve`? Until then the writer refuses and leaves the record pending.
-- The kill-point trigger is a test-only environment variable read by production code. Is that acceptable, or should it move behind a build flag?
-- Approval commands will refuse under `! pod-factory approve` inside Claude Code, because that shell inherits `CLAUDECODE=1`. The approver must run them from a plain terminal.
+None open. The three from the first draft were answered by the approver (see Decisions).
 
 ## Next step
 
-Slice 2, `approve` and `lock`, on worktree `bootstrap-02-approve-lock`, created through Orca from main after this slice merges.
+Slice 2, `approve` and `lock`, in a new bootstrap worktree created through Orca from main after this slice merges. Slice 2 also documents the exact command sequence for creating the records branch.

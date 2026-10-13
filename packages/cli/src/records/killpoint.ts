@@ -1,7 +1,7 @@
 /**
- * The defined kill points of REQ-08 inside a record write. When POD_FACTORY_TEST_KILL_AT names
- * one, the process kills itself there with SIGKILL, exactly as an outside kill would land; the
- * kill-and-resume tests use this to stop a write at each point and restart from records alone.
+ * The defined kill points of REQ-08 inside a record write. The writer calls an optional hook at
+ * each one; shipped code never sets it. The kill-and-resume tests pass a hook that kills the
+ * process there, exactly as an outside kill would land.
  */
 export const KILL_POINTS = [
   'during-journal-write',
@@ -12,8 +12,4 @@ export const KILL_POINTS = [
 ] as const;
 export type KillPoint = (typeof KILL_POINTS)[number];
 
-export const KILL_AT_VARIABLE = 'POD_FACTORY_TEST_KILL_AT';
-
-export function killPoint(point: KillPoint): void {
-  if (process.env[KILL_AT_VARIABLE] === point) process.kill(process.pid, 'SIGKILL');
-}
+export type KillPointHook = (point: KillPoint) => void;

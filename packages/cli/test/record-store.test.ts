@@ -3,7 +3,6 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  KILL_AT_VARIABLE,
   RecordWriteError,
   journalDir,
   readJournal,
@@ -176,7 +175,7 @@ describe('record store: kill and resume at each write point', () => {
       const commitsBefore = f.commitCount();
 
       const killed = runChild(['write', f.work, JSON.stringify(record), 'story-1-in-progress'], {
-        [KILL_AT_VARIABLE]: point,
+        POD_FACTORY_TEST_KILL_AT: point,
       });
       expect(killed.signal, killed.stderr).toBe('SIGKILL');
       expect(filesWithId(f.filesOnBranch(), record.recordId)).toHaveLength(

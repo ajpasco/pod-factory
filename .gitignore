@@ -4,3 +4,6 @@ orca/
 claude-portable-*.zip
 # per-worktree Claude Code settings
 .claude/settings.local.json
+# build output and dependencies
+node_modules/
+dist/

@@ -1,0 +1,19 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000000",
+  "transcript_path": "{{home}}/.claude/projects/fixture/00000000-0000-4000-8000-000000000000.jsonl",
+  "cwd": "{{cwd}}",
+  "prompt_id": "9c27da9d-4477-4916-82eb-7f92dc911f7a",
+  "permission_mode": "acceptEdits",
+  "agent_id": "ab5062320d58b433d",
+  "agent_type": "general-purpose",
+  "effort": {
+    "level": "xhigh"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "{{file_path}}",
+    "content": "sub"
+  },
+  "tool_use_id": "toolu_01HZ14JvT262AVnAshHjk9iS"
+}

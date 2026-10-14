@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { currentContext, detectActorKind, type InvocationContext } from '../records/actor.js';
 import type { ApprovalRecord, FactoryRecord, LockRecord } from '../records/format.js';
 import { resumePendingRecords } from '../records/write.js';
@@ -12,6 +13,8 @@ export interface CommandIO {
   err(line: string): void;
   /** Asks the human a question on the terminal and returns the typed line. */
   ask(question: string): Promise<string>;
+  /** Everything on standard input, for the hook, which reads one event there. */
+  input?(): string;
 }
 
 export function processIO(cwd: string, ask: CommandIO['ask']): CommandIO {
@@ -22,6 +25,7 @@ export function processIO(cwd: string, ask: CommandIO['ask']): CommandIO {
     out: (line) => process.stdout.write(`${line}\n`),
     err: (line) => process.stderr.write(`${line}\n`),
     ask,
+    input: () => readFileSync(0, 'utf8'),
   };
 }
 

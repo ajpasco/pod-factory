@@ -18,4 +18,5 @@ export { recordsValidate } from './check-runner/records-validate.js';
 export { verifyRecord } from './check-runner/verify-record.js';
 export { REPORTS_DIR, scrubbedEnv, verify, type BundleManifest } from './check-runner/verify.js';
 export * from './lock-state.js';
+export { PROTECTED_PATTERNS, hookPreToolUse } from './hook/pre-tool-use.js';
 export { run, USAGE } from './run.js';

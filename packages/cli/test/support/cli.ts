@@ -20,11 +20,13 @@ export function runCli(
   cwd: string,
   args: string[],
   env: Record<string, string>,
+  input?: string,
 ): SpawnSyncReturns<string> {
   return spawnSync(process.execPath, [cli, ...args], {
     cwd,
     env,
     encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
+    input,
+    stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
   });
 }

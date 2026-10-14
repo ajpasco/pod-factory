@@ -18,17 +18,22 @@ export function runChild(
 
 const flowScript = fileURLToPath(new URL('./flow-child.ts', import.meta.url));
 
-/** Runs one pod-factory command in flow-child.ts, killed at `killAt` when given. */
+/**
+ * Runs one pod-factory command in flow-child.ts, killed at `killAt` when given. `ctxEnv` joins
+ * the command's own invocation environment, for example to put a fake gh on its PATH.
+ */
 export function runFlowChild(
   cwd: string,
   who: 'human' | 'agent',
   token: string,
   args: string[],
   killAt?: string,
+  ctxEnv: Record<string, string> = {},
 ): SpawnSyncReturns<string> {
   const env: Record<string, string | undefined> = { ...process.env };
   delete env.POD_FACTORY_TEST_KILL_AT;
   if (killAt !== undefined) env.POD_FACTORY_TEST_KILL_AT = killAt;
+  env.POD_FACTORY_TEST_CTX_ENV = JSON.stringify(ctxEnv);
   return spawnSync(process.execPath, ['--import', 'tsx', flowScript, cwd, who, token, ...args], {
     cwd: packageDir,
     env,

@@ -12,13 +12,14 @@ const [cwd, who, token, ...args] = process.argv.slice(2);
 if (cwd === undefined || (who !== 'human' && who !== 'agent') || token === undefined) {
   throw new Error('usage: flow-child <cwd> <human|agent> <confirmation token> <command...>');
 }
+const extra = JSON.parse(process.env.POD_FACTORY_TEST_CTX_ENV ?? '{}') as Record<string, string>;
 const lines: string[] = [];
 const io: CommandIO = {
   cwd,
   ctx:
     who === 'human'
-      ? { env: {}, stdinIsTTY: true, stdoutIsTTY: true }
-      : { env: { CLAUDECODE: '1' }, stdinIsTTY: false, stdoutIsTTY: false },
+      ? { env: { ...extra }, stdinIsTTY: true, stdoutIsTTY: true }
+      : { env: { ...extra, CLAUDECODE: '1' }, stdinIsTTY: false, stdoutIsTTY: false },
   remote: 'origin',
   out: (line) => {
     lines.push(line);

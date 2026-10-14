@@ -2,6 +2,8 @@
 
 > Amended 2026-10-12 by ADR-011: two jobs added (artifact-check, classify); gate-check also requires the delegated-merge acknowledgment, compares every locked path explicitly and checks the dispatch record; doctor is a required check; release-gate has build and verify triggers; records-validate re-evaluates preconditions; pull-request classes defined.
 
+> Amended 2026-10-14 by ADR-015: the locked-path rule judges what a merge leaves on main, path by path; gate-check applies it itself and does not rely on lock-guard's check run, which is advisory for merging.
+
 Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended option taken). PRD basis: NFR-01 (CI and host rulesets are authoritative; hooks and pre-commit advisory), NFR-02 (hook and lock suite on three operating systems), decision 28 (records branch validated by CI), REQ-06, REQ-09, REQ-10, REQ-11, REQ-18, REQ-19 (`doctor`), REQ-24 (managed setup).
 
 ## Decision

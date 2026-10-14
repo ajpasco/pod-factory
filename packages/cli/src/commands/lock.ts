@@ -12,6 +12,7 @@ import {
   isLock,
   requireHuman,
   short,
+  writeOptions,
   type CommandIO,
 } from './common.js';
 
@@ -69,7 +70,7 @@ export function lock(argv: string[], io: CommandIO): number {
     refs: [approval.record.recordId],
     lock: { patterns: [...LOCKED_PATTERNS], testCommands },
   };
-  const landed = writeRecord(io.cwd, record, 'gate-2', { remote: io.remote });
+  const landed = writeRecord(io.cwd, record, 'gate-2', writeOptions(io));
   io.out(
     `Locked ${locked.length} files under ${LOCKED_PATTERNS.length} patterns on ${TRUNK} at commit ${commit}, following gate-2 approval ${approval.record.recordId}.`,
   );

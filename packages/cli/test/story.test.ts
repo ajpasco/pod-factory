@@ -278,8 +278,9 @@ describe('story finish', () => {
     });
     await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
     const unapproved = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
-    expect(unapproved.errors.join()).toMatch(
-      /there is no valid, unrevoked story approval for it on pull request 7/,
+    expect(unapproved.code).toBe(0);
+    expect(unapproved.lines.join('\n')).toMatch(
+      /story-1 is verifying .*cannot be done yet, because there is no valid, unrevoked story approval for it on pull request 7\. Nothing was written\./,
     );
     plantApproval(f, 'story', 7, tree);
     const unmerged = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);

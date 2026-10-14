@@ -19,7 +19,14 @@ import {
   storyFile,
   storyStage,
 } from '../story.js';
-import { Refusal, active, finishPendingWrites, short, type CommandIO } from './common.js';
+import {
+  Refusal,
+  active,
+  finishPendingWrites,
+  short,
+  writeOptions,
+  type CommandIO,
+} from './common.js';
 
 export const STORY_USAGE = `Usage:
   pod-factory story start story-<n> --holder <builder> [--lease <minutes>]
@@ -165,7 +172,7 @@ export function storyStart(argv: string[], io: CommandIO): number {
       handoffNote: null,
     },
   };
-  const landed = writeRecord(io.cwd, record, `${story}-in-progress`, { remote: io.remote });
+  const landed = writeRecord(io.cwd, record, `${story}-in-progress`, writeOptions(io));
   io.out(
     `${story} is in progress, held by ${holder} until ${record.transition.lease?.expiresAt}. Record ${landed.path}.`,
   );
@@ -225,7 +232,7 @@ export function storyFinish(argv: string[], io: CommandIO): number {
         handoffNote: { path: note, sha256: hash },
       },
     };
-    const landed = writeRecord(io.cwd, record, `${story}-verifying`, { remote: io.remote });
+    const landed = writeRecord(io.cwd, record, `${story}-verifying`, writeOptions(io));
     io.out(
       `${story} is verifying. Handoff note ${note} (${short(hash)}) at pull request ${pr} ${short(head)} is kept in record ${landed.path}.`,
     );
@@ -235,9 +242,11 @@ export function storyFinish(argv: string[], io: CommandIO): number {
   if (stage === 'verifying' && last !== undefined) {
     const approval = active(set, isStoryApproval(story, pr)).at(-1);
     if (approval === undefined) {
-      throw new Refusal(
-        `story finish refused: ${story} cannot be done, because there is no valid, unrevoked story approval for it on pull request ${pr}. Nothing was written.`,
+      // Not an error: the story is where finish left it, so a restart after a kill lands here.
+      io.out(
+        `${story} is verifying (${last.path}). It cannot be done yet, because there is no valid, unrevoked story approval for it on pull request ${pr}. Nothing was written.`,
       );
+      return 0;
     }
     if (treeOf(io.cwd, head) !== approval.record.binds.tree) {
       throw new Refusal(
@@ -266,10 +275,15 @@ export function storyFinish(argv: string[], io: CommandIO): number {
       refs: [approval.record.recordId],
       transition: { story, from: 'verifying', to: 'done', lease: null, handoffNote: null },
     };
-    const landed = writeRecord(io.cwd, record, `${story}-done`, { remote: io.remote });
+    const landed = writeRecord(io.cwd, record, `${story}-done`, writeOptions(io));
     io.out(
       `${story} is done: approval ${approval.record.recordId} binds the content merged into ${TRUNK} (${proof}). Record ${landed.path}.`,
     );
+    return 0;
+  }
+
+  if (stage === 'done' && last !== undefined) {
+    io.out(`${story} is already done (${last.path}). Nothing was written.`);
     return 0;
   }
 

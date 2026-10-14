@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { currentContext, detectActorKind, type InvocationContext } from '../records/actor.js';
 import type { ApprovalRecord, FactoryRecord, LockRecord } from '../records/format.js';
-import { resumePendingRecords } from '../records/write.js';
+import { resumePendingRecords, type WriteOptions } from '../records/write.js';
+import type { KillPointHook } from '../records/killpoint.js';
 import type { RecordSet, StoredRecord } from '../records/store.js';
 
 /** Everything a command touches outside its arguments, so tests can script it. */
@@ -15,6 +16,8 @@ export interface CommandIO {
   ask(question: string): Promise<string>;
   /** Everything on standard input, for the hook, which reads one event there. */
   input?(): string;
+  /** The defined kill points of a record write (REQ-08); shipped code never sets it. */
+  onKillPoint?: KillPointHook;
 }
 
 export function processIO(cwd: string, ask: CommandIO['ask']): CommandIO {
@@ -51,9 +54,16 @@ export function requireHuman(command: string, ctx: InvocationContext): void {
 
 /** Finishes any record write a killed or failed command left pending, before doing anything new. */
 export function finishPendingWrites(io: CommandIO): void {
-  for (const landed of resumePendingRecords(io.cwd, { remote: io.remote })) {
+  for (const landed of resumePendingRecords(io.cwd, writeOptions(io))) {
     io.out(`Finished an earlier pending write: ${landed.path}.`);
   }
+}
+
+/** The options every command passes to a record write: its remote, and any kill-point hook. */
+export function writeOptions(io: CommandIO): WriteOptions {
+  return io.onKillPoint === undefined
+    ? { remote: io.remote }
+    : { remote: io.remote, onKillPoint: io.onKillPoint };
 }
 
 /** IDs revoked by a valid revocation record. */

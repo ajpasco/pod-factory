@@ -21,7 +21,14 @@ import {
   revocationTarget,
   type RevocationTarget,
 } from '../revocation.js';
-import { Refusal, finishPendingWrites, requireHuman, short, type CommandIO } from './common.js';
+import {
+  Refusal,
+  finishPendingWrites,
+  requireHuman,
+  short,
+  writeOptions,
+  type CommandIO,
+} from './common.js';
 
 export const REVOKE_USAGE = `Usage:
   pod-factory revoke <record ID | bootstrap record file> --reason "<why>" [--wait <seconds>]
@@ -275,7 +282,7 @@ export async function revoke(argv: string[], io: CommandIO): Promise<number> {
       .replace(/\.json$/, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/-$/, '')}`,
-    { remote: io.remote },
+    writeOptions(io),
   );
   io.out(`Revoked. Record ${landed.path} is on the records branch (record ID ${record.recordId}).`);
   io.out(effect(target, unlocked));

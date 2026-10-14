@@ -34,6 +34,8 @@ Stacked on slice 7 (`bootstrap-07-doctor`, PR #8). This pull request targets tha
 
 ## The remaining sequence, in order
 
+> **Superseded on 2026-10-14.** Follow "The approver's sequence" in `.factory/work/bootstrap-10-revocation-fixes/handoff.md`. Steps 1 to 3 are done. Steps 5 and 6 are wrong in the order of the swap, and step 6 is wrong about `bootstrap-check.yml`; both are marked below. The text is otherwise kept as written.
+
 1. The approver installs the packed binary from a checkout of main: `npm ci && npm run build --workspace packages/cli`, then `cd packages/cli && npm pack && npm install -g ./pod-factory-0.0.0-m0.tgz`.
 2. #5, #6 (after he copies its staged workflow), #7, #8 and this pull request merge in order. Each takes `pod-factory approve bootstrap <n>`, typed in a terminal outside any agent session, then a re-run of gate-check.
 3. The gate-2 test pull request lands the three status tests, T-19-P1, T-19-N1 and T-19-N2. They fail on their assertions, so that pull request's verify is red by design and its gate-check cannot go green. It can merge only while `bootstrap-check` is still the only required check, under the approver's `approve bootstrap`. **The approver must not swap the required checks before this.**
@@ -42,8 +44,10 @@ Stacked on slice 7 (`bootstrap-07-doctor`, PR #8). This pull request targets tha
    - copies `.factory/work/reports/cli.json` to `.factory/work/classification/gate-2.json` and commits it;
    - writes bootstrap record 0005 binding it (records-branch.md step 2);
    - runs `approve 2`, then `lock`.
-5. `approve 3`, then `story start story-1`. A builder subagent in its own worktree implements `status`, and story one's pull request makes the three tests pass. Then `approve story-1 --pr <n>`, the merge, and `story finish` twice, to done.
-6. Only then:
+5. **Superseded in part:** the swap now comes between `story start` and story one's pull request (step 6). As first written: `approve 3`, then `story start story-1`. A builder subagent in its own worktree implements `status`, and story one's pull request makes the three tests pass. Then `approve story-1 --pr <n>`, the merge, and `story finish` twice, to done.
+6. **Superseded:** the swap and the records-branch protection come after `story start` and before story one's pull request opens, not after story one. `bootstrap-check.yml` is not deleted. It is dropped from the required checks instead, because after the lock its deletion needs an amendment that gate-check cannot pass (the review's fifth finding). As first written:
+
+   Only then:
    - swap the required checks to `lock-guard`, `verify` and `gate-check`, bound to app 15368, with `strict` his call;
    - protect the records branch: no force pushes, no deletion, no required checks or reviews;
    - delete `bootstrap-check.yml`. After the lock, `.github/workflows/**` is locked, so that deletion is the first real use of `approve amendment`, end to end, on pod-factory itself.

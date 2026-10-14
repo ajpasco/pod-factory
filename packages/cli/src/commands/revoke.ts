@@ -83,7 +83,7 @@ function effect(target: RevocationTarget, unlocked: string[]): string {
     }
     if (a.kind === 'gate') return `Gate ${a.gate} is open again.`;
     if (a.kind === 'amendment') {
-      return `The amendment for pull request ${a.pullRequest} no longer counts; lock-guard fails that change.`;
+      return `The amendment for pull request ${a.pullRequest} no longer counts; gate-check and lock-guard fail that change.`;
     }
     return `Pull request ${a.pullRequest} has no valid approval for that content now; gate-check fails it.`;
   }
@@ -160,6 +160,22 @@ function enforcement(
   };
 }
 
+/** Starts records-validate on main, whose relay blocks the pull requests that relied on it. */
+function dispatchRelay(io: CommandIO): void {
+  const dispatched = gh(io.cwd, io.ctx, [
+    'workflow',
+    'run',
+    'records-validate.yml',
+    '--ref',
+    'main',
+  ]);
+  io.out(
+    dispatched.ok
+      ? 'records-validate was started so CI blocks any open pull request that relied on it.'
+      : `records-validate could not be started (${dispatched.reason}); run the same revoke command again to retry. Its schedule also picks the revocation up.`,
+  );
+}
+
 async function report(
   io: CommandIO,
   revocation: RevocationRecord,
@@ -222,6 +238,9 @@ export async function revoke(argv: string[], io: CommandIO): Promise<number> {
     io.out(
       `${describe(target)} was already revoked by ${earlier.record.recordId}. Nothing was written.`,
     );
+    // A run stopped after the revocation landed but before the dispatch leaves nothing to start
+    // the relay, so while enforcement is pending every re-run starts it again.
+    if (!enforcement(io, set, earlier.record, target).done) dispatchRelay(io);
     await report(io, earlier.record, target, waitSeconds);
     return 0;
   }
@@ -286,19 +305,7 @@ export async function revoke(argv: string[], io: CommandIO): Promise<number> {
   );
   io.out(`Revoked. Record ${landed.path} is on the records branch (record ID ${record.recordId}).`);
   io.out(effect(target, unlocked));
-
-  const dispatched = gh(io.cwd, io.ctx, [
-    'workflow',
-    'run',
-    'records-validate.yml',
-    '--ref',
-    'main',
-  ]);
-  io.out(
-    dispatched.ok
-      ? 'records-validate was started so CI blocks any open pull request that relied on it.'
-      : `records-validate could not be started (${dispatched.reason}); its schedule picks the revocation up.`,
-  );
+  dispatchRelay(io);
   await report(io, record, target, waitSeconds);
   return 0;
 }

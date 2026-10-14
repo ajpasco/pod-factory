@@ -12,6 +12,7 @@ import {
   reportFlagged,
   requireRecordsBranch,
 } from './job.js';
+import { checkLockedPaths } from './lock-guard.js';
 
 /** The optional hook a test uses to land a record between gate-check's two reads. */
 export interface GateCheckHooks {
@@ -65,13 +66,29 @@ function evaluate(io: CommandIO, set: RecordSet, pr: number, head: string, tree:
       `Approval ${approval.record.recordId} by ${approval.record.actor.name} and verify result ${result.record.recordId} (run ${result.record.checkResult.runUrl}, bundle manifest ${short(result.record.checkResult.bundleManifestSha256 ?? '')}) bind tree ${short(tree)}, and neither is revoked.`,
     );
   }
+  // The locked-path rule, applied here from this run's records rather than taken from lock-guard's
+  // check run: a re-run can supersede a check run, so a green one proves nothing after a revocation.
+  const lockRule = checkLockedPaths(io, set, pr, head);
+  lines.push(
+    ...(lockRule.locked === null
+      ? ['Nothing is locked yet, so no locked path can change.']
+      : lockRule.failures.length === 0
+        ? [
+            `Lock ${lockRule.locked.lock.record.recordId}: pull request ${pr} changes ${lockRule.changed.length === 0 ? 'no locked path' : 'locked paths only under unrevoked amendments bound to this head'}, and main holds only approved locked content.`,
+          ]
+        : lockRule.failures),
+  );
   let inScope = true;
   if (approval !== undefined && approval.record.approval.kind === 'story') {
     const scope = scopeCheck(io, set, approval.record.approval.story as string, head);
     lines.push(...scope.lines);
     inScope = scope.pass;
   }
-  return { pass: approval !== undefined && result !== undefined && inScope, lines };
+  return {
+    pass:
+      approval !== undefined && result !== undefined && lockRule.failures.length === 0 && inScope,
+    lines,
+  };
 }
 
 /**
@@ -125,9 +142,10 @@ function scopeCheck(io: CommandIO, set: RecordSet, story: string, head: string):
 
 /**
  * `pod-factory ci gate-check --pr <n> --head <sha>`. Passes only with a valid, unrevoked approval
- * and a passing verify result, both bound to this exact head tree, as the records branch stands
- * when the run reads it. It reads the branch again before reporting and re-evaluates if it moved,
- * so a run that started before a revocation landed cannot pass after it. Returns the exit code.
+ * and a passing verify result, both bound to this exact head tree, and with the locked-path rule
+ * holding, as the records branch stands when the run reads it. It reads the branch again before
+ * reporting and re-evaluates if it moved, so a run that started before a revocation landed cannot
+ * pass after it. Returns the exit code.
  */
 export function gateCheck(argv: string[], io: CommandIO, hooks: GateCheckHooks = {}): number {
   const args = jobArgs('gate-check', argv, ['pr', 'head'], ['pr', 'head']);

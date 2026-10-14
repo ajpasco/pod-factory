@@ -119,6 +119,35 @@ describe('approve', () => {
     expect(f.commitCount()).toBe(before);
   });
 
+  it('accepts the hash prefix typed in uppercase', async () => {
+    const f = project();
+    const io = human(f.work, (io) => `2 ${shownHash(io).slice(0, 8).toUpperCase()}`);
+    expect(await run(['approve', '2', '--classification', CLASSIFICATION_RECORD], io)).toBe(0);
+    expect(approvals(f.work)).toHaveLength(1);
+  });
+
+  it('shows a different hash when the approval refers to a different classification record', async () => {
+    const f = project();
+    const rerun = '0006-classification-gate-2-rerun.json';
+    f.plant({
+      [`records/bootstrap/${rerun}`]: classificationRecord(
+        PROJECT_FILES['.factory/work/classification/gate-2.json'] as string,
+      ),
+    });
+    const first = human(f.work, () => '');
+    const second = human(f.work, () => '');
+    await run(['approve', '2', '--classification', CLASSIFICATION_RECORD], first);
+    await run(['approve', '2', '--classification', rerun], second);
+    const differing = (l: string): boolean =>
+      l.includes('refers to') || l.startsWith('Hash of everything above: ');
+    expect(first.lines.filter((l) => !differing(l))).toEqual(
+      second.lines.filter((l) => !differing(l)),
+    );
+    expect(first.lines).toContain(`  refers to ${CLASSIFICATION_RECORD}`);
+    expect(second.lines).toContain(`  refers to ${rerun}`);
+    expect(shownHash(first)).not.toBe(shownHash(second));
+  });
+
   it('writes nothing when main moves while the human is confirming', async () => {
     const f = project();
     const before = f.commitCount();

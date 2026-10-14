@@ -243,12 +243,17 @@ export function serializeRecord(record: FactoryRecord): string {
   return `${JSON.stringify(canonicalize(record), null, 2)}\n`;
 }
 
-/** The single hash `approve` shows for what it binds: SHA-256 over the canonical binds. */
-export function bindsHash(binds: Binds): string {
+/**
+ * The single hash `approve` shows: SHA-256 over everything it printed above the hash, in canonical
+ * form: the statement, the bound tree and files, and the records the approval refers to.
+ */
+export function shownHashOf(shown: { statement: string; binds: Binds; refs: string[] }): string {
   const files: Record<string, FileBinding> = {};
-  for (const path of Object.keys(binds.files).sort()) {
-    const value = binds.files[path] as FileBinding;
+  for (const path of Object.keys(shown.binds.files).sort()) {
+    const value = shown.binds.files[path] as FileBinding;
     files[path] = typeof value === 'string' ? value : { before: value.before, after: value.after };
   }
-  return hashText(JSON.stringify({ tree: binds.tree, files }));
+  return hashText(
+    JSON.stringify({ statement: shown.statement, tree: shown.binds.tree, files, refs: shown.refs }),
+  );
 }

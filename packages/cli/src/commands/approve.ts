@@ -21,8 +21,8 @@ import { resolveActor } from '../records/actor.js';
 import {
   BOOTSTRAP_DIR,
   BOOTSTRAP_FILE_PATTERN,
-  bindsHash,
   recordBase,
+  shownHashOf,
   type ApprovalBlock,
   type ApprovalRecord,
   type Binds,
@@ -294,7 +294,7 @@ export async function approve(argv: string[], io: CommandIO): Promise<number> {
   requireHuman('approve', io.ctx);
   finishPendingWrites(io);
   const p = plan(io, argv);
-  const shown = bindsHash(p.binds);
+  const shown = shownHashOf(p);
   show(io, p, shown);
   const expected = `${p.token} ${shown.slice(0, 8)}`;
   const typed = (
@@ -303,7 +303,8 @@ export async function approve(argv: string[], io: CommandIO): Promise<number> {
     )
   )
     .trim()
-    .replace(/\s+/g, ' ');
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
   if (typed !== expected) {
     throw new Refusal(
       `Not approved: you typed "${typed}", which does not match "${p.token}" and the first eight characters of the hash. Nothing was written.`,

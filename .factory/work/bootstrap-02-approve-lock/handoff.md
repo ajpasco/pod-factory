@@ -11,7 +11,7 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
   - `3`: binds `.factory/work/plan/build-plan.md`, every `.factory/work/story-<n>/story.md` it names, and the tree.
   - `story-<n> --pr <n>` and `bootstrap <n>`: bind the PR head tree, fetched from `refs/pull/<n>/head`.
   - `amendment --pr <n> <paths>`: `before` comes from the latest valid lock, `after` from the PR head, and either is `null` where the file is absent. Unlocked or unchanged paths are refused.
-- For every target, `approve` shows the statement (with the commit and tree), the bound hashes and one shown hash, the SHA-256 of the canonical binds. You type the token and 8 characters. It then re-fetches the source and writes nothing if it moved, and only then writes the record.
+- For every target, `approve` shows the statement (with the commit and tree), the bound hashes, the records it refers to, and one shown hash: the SHA-256 over everything printed above it (statement, tree, files, refs). You type the token and 8 characters; the typed line is lowercased first, so an uppercase hex prefix is accepted. It then re-fetches the source and writes nothing if it moved, and only then writes the record.
 - `lock` requires the latest valid, unrevoked gate-2 approval and main's tree equal to the approved tree. It writes `lock.patterns`, every matched path with its hash, `binds.tree`, and `lock.testCommands`. It is idempotent per approval.
 - `src/lock-policy.ts` holds the constants. The locked test `test/lock-constants.test.ts` checks that every backticked path in eval-plan section 5's table and every command in section 4's table appears in them.
 - Format changes:
@@ -22,7 +22,7 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
 - TECH-SPEC: section 3.2 `lock`; section 3.3 step 3, the gate-2 file list; section 4, the agent kind, the refs rule (and revokes from slice 5), the lock format, and the bootstrap records as a set.
 - eval-plan section 5: the "bound but not locked" line no longer lists `docs/adr/`, and the runbook joins in phase 3.
 - `records-branch.md`: the exact sequence for creating the branch and adding 0005. Both steps were run against a scratch copy.
-- Tests: 67 passing. The section-13 tests in this slice are T-03-N4 and T-06-P3. Mutation checks: dropping a constant fails the constants test and T-06-P3; removing the main-moved re-check fails its test.
+- Tests: 69 passing. The section-13 tests in this slice are T-03-N4 and T-06-P3. Mutation checks: dropping a constant fails the constants test and T-06-P3; removing the main-moved re-check fails its test.
 
 ## Decisions made in session, by the approver
 
@@ -31,6 +31,8 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
 - The build plan and story paths.
 - `refs` takes bootstrap file names.
 - The re-check before writing.
+- Review of 77231ff: the shown hash covers refs (I also kept the statement in, so "Hash of everything above" is literally true), with a test that two gate-2 approvals naming different classification records show different hashes; the typed line is lowercased before comparing.
+- The constants test stays unnumbered: it guards our own constants, not an acceptance criterion.
 - Binding tests use fixture trees only.
 - T-03-P2 lands with `doctor`.
 
@@ -38,18 +40,19 @@ Session of 2026-10-13, Opus builder. Approver: Allan Pasco.
 
 - `lock.testCommands` holds only the section-4 commands whose package or config exists in the approved tree: today `npm ci` plus the cli command. The other five join by amendment as their packages appear. Locking all seven would make verify fail on workspaces that don't exist.
 - `docs/spec/*.md` is enumerated from main's tree at approval time rather than hard-coded by name, because I can't see the names. The mapping file is required by name.
-- Gate 2's shown hash is computed over the binds only. The classification record is checked, not hashed into it.
 - `lock` requires main's tree to equal the approved tree exactly. If anything merged in between, `approve 2` must be run again.
 
 ## Left
 
 - T-03-P2 (with `doctor`, slice 7).
-- The JSON reporter and output path for evidence come in slice 3.
+- Slice 3, from the review:
+  - The JSON reporter goes in the locked vitest config, not on a command line, so the locked command alone produces `.factory/work/classification/gate-2.json`. It must land before the classification run.
+  - Eval plan section 5's enforcement row: add `.pre-commit-config.yaml` to the patterns when that file first lands, and reword the row so the enforcing-version pin is covered by the gate-2 binding until the project profile file exists.
 - Clearing Orca's branch-prefix setting for this repository is an app setting, not exposed by the Orca CLI.
 
 ## Open questions
 
-- The constants test has no test ID. Should it get one (for example T-06-P12), or stay unnumbered?
+- None.
 
 ## Next step
 

@@ -6,6 +6,7 @@ import { verify } from './check-runner/verify.js';
 import { APPROVE_USAGE, approve } from './commands/approve.js';
 import { hookPreToolUse } from './hook/pre-tool-use.js';
 import { Refusal, type CommandIO } from './commands/common.js';
+import { doctor } from './commands/doctor.js';
 import { lock } from './commands/lock.js';
 import { REVOKE_USAGE, revoke } from './commands/revoke.js';
 import { STORY_USAGE, storyFinish, storyStart } from './commands/story.js';
@@ -20,6 +21,7 @@ Commands:
   lock      lock the tests and enforcement files the gate-2 approval binds
   revoke    revoke a record; the gate it opened closes and CI blocks what relied on it
   story     start a story for a builder, or finish it (verifying, then done)
+  doctor    report each enforcement layer present or missing
   hook      answer a Claude Code hook event on standard input: pre-tool-use
   ci        run a check-runner job: lock-guard, verify, verify-record, gate-check,
             records-validate
@@ -36,6 +38,7 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
   try {
     if (command === 'approve') return await approve(rest, io);
     if (command === 'lock') return lock(rest, io);
+    if (command === 'doctor') return doctor(rest, io);
     if (command === 'revoke') return await revoke(rest, io);
     if (command === 'story') {
       const [verb, ...args] = rest;

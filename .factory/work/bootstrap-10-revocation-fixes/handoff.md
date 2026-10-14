@@ -52,12 +52,53 @@ Two code defects in the revocation path, found by an external review of the whol
   - The design session took the variant. It added these conditions: write the asymmetry and both failure modes into the ADR; add T-06-P12 and T-06-N11; state that correctness does not depend on up-to-date branches; and leave the P2 test exactly as it is.
 - **The design session said it is telling the approver it made this call**, since it changes how the gate behaves. The approver may veto it.
 - **The test table is in the eval plan, not TECH-SPEC.** The brief said "TECH-SPEC section 13", but section 13 there is later-phase designs. The table and count sentence are `docs/eval-plan.md` section 13.
+- **By the design session, after the merge:** two changes to the approver's sequence. First, the required-check swap moves to between `story start` and story one's pull request, so story one is the first pull request the real checks gate. Second, `bootstrap-check.yml` is not deleted (the review's fifth finding); it is dropped from the required checks instead. The design session also asked for the sequence to be written once, here, with the old steps marked superseded in place.
+- **The builder's, found while writing the sequence, for the design session to confirm:**
+  - The record-0005 template in `records-branch.md` named a classification command that is not the locked command.
+  - The relay workflow, and any other change to a path the lock will cover, are placed before the classification run, not just before the lock.
+  - The records-branch protection moves with the swap, since nothing in it waits on story one.
 
 ## Left
 
 - **For the design session:** ADR-013 (lock-guard and class rules) is outside this builder's sparse checkout. Judge whether it needs an "amended by ADR-015" line like ADR-006's.
 - **For the approver:** the staged relay workflow, `.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml`, is still not on main. Until it is, neither `revoke`'s dispatch nor the schedule runs the relay.
-- **After merge:** the approver's sequence in `.factory/work/bootstrap-08a-kill-resume/handoff.md` continues from gate 2. The classification run must happen at the merge commit that includes this pull request, because it adds six tests.
+- **After merge:** the approver's sequence below. It supersedes the one in `.factory/work/bootstrap-08a-kill-resume/handoff.md`.
+
+## The approver's sequence
+
+Written 2026-10-14, after this pull request merged as 570f615. This is the sequence to follow. It replaces step 6 of `.factory/work/bootstrap-08a-kill-resume/handoff.md`, which is marked superseded there, and corrects the classification command in `.factory/work/bootstrap-02-approve-lock/records-branch.md`.
+
+Two rules fix the order:
+
+- **Every human change to main lands before the required-check swap.** From the swap on, verify fails every pull request until story one makes the three `status` tests pass.
+- **Every change to a path the lock will cover lands before the classification run.** After `lock`, `.github/workflows/**` is locked, so a later workflow change needs an amendment. Gate 2 also approves main's tree, and its classification must be the single run at that commit.
+
+Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615.
+
+1. **This pull request** merges under `pod-factory approve bootstrap <n>`.
+2. **The relay workflow.** Replace `.github/workflows/records-validate.yml` on main with `.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml`. Use a pull request from a `bootstrap-*` branch, merged under `approve bootstrap <n>`. Main's current file validates records but does not relay, so until this lands, `revoke` blocks nothing.
+3. **Anything else the approver wants on main** lands now, the same way. After step 4 nothing merges until `lock`, and after step 6 nothing merges except story one.
+4. **Gate 2,** at main's commit after step 3:
+   - From the repository root: `npm ci`, then the locked command `npm exec --workspace packages/cli -- vitest run --config vitest.config.ts`. Expect 167 tests: 164 pass, and exactly T-19-P1, T-19-N1 and T-19-N2 fail.
+   - Copy `.factory/work/reports/cli.json` to `.factory/work/classification/gate-2.json`. Commit it on a `bootstrap-*` branch and merge it under `approve bootstrap <n>`. That merge is the tree gate 2 approves.
+   - Write record 0005 by hand, following records-branch.md step 2. Its `command` names the locked command above.
+   - `pod-factory approve 2 --classification 0005-classification-gate-2.json`, then `pod-factory lock` at once.
+5. **`pod-factory approve 3`, then `pod-factory story start story-1`.** Before the story's builder starts, the builder session checks that every Inputs path in `.factory/work/story-1/story.md` hashes on main to what the start record binds, and that the Tests path is locked at the lock's hash.
+6. **The swap,** before story one's pull request opens, so that story one is the first pull request the real checks gate:
+   - Main's required checks become `lock-guard`, `verify` and `gate-check`, each from the GitHub Actions app (ID 15368). `bootstrap-check` leaves the list. `strict` is the approver's call:
+     ```sh
+     gh api -X PATCH repos/ajpasco/pod-factory/branches/main/protection/required_status_checks --input - <<'JSON'
+     {"strict": false, "checks": [
+       {"context": "lock-guard", "app_id": 15368},
+       {"context": "verify", "app_id": 15368},
+       {"context": "gate-check", "app_id": 15368}]}
+     JSON
+     ```
+   - Protect the records branch: no force pushes, no deletion, and no required checks or reviews, which would stop `verify-record` pushing.
+   - `pod-factory doctor` should read every layer present, with no note that the placeholder is still required.
+7. **Story one.** A builder subagent in its own worktree implements `status`, and story one's pull request makes the three tests pass. Then `approve story-1 --pr <n>`, the design session merges, and `story finish` runs twice, to done.
+
+`bootstrap-check.yml` is not deleted in this sequence. The review's fifth finding made the deletion a dead end. After the lock it needs an amendment, and an amendment's pull request cannot pass while gate-check rejects a bootstrap approval. The decision is to defer the deletion and drop the placeholder from the required checks at step 6. The file stays on main and still reports on every pull request. It fails on any branch not named `bootstrap-*`, story one's included, and that blocks nothing once it is no longer required.
 
 ## Open questions
 
@@ -65,4 +106,4 @@ Two code defects in the revocation path, found by an external review of the whol
 
 ## Next step
 
-The design session reviews this pull request. Its verify is red from the three `status` tests, as on every pull request until story one lands.
+The design session reviewed and merged this pull request as 570f615. The approver follows the sequence above, from step 1.

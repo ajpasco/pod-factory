@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "amendment",
+  "gate": 1,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "2026-10-12T20:27:15-04:00",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human",
+    "source": "approver decision in session: \"Do 1, but lets give the user the ability to turn this off, it would be up to them to monitor their usage then\""
+  },
+  "amends": "0001-gate-1-approval-prd-0.9.json",
+  "subject": "REQ-09 and the matching sentence in section 2: a third budget mode, off, in which no budget or cap is enforced or flagged and the project owns its usage monitoring; packets and status show the active mode",
+  "authority": "ADR-007; extends PRD reference decision 12",
+  "binds": {
+    "docs/PRD.md": {
+      "before": {
+        "version": "0.9",
+        "sha256": "5b8cbc0f58a70f4fb429f0d60ef15393a6b68d12aeced44be33c27c7d33e6fc2"
+      },
+      "after": {
+        "version": "0.9.1",
+        "sha256": "dbd72a26185d2655598f4e7a2386b42f026632c306d2fc46165e97ad3a28caf0"
+      }
+    },
+    "requirementsChanged": {
+      "REQ-09": {
+        "before": "df55b3b9c2f3c8e3221b257a3396c07cbd7788d9969fa06b145894a56f05e20f",
+        "after": "bf87139382d8de9f16f419052bb9d3c3b00e11423def98ff84aa79d071879963"
+      }
+    },
+    "requirementsUnchanged": 23
+  },
+  "scope": "Only the requirements listed as changed are re-approved by this amendment; the gate-1 record 0001 remains valid for every other requirement.",
+  "bootstrapExceptions": [
+    "amendment written by the assistant on the approver's explicit decision; the amend command does not exist yet",
+    "no CI validation yet",
+    "working tree, not yet the records branch"
+  ],
+  "outcome": "approved"
+}

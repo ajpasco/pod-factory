@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "amendment",
+  "gate": 1,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "2026-10-12T21:31:22-04:00",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human",
+    "source": "approver answered \"yes to all\" to the nine pending items on 2026-10-12, item 6 covering PRD amendments in principle; this correction changes no approved text"
+  },
+  "amends": "0001-gate-1-approval-prd-0.9.json",
+  "subject": "Corrects the binding of docs/PRD-reference.md, which gained a one-line traceability note under decision 12 when ADR-007 and record 0002 landed. The reference is non-binding by the PRD; from this record on, gate records bind docs/PRD.md and record the reference hash as a traceability note only.",
+  "binds": {
+    "docs/PRD-reference.md": {
+      "before": "d26bc153717e9e9bc8c7818872ff1b84fbabbf66f01ab498b85032f85ce29dc3",
+      "after": "e48520d5267da614143d189ff313895cfdb5853f5c44c0ac501ca101e3e37808",
+      "role": "traceability note, non-binding"
+    },
+    "docs/PRD.md": {
+      "unchanged": "dbd72a26185d2655598f4e7a2386b42f026632c306d2fc46165e97ad3a28caf0",
+      "version": "0.9.1"
+    }
+  },
+  "bootstrapExceptions": [
+    "written by the assistant under the approver's blanket yes; the amend command does not exist yet",
+    "no CI validation yet",
+    "working tree, not yet the records branch"
+  ],
+  "outcome": "approved"
+}

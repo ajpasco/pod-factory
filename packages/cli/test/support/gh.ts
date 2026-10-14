@@ -11,6 +11,8 @@ export interface FakeState {
   /** Every call fails, as gh does when it is logged out or GitHub is unreachable. */
   fail?: boolean;
   pulls: Record<string, FakePull>;
+  /** Branch protection by branch name, as the API returns it; absent means not protected. */
+  protection?: Record<string, unknown>;
 }
 
 export interface FakeGitHub {
@@ -35,6 +37,13 @@ if (args[0] === 'pr' && args[1] === 'view') {
   process.exit(0);
 }
 if (args[0] === 'api' && args.includes('POST')) { process.stdout.write('{}'); process.exit(0); }
+const protectedBranch = args[0] === 'api' && new RegExp('branches/(.+)/protection$').exec(args[args.length - 1]);
+if (protectedBranch) {
+  const found = (state.protection || {})[decodeURIComponent(protectedBranch[1])];
+  if (!found) { process.stderr.write('Branch not protected (HTTP 404)'); process.exit(1); }
+  process.stdout.write(JSON.stringify(found));
+  process.exit(0);
+}
 if (args[0] === 'api') {
   for (const [n, p] of Object.entries(state.pulls)) if (p.state === 'OPEN') process.stdout.write(n + '\\t' + p.head + '\\n');
   process.exit(0);

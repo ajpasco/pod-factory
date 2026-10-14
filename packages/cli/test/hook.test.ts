@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from '
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { PROTECTED_PATTERNS, type LockRecord } from '../src/index.js';
+import { HOOK_COMMAND, HOOK_MATCHER, PROTECTED_PATTERNS, type LockRecord } from '../src/index.js';
 import { ciProject, plantLock, type CiFixture } from './support/ci.js';
 import { cleanEnv, runCli } from './support/cli.js';
 import { BRANCH, sh, tempDir } from './support/repo.js';
@@ -211,6 +211,11 @@ describe('the committed hook configuration', () => {
   };
   const [entry] = settings.hooks.PreToolUse;
   const command = entry?.hooks[0]?.command as string;
+
+  it('is exactly what doctor checks main for', () => {
+    expect(entry?.matcher).toBe(HOOK_MATCHER);
+    expect(command).toBe(HOOK_COMMAND);
+  });
 
   it('runs hook 1 on every file-edit tool', () => {
     expect(entry?.matcher).toBe('Write|Edit|MultiEdit|NotebookEdit');

@@ -6,6 +6,16 @@ import { LOCKED_PATTERNS, globToRegExp } from '../lock-policy.js';
 import { git } from '../records/git.js';
 import { readRecords, remoteRecordsRef } from '../records/store.js';
 
+/** The PreToolUse matcher in the committed .claude/settings.json; a test pins the file to it. */
+export const HOOK_MATCHER = 'Write|Edit|MultiEdit|NotebookEdit';
+
+/**
+ * The hook command in the committed .claude/settings.json: refuse every edit with exit 2 when
+ * pod-factory is not installed, otherwise run the installed copy. `doctor` checks main holds it.
+ */
+export const HOOK_COMMAND =
+  'command -v pod-factory >/dev/null 2>&1 || { echo "pod-factory is not installed on this machine, so locked and protected paths cannot be checked and every file edit is refused. Install a packed copy from a checkout of main: npm ci && npm run build --workspace packages/cli && cd packages/cli && npm pack && npm install -g ./pod-factory-0.0.0-m0.tgz" >&2; exit 2; }; exec pod-factory hook pre-tool-use';
+
 /** The file-edit tools hook 1 answers, with the field that names the target file. */
 const EDIT_TOOLS: Record<string, string> = {
   Write: 'file_path',

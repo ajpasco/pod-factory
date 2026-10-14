@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "amendment",
+  "gate": 1,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "FILL IN: the moment you write it, ISO 8601 with offset",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human",
+    "source": "FILL IN: quote the approving message of 2026-10-14, \"I approve the revised product direction and contract in PR #13\", together with its limits: the approval is of the design and not a claim that phase-1b automation is implemented or verified, automatic merging stays disabled until the implementation passes its acceptance tests, and milestone zero finishes first."
+  },
+  "amends": [
+    "0001-gate-1-approval-prd-0.9.json",
+    "0002-amendment-prd-0.9.1-budget-off-mode.json",
+    "0004-amendment-prd-0.9.2-simplification.json"
+  ],
+  "subject": "PRD 0.9.2 to 0.10: the approved contract defines done, with tests and recorded reviews as its evidence; gate 2 approves the build contract and gate 3 authorizes execution of the plan, so stories are implemented, reviewed, verified and merged by agents under machine-checked conditions instead of a human approval each; gate 4 becomes acceptance of the product and is never delegated; delegation narrows to bounded decision rights during build; new REQ-26 pre-build gap review and REQ-27 product verification; milestone zero keeps its per-pull-request approval unchanged. The phase-1b reference application is named as the second project, resolving open question 2; and, from the approver’s two closing requirements, an automatic merge must be of content verified and reviewed with main as it then stands, refreshed when main moves, while a failing post-merge verification of main reopens the story that caused it for a bounded repair inside its own scope even when that story is done, with everything unrelated held.",
+  "binds": {
+    "docs/PRD.md": {
+      "before": {
+        "version": "0.9.2",
+        "sha256": "69ec90c4786e6df3f7e87563d9d8cf287f6ea6c45e3aafe0947df4443af4c431"
+      },
+      "after": {
+        "version": "0.10",
+        "sha256": "15455bab60855e710892ca52ab8835a77dfc75a41452c9b3437dde13f27494fd"
+      }
+    },
+    "requirementsChanged": {
+      "REQ-04": {
+        "before": "f307d402c6a369dd3e103c28421c608fa2a0d8b44f72c4a1e08c6fa53f96e864",
+        "after": "5f9c24430b910f85613f70ec74041b511437ea3de57a35817be86cb7531f74ba"
+      },
+      "REQ-05": {
+        "before": "3cff8f9a60335ae2ca1e95aa56987179cbec011256b78638cdce4290a74ca017",
+        "after": "af7534ef519e1dc2444536fe3b5e92e521def5a9a75f12338fb18cc5f2dc9ea0"
+      },
+      "REQ-06": {
+        "before": "b5431ad63cbc42e687182b03c8b289a3b052fe88bae50bb3aa07730f08ca0d98",
+        "after": "0db1d04850332498f8f4da69a07e715434d67845840b3f5796eef2aef99f884f"
+      },
+      "REQ-07": {
+        "before": "4a4258d22b9f2e200db89e2cdb66c08447680af5a3e4e3efdb1bd9bd3cbaef36",
+        "after": "b280d9429d16419684d2208c4754cb509a7dbc91c879bd57f8fc0d5cfa32b3e8"
+      },
+      "REQ-08": {
+        "before": "05a335b58ab57bf0b04e5eee7de11a0d8df01f11be57750e9299f87a472e213b",
+        "after": "36cd52f3b9a2d68af3720fdf6512c45cee77b15046b60a4b0fe042025e574796"
+      },
+      "REQ-09": {
+        "before": "bf87139382d8de9f16f419052bb9d3c3b00e11423def98ff84aa79d071879963",
+        "after": "873e8da2adf30f6dea13a22eb2873560577542a1dff13d2f92a5597dbf99ee10"
+      },
+      "REQ-10": {
+        "before": "ffda5aa25f45b221fbc5fac426086b49f1b4a24fcde7f4f61b2a87f6a3d6287b",
+        "after": "5c96ade06025226729003093c67fc39767b08cb06fd7dcd3798a14ba731465ad"
+      },
+      "REQ-13": {
+        "before": "f17872660db9efcd0e36aa32781f7d2a123852d93a983a7875fe9e63cfa8df77",
+        "after": "a71ac6afacd396c940f1a409293441e5112e7e12d1765ca4fcc46504d9aa5064"
+      },
+      "REQ-17": {
+        "before": "9ef3fb4de507c2398d19a104c2bf1a3322b3666d7679f9d6ee6d84dc833d5a6c",
+        "after": "003fcb44143dc7bdfadd3f9000702d640c4c7d9d6a93bd63bc8b1385c1de1d32"
+      },
+      "REQ-23": {
+        "before": "4753e83acb8e62883d03c6adfff4e384435875e65dec1848af26cf91c552a911",
+        "after": "09bb9dece8bae38d8654eaa0e58e4f8d256caafa523138e5658b3d4e9f912aa3"
+      },
+      "REQ-26": {
+        "before": null,
+        "after": "586615ebff80ea0757fa3e7cf81f00fcb4178d8ac10dd42d8683e16fc576768a"
+      },
+      "REQ-27": {
+        "before": null,
+        "after": "8d921dfba587f65aa434bf640e062ed88b8daee8779514791912a978ff46590c"
+      }
+    },
+    "requirementsUnchanged": 15,
+    "sectionsChanged": [
+      "1 The promise",
+      "2 Gate 1",
+      "2 Gate 2",
+      "2 Gate 3",
+      "2 Build and verify",
+      "2 Gate 4",
+      "2 Gate 5",
+      "3 Milestone zero",
+      "3 The reference application",
+      "4 preamble",
+      "5 Limitations",
+      "6 Open questions",
+      "header"
+    ]
+  },
+  "scope": "The gate-1 record 0001 as amended by 0002 and 0004 remains valid for every unchanged requirement; this amendment re-approves the ten changed ones and approves REQ-26 and REQ-27, whose before hash is null because they are new.",
+  "bootstrapExceptions": [
+    "prepared by the design session; it is a record only once the approver writes or authorizes it",
+    "no CI validation yet",
+    "working tree and the records branch, as 0001 to 0004 are"
+  ],
+  "outcome": "approved"
+}

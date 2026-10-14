@@ -9,7 +9,7 @@ describe('line-ending-normalized hashing', () => {
   it('T-06-P6 [M0] the approved PRD saved with Windows line endings hashes to the hash in its approval record', () => {
     const amendment = JSON.parse(
       readFileSync(
-        `${repoRoot}.factory/records/0004-amendment-prd-0.9.2-simplification.json`,
+        `${repoRoot}.factory/records/0006-amendment-prd-0.10-authorized-execution.json`,
         'utf8',
       ),
     ) as { binds: { 'docs/PRD.md': { after: { sha256: string } } } };

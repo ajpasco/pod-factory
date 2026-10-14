@@ -37,15 +37,67 @@ export const CI_FILES: Record<string, string> = {
   'src/result.txt': 'pass\n',
 };
 
+/** Story one's file in CI fixtures: its locked test, its scope, and one input. */
+export const STORY_TEXT = [
+  '# story-1: the app',
+  '',
+  'Tests:',
+  '- packages/cli/test/a.test.ts',
+  '',
+  'Scope:',
+  '- src/**',
+  '',
+  'Inputs:',
+  '- package.json',
+  '',
+].join('\n');
+
+export const STORY_FILES: Record<string, string> = {
+  '.factory/work/plan/build-plan.md': '# Build plan\n\n1. .factory/work/story-1/story.md\n',
+  '.factory/work/story-1/story.md': STORY_TEXT,
+};
+
 export interface CiFixture extends Fixture {
   main: string;
 }
 
-export function ciProject(options: { recordsBranch?: boolean } = {}): CiFixture {
+/** The CI fixture project; with `story`, main also holds a build plan and story one. */
+export function ciProject(options: { recordsBranch?: boolean; story?: boolean } = {}): CiFixture {
   const f = fixture(options);
-  const main = f.commitToMain(CI_FILES, 'fixture project');
+  const main = f.commitToMain(
+    options.story === true ? { ...CI_FILES, ...STORY_FILES } : CI_FILES,
+    'fixture project',
+  );
   sh(f.work, ['pull', '--quiet', 'origin', 'main']);
   return { ...f, main };
+}
+
+/** Plants a gate-3 approval binding the build plan and story files as main holds them now. */
+export function plantGate3(
+  f: CiFixture,
+  files: Record<string, string> = STORY_FILES,
+): ApprovalRecord {
+  const approval: ApprovalRecord = {
+    ...recordBase(HUMAN),
+    recordType: 'approval',
+    binds: {
+      tree: treeAt(f, 'main'),
+      files: Object.fromEntries(Object.entries(files).map(([p, text]) => [p, hashText(text)])),
+    },
+    outcome: 'approved',
+    refs: [],
+    approval: {
+      kind: 'gate',
+      gate: 3,
+      story: null,
+      pullRequest: null,
+      shownHash: SHA_A,
+      typedPrefix: SHA_A.slice(0, 8),
+      statement: 'Gate 3: the build plan and its story',
+    },
+  };
+  f.plant(Object.fromEntries([stored(approval, 'gate-3')]), 'gate 3');
+  return approval;
 }
 
 export function treeAt(f: Fixture, commit: string): string {

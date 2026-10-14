@@ -12,6 +12,8 @@ export * from './git-tree.js';
 export { approve, APPROVE_USAGE } from './commands/approve.js';
 export { lock } from './commands/lock.js';
 export { REVOKE_USAGE, revoke } from './commands/revoke.js';
+export { STORY_USAGE, storyFinish, storyStart } from './commands/story.js';
+export * from './story.js';
 export * from './revocation.js';
 export * from './github.js';
 export { Refusal, requireHuman, type CommandIO } from './commands/common.js';

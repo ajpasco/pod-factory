@@ -4,6 +4,7 @@ import { recordsValidate } from './check-runner/records-validate.js';
 import { verifyRecord } from './check-runner/verify-record.js';
 import { verify } from './check-runner/verify.js';
 import { APPROVE_USAGE, approve } from './commands/approve.js';
+import { hookPreToolUse } from './hook/pre-tool-use.js';
 import { Refusal, type CommandIO } from './commands/common.js';
 import { lock } from './commands/lock.js';
 import { GitError } from './records/git.js';
@@ -15,6 +16,7 @@ export const USAGE = `Usage: pod-factory <command>
 Commands:
   approve   approve a gate, a story, a bootstrap pull request or an amendment
   lock      lock the tests and enforcement files the gate-2 approval binds
+  hook      answer a Claude Code hook event on standard input: pre-tool-use
   ci        run a check-runner job: lock-guard, verify, verify-record, gate-check,
             records-validate
 
@@ -27,6 +29,9 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
     if (command === 'approve') return await approve(rest, io);
     if (command === 'lock') return lock(rest, io);
     if (command === 'ci') return ci(rest, io);
+    if (command === 'hook' && rest.length === 1 && rest[0] === 'pre-tool-use') {
+      return hookPreToolUse(io.input?.() ?? '', io);
+    }
     if (command === undefined || command === '--help' || command === 'help') {
       io.out(USAGE);
       return 0;

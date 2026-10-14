@@ -15,7 +15,12 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - In each test the content assertion comes first, so the failure names the missing content. The exit code is checked last.
   - In N2, the absence of "approved" is checked only after a gate-3 line is proven present (rule 2).
   - The Givens were checked once with a temporary test, not committed: P1 and N1 have nothing flagged, gate 3 approved, story-1 in progress and story-2 ready; N2's edited approval is the only flagged record, and no gate-3 approval counts.
-- The full suite: 159 tests, 156 passing and these 3 failing on their first assertion. Lint is clean. No other file changed.
+- The full suite: 161 tests, 158 passing and these 3 failing on their first assertion. Lint is clean.
+- Section 13 made self-consistent, from the design session's audit. Of the 28 IDs that section 1 lists for gate 2 but section 13 lacks, 25 are deliberate: they belong to mechanisms milestone zero does not have. The other three were checked against code:
+  - **T-07-N7** and **T-08-P4** describe behaviour milestone zero has. Each was asserted only inside another test (T-07-N5, T-07-P3), so each now has its own test, titled with its ID, plus a section 13 row. Both are RB, and a mutation that drops an input fails T-08-P4.
+  - **T-20-P4** stays out, for the reason now stated in section 13.
+  - The count sentence now reads "Fifty-four tests, the count of distinct test IDs in this table", so the number can be re-derived; the table holds 54, all in code. `docs/HANDOFF-M0-opus.md` says 54.
+  - The documents changed only on those lines, the same with and without whitespace, edited without a formatter.
 - No `status` entry point, per TECH-SPEC section 3.3 and the design session's ruling.
 
 ## Decisions made in session
@@ -24,6 +29,7 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - These are NB tests asserting displayed content. The rule that governs them is "fail on a real assertion for the stated reason, never a setup or import error". The unknown-command text as the received value is incidental.
   - Keep each test's reason in its comment.
   - This pull request's body says its verify is red by design, and that it is the single pull request where that is true.
+- The count is the builder's to fix, not the approver's: making a document self-consistent before it is approved is not a scope decision.
 - Lesson from 8a, from the design session: after any formatter runs, read the diff you are about to ask a human to approve. If it is bigger than the change you made, find out why before pushing.
 
 ## Expected on GitHub
@@ -36,7 +42,7 @@ The sequence in `.factory/work/bootstrap-08a-kill-resume/handoff.md`, from step 
 
 ## Open questions
 
-- Section 13's stated count does not match its table, and this needs settling before the eval plan is locked (asked of the design session). The table lists 52 distinct test IDs, but the text says "Sixty tests". On main it lists 55 against "Sixty-three", so the count was 8 too high before this stack.
+- None.
 
 ## Next step
 

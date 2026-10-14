@@ -8,6 +8,7 @@ import {
   type TransitionRecord,
 } from '../src/index.js';
 import {
+  CI_FILES,
   STORY_FILES,
   STORY_TEXT,
   ciProject,
@@ -127,6 +128,40 @@ describe('story start', () => {
       ),
     );
     for (const f of [none, editedInPlace, revoked.f, older.f]) expect(transitions(f)).toEqual([]);
+  });
+
+  it('T-07-N7 [M0] refuses the start when a story file gate 3 bound has changed its scope, and gate 3 shows as open', async () => {
+    const { f, gate3 } = readyStory();
+    f.commitToMain({
+      '.factory/work/story-1/story.md': STORY_TEXT.replace('- src/**', '- src/**\n- docs/**'),
+    });
+    const io = await orchestrator(f, ['start', 'story-1', '--holder', 'builder-1']);
+    expect(io.errors.join()).toMatch(
+      new RegExp(
+        `\\.factory/work/story-1/story\\.md on main no longer matches gate-3 approval ${gate3.recordId}, so the plan it approved is not the plan on main\\. Gate 3 is open again`,
+      ),
+    );
+    expect(io.code).toBe(1);
+    expect(transitions(f)).toEqual([]);
+  });
+
+  it('T-08-P4 [M0] records exactly the story file and the inputs it lists, with their hashes, when a builder starts', async () => {
+    const f = ciProject({ story: true });
+    plantLock(f);
+    const text = STORY_TEXT.replace(
+      '- package.json',
+      '- package.json\n- packages/cli/vitest.config.ts',
+    );
+    f.commitToMain({ '.factory/work/story-1/story.md': text });
+    plantGate3(f, { ...STORY_FILES, '.factory/work/story-1/story.md': text });
+    expect((await orchestrator(f, ['start', 'story-1', '--holder', 'builder-1'])).code).toBe(0);
+    expect(transitions(f)[0]?.binds.files).toEqual({
+      '.factory/work/story-1/story.md': hashText(text),
+      'package.json': hashText(CI_FILES['package.json'] as string),
+      'packages/cli/vitest.config.ts': hashText(
+        CI_FILES['packages/cli/vitest.config.ts'] as string,
+      ),
+    });
   });
 
   it('T-07-P4 [M0] moves a story whose tests are locked to in progress', async () => {

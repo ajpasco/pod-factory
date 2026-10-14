@@ -233,8 +233,12 @@ describe('story finish', () => {
     const approval = plantApproval(f, 'story', 7, tree);
     sh(f.work, ['fetch', '--quiet', 'origin', `refs/pull/7/head`]);
     sh(f.work, ['push', '--quiet', 'origin', `${head}:refs/heads/main`]);
+    f.commitToMain({ 'docs/after.md': 'main moved on after the merge\n' }, 'later work');
     const done = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
     expect(done.errors).toEqual([]);
+    expect(done.lines.join('\n')).toMatch(
+      /\(the approved head [0-9a-f]{12} is in main's history\)/,
+    );
     expect(transitions(f).at(-1)).toMatchObject({
       outcome: 'done',
       refs: [approval.recordId],
@@ -245,6 +249,26 @@ describe('story finish', () => {
       'verifying',
       'done',
     ]);
+  });
+
+  it('accepts a squash merge as done when main holds exactly the approved tree, and says which proof held', async () => {
+    const { f, tree } = await inProgress({
+      'src/app.js': 'export const app = 1;\n',
+      [NOTE]: NOTE_TEXT,
+    });
+    await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
+    plantApproval(f, 'story', 7, tree);
+    f.commitToMain(
+      { 'src/app.js': 'export const app = 1;\n', [NOTE]: NOTE_TEXT },
+      'squash of pull request 7',
+    );
+    expect(treeAt(f, 'main')).toBe(tree);
+    const done = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
+    expect(done.errors).toEqual([]);
+    expect(done.lines.join('\n')).toMatch(
+      /\(main at [0-9a-f]{12} holds exactly the approved tree\)/,
+    );
+    expect(transitions(f).at(-1)?.outcome).toBe('done');
   });
 
   it('T-08-N2 [M0] refuses done without a story approval, or before the merge', async () => {

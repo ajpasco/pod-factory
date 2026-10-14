@@ -17,7 +17,7 @@ Stacked on slice 5 (`bootstrap-05-revoke-relay`, PR #6), which is stacked on sli
   - when the story is already in progress, it writes nothing and reprints the lease and inputs, so a killed orchestrator can resume.
 - `pod-factory story finish story-<n> --pr <n>`, by stage:
   - **in-progress → verifying:** `.factory/work/story-<n>/handoff.md` must exist at the pull request's head. Otherwise it refuses, naming the story, the holder and the missing note. The note's path and hash are kept in the record.
-  - **verifying → done:** needs a valid, unrevoked approval of kind story for this story and pull request, bound to the current head tree, and that head must be an ancestor of main. Otherwise it refuses, naming the missing approval or the unmerged pull request. The done record refs the approval.
+  - **verifying → done:** needs a valid, unrevoked approval of kind story for this story and pull request, bound to the current head tree, and the approved content must be merged: either the approved head is in main's history (a merge commit), or main holds exactly the approved tree (a squash). The output names which proof held. Otherwise it refuses, naming the missing approval or the unmerged pull request. The done record refs the approval.
   - Any other stage is refused, naming it.
 - The file-scope check is in gate-check (TECH-SPEC section 3.2), for story approvals:
   - the story comes from the approval, never the branch name;
@@ -25,7 +25,7 @@ Stacked on slice 5 (`bootstrap-05-revoke-relay`, PR #6), which is stacked on sli
   - the diff from the merge base to the head must stay inside the `Scope:` globs, plus `.factory/work/story-<n>/**`; anything else under `.factory/` fails, whatever the scope says.
 - No redundant deepening: in a shallow clone, the full-depth records fetch already makes main's history whole (checked directly with git). The shallow-clone test guards that end to end.
 - TECH-SPEC section 3.2 (story commands; the scope check moved from verify to gate-check) and section 12 (L10 observed, with the schedule stated as a backstop of unmeasured latency).
-- Tests: 143 passing on two runs. Typecheck, ESLint and Prettier are clean.
+- Tests: 144 passing on two runs. Typecheck, ESLint and Prettier are clean.
   - Section-13 tests: T-07-P3, T-07-N5, T-07-P4, T-07-N6, T-08-P3, T-08-N3, T-08-P2, T-08-N2, T-08-P5, T-08-N5 (as gate-check tests).
   - Also tested: a story file missing a list, resume, finishing a story that is still ready, a pull request widening its own scope, a scope glob covering `.factory/`, a shallow enforcer clone, and a listed test that does not exist.
 - Mutation checks, each failing a test:
@@ -34,7 +34,7 @@ Stacked on slice 5 (`bootstrap-05-revoke-relay`, PR #6), which is stacked on sli
   - no story-folder exception;
   - a missing test passing the ready rule (a real bug, found and fixed while writing it);
   - no plan match;
-  - done before the merge;
+  - done before the merge, and each of the two done proofs separately;
   - no handoff note required.
 
 ## Decisions made in session
@@ -45,11 +45,8 @@ Stacked on slice 5 (`bootstrap-05-revoke-relay`, PR #6), which is stacked on sli
   - The work-folder exception is exactly `.factory/work/story-<n>/**`, with the number from the approval.
   - No advisory copy in verify: two scope checks with different inputs would drift.
   - The three lists, the agent kind on `story start`, resume by reprint, the ready rule over locked `Tests:` paths, and finish's two stages with the ancestor check are accepted as designed.
+- By the design session, after review: done accepts either ancestry or main's tree equal to the approved tree, and says which proof held. The tree match is the stronger claim.
 - L10, from the design session: no cadence is claimed. The schedule is a backstop of unmeasured latency, and correctness does not rest on it.
-
-## Known limitation
-
-- `story finish` reaches done only when the approved head is an ancestor of main, so the story's pull request must be merged with a merge commit, not squashed. Milestone zero's approver merges with a merge commit.
 
 ## Left, for the approver only
 

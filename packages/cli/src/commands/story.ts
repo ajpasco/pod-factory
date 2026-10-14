@@ -245,13 +245,19 @@ export function storyFinish(argv: string[], io: CommandIO): number {
       );
     }
     const main = fetchTrunk(io.cwd, io.remote);
-    const merged =
+    // Either proves the approved content merged: the approved head is in main's history (a merge
+    // commit), or main holds exactly the approved tree (a squash, or nothing merged since).
+    const ancestor =
       git(io.cwd, ['merge-base', '--is-ancestor', head, main], { allowFail: true }).status === 0;
-    if (!merged) {
+    const sameTree = treeOf(io.cwd, main) === approval.record.binds.tree;
+    if (!ancestor && !sameTree) {
       throw new Refusal(
-        `story finish refused: ${story} cannot be done until pull request ${pr} at ${short(head)} is merged into ${TRUNK}. Nothing was written.`,
+        `story finish refused: ${story} cannot be done until pull request ${pr} at ${short(head)} is merged into ${TRUNK}: that head is not in ${TRUNK}'s history, and ${TRUNK} does not hold the approved tree ${short(approval.record.binds.tree ?? '')}. Nothing was written.`,
       );
     }
+    const proof = ancestor
+      ? `the approved head ${short(head)} is in ${TRUNK}'s history`
+      : `${TRUNK} at ${short(main)} holds exactly the approved tree`;
     const record: TransitionRecord = {
       ...recordBase(actor),
       recordType: 'transition',
@@ -262,7 +268,7 @@ export function storyFinish(argv: string[], io: CommandIO): number {
     };
     const landed = writeRecord(io.cwd, record, `${story}-done`, { remote: io.remote });
     io.out(
-      `${story} is done: approval ${approval.record.recordId} binds the content merged into ${TRUNK}. Record ${landed.path}.`,
+      `${story} is done: approval ${approval.record.recordId} binds the content merged into ${TRUNK} (${proof}). Record ${landed.path}.`,
     );
     return 0;
   }

@@ -47,7 +47,7 @@ describe('bootstrap records', () => {
     const names = readdirSync(recordsDir)
       .filter((n) => n.endsWith('.json'))
       .sort();
-    expect(names.map((n) => n.slice(0, 4))).toEqual(['0001', '0002', '0003', '0004']);
+    expect(names.map((n) => n.slice(0, 4))).toEqual(['0001', '0002', '0003', '0004', '0006']);
     for (const name of names) {
       const bytes = readFileSync(recordsDir + name);
       const result = validateBootstrapRecord(`records/bootstrap/${name}`, bytes);
@@ -63,34 +63,33 @@ describe('bootstrap records', () => {
   it("T-03-P5 [M0] today's PRD matches the gate-1 record as amended, whole and for every requirement", () => {
     const r0002 = record('0002');
     const r0004 = record('0004');
+    const r0006 = record('0006');
     expect(r0002.amends).toBe('0001-gate-1-approval-prd-0.9.json');
     expect(r0004.amends).toContain('0001-gate-1-approval-prd-0.9.json');
 
-    expect(hashText(prd)).toBe(r0004.binds['docs/PRD.md'].after.sha256);
+    expect(hashText(prd)).toBe(r0006.binds['docs/PRD.md'].after.sha256);
 
-    const approved = approvedRequirements([r0002, r0004]);
+    const approved = approvedRequirements([r0002, r0004, r0006]);
     const today = requirementHashesToday();
     expect(Object.keys(today).sort()).toEqual(Object.keys(approved).sort());
-    expect(Object.keys(today)).toHaveLength(25);
+    expect(Object.keys(today)).toHaveLength(27);
     for (const [id, hash] of Object.entries(today)) expect(hash, id).toBe(approved[id]);
   });
 
   it("T-03-P7 [M0] records 0001 to 0004 chain to today's PRD, with the reference kept as a traceability note", () => {
-    const [r0001, r0002, r0003, r0004] = ['0001', '0002', '0003', '0004'].map(record) as [
-      Json,
-      Json,
-      Json,
-      Json,
-    ];
+    const [r0001, r0002, r0003, r0004, r0006] = ['0001', '0002', '0003', '0004', '0006'].map(
+      record,
+    ) as [Json, Json, Json, Json, Json];
 
     // The PRD's whole-document hash runs unbroken from gate 1 to today.
     expect(r0002.binds['docs/PRD.md'].before.sha256).toBe(r0001.binds['docs/PRD.md'].sha256);
     expect(r0003.binds['docs/PRD.md'].unchanged).toBe(r0002.binds['docs/PRD.md'].after.sha256);
     expect(r0004.binds['docs/PRD.md'].before.sha256).toBe(r0002.binds['docs/PRD.md'].after.sha256);
-    expect(hashText(prd)).toBe(r0004.binds['docs/PRD.md'].after.sha256);
+    expect(r0006.binds['docs/PRD.md'].before.sha256).toBe(r0004.binds['docs/PRD.md'].after.sha256);
+    expect(hashText(prd)).toBe(r0006.binds['docs/PRD.md'].after.sha256);
 
     // Every requirement as approved through the chain matches its line today.
-    const approved = approvedRequirements([r0002, r0004]);
+    const approved = approvedRequirements([r0002, r0004, r0006]);
     const today = requirementHashesToday();
     expect(Object.keys(today).sort()).toEqual(Object.keys(approved).sort());
     for (const [id, hash] of Object.entries(today)) expect(hash, id).toBe(approved[id]);

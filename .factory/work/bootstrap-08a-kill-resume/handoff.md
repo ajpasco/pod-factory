@@ -49,6 +49,10 @@ Stacked on slice 7 (`bootstrap-07-doctor`, PR #8). This pull request targets tha
    - delete `bootstrap-check.yml`. After the lock, `.github/workflows/**` is locked, so that deletion is the first real use of `approve amendment`, end to end, on pod-factory itself.
    - `pod-factory doctor` should then read every layer present.
 
+## A mistake, corrected
+
+- 66954b0 reformatted `docs/TECH-SPEC.md`, `docs/adr/ADR-007` and `docs/eval-plan.md` (about 750 lines, whitespace and emphasis only). I had run `npx prettier --write … ../../docs` from `packages/cli`, and Prettier reads `.prettierignore` relative to where it runs, so `docs/` was not ignored. The next commit restores `docs/` to 14b9c1b plus the one intended sentence in TECH-SPEC section 3.2, written without Prettier. Across the whole stack, the `docs/` diff from main is now the same with and without whitespace. From here, Prettier runs only from the repository root, through `npm run lint`.
+
 ## Left, for me
 
 - The gate-2 test pull request with the three status tests, once this stack is merged.

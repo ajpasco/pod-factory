@@ -1,5 +1,7 @@
 import { active, isLock, short, type CommandIO } from '../commands/common.js';
-import { treeOf } from '../git-tree.js';
+import { fetchTrunk, treeOf } from '../git-tree.js';
+import { gitText } from '../records/git.js';
+import { boundStoryFile, gate3Approval, outsideScope, parseStory } from '../story.js';
 import type { ApprovalRecord, CheckResultRecord, FactoryRecord } from '../records/format.js';
 import { loadRecords, type RecordSet } from '../records/store.js';
 import {
@@ -27,7 +29,7 @@ interface Verdict {
   lines: string[];
 }
 
-function evaluate(set: RecordSet, pr: number, tree: string): Verdict {
+function evaluate(io: CommandIO, set: RecordSet, pr: number, head: string, tree: string): Verdict {
   const locked = active(set, isLock).length > 0;
   const forThisPr = active(set, isMergeApproval).filter(
     (a) => a.record.approval.pullRequest === pr,
@@ -63,7 +65,62 @@ function evaluate(set: RecordSet, pr: number, tree: string): Verdict {
       `Approval ${approval.record.recordId} by ${approval.record.actor.name} and verify result ${result.record.recordId} (run ${result.record.checkResult.runUrl}, bundle manifest ${short(result.record.checkResult.bundleManifestSha256 ?? '')}) bind tree ${short(tree)}, and neither is revoked.`,
     );
   }
-  return { pass: approval !== undefined && result !== undefined, lines };
+  let inScope = true;
+  if (approval !== undefined && approval.record.approval.kind === 'story') {
+    const scope = scopeCheck(io, set, approval.record.approval.story as string, head);
+    lines.push(...scope.lines);
+    inScope = scope.pass;
+  }
+  return { pass: approval !== undefined && result !== undefined && inScope, lines };
+}
+
+/**
+ * The story's file scope (TECH-SPEC section 3.2): the diff from the merge base with main to the
+ * head stays inside the Scope globs of the story file as gate-3 approval bound it, plus the
+ * story's own work folder. The story comes from the human's story approval, never the branch.
+ */
+function scopeCheck(io: CommandIO, set: RecordSet, story: string, head: string): Verdict {
+  const gate3 = gate3Approval(set);
+  if (gate3 === undefined) {
+    return {
+      pass: false,
+      lines: [`There is no valid gate-3 approval, so ${story}'s file scope cannot be checked.`],
+    };
+  }
+  // loadRecords fetched the records branch with full depth, which in a shallow clone also makes
+  // main's history whole, so the tree gate 3 bound and the merge base are both readable here.
+  const main = fetchTrunk(io.cwd, io.remote);
+  const file = boundStoryFile(io.cwd, gate3.record, story);
+  if ('reason' in file)
+    return { pass: false, lines: [`${story}'s file scope cannot be checked: ${file.reason}.`] };
+  const lists = parseStory(file.text);
+  if ('missing' in lists) {
+    return {
+      pass: false,
+      lines: [
+        `${story}'s approved story file has no ${lists.missing.join(', ')} list, so its scope cannot be checked.`,
+      ],
+    };
+  }
+  const base = gitText(io.cwd, ['merge-base', main, head]);
+  const changed = gitText(io.cwd, ['diff', '--name-only', '--no-renames', '-z', base, head])
+    .split('\0')
+    .filter((p) => p !== '');
+  const outside = outsideScope(story, lists.scope, changed);
+  if (outside.length === 0) {
+    return {
+      pass: true,
+      lines: [`All ${changed.length} changed files are inside ${story}'s approved scope.`],
+    };
+  }
+  return {
+    pass: false,
+    lines: outside.map((p) =>
+      p.startsWith('.factory/')
+        ? `${p} is in the factory's own folder, outside ${story}'s work folder; a story never changes it.`
+        : `${p} is outside ${story}'s approved file scope (${lists.scope.join(', ')}).`,
+    ),
+  };
 }
 
 /**
@@ -81,7 +138,7 @@ export function gateCheck(argv: string[], io: CommandIO, hooks: GateCheckHooks =
   let set = loadRecords(io.cwd, io.remote);
   for (let attempt = 0; attempt < 5; attempt++) {
     requireRecordsBranch(set, 'gate-check');
-    const verdict = evaluate(set, pr, tree);
+    const verdict = evaluate(io, set, pr, head, tree);
     hooks.afterRead?.(attempt);
     const again = loadRecords(io.cwd, io.remote);
     if (again.head === set.head) {

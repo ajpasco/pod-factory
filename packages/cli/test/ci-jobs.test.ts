@@ -15,6 +15,7 @@ import {
   job,
   mergeApproval,
   plantApproval,
+  plantGate3,
   plantLock,
   plantVerify,
   readManifest,
@@ -326,7 +327,11 @@ describe('ci verify and verify-record', () => {
 
 describe('ci gate-check', () => {
   function approvedAndVerified(kind: 'story' | 'bootstrap' = 'story') {
-    const { f, head, tree } = lockedWithPullRequest();
+    const f = ciProject({ story: true });
+    plantLock(f);
+    plantGate3(f);
+    const head = f.pullRequest(7, { 'src/app.js': 'export const app = 1;\n' });
+    const tree = treeAt(f, head);
     const approval = plantApproval(f, kind, 7, tree);
     const result = plantVerify(f, 7, tree);
     return { f, head, tree, approval, result };

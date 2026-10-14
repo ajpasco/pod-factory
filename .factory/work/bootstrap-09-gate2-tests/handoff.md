@@ -26,8 +26,8 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - `.factory/work/plan/build-plan.md` names `.factory/work/story-1/story.md`, which is how `approve 3` finds it. It also covers REQ-07 in substance: requirement and test IDs, interface, file scope, budgets and caps, agent and model, no dependencies, and an estimate.
   - `.factory/work/story-1/story.md` is the builder's brief:
     - `Tests:` `packages/cli/test/status.test.ts` (a locked pattern; locked at its hash by `lock`).
-    - `Scope:` the new command `packages/cli/src/commands/status.ts`, its helpers and unit tests under `packages/cli/src/status/**`, and its registration in `packages/cli/src/run.ts` and `packages/cli/src/index.ts`. Its own work folder is allowed without listing. The shared modules (`story.ts`, the store, the check runner) are deliberately outside, so story one cannot change enforcement code.
-    - `Inputs:` `docs/TECH-SPEC.md` (section 3.2 specifies `status`) and the locked test file.
+    - `Scope:` the new command `packages/cli/src/commands/status.ts`, its helpers in `packages/cli/src/status.ts` or under `packages/cli/src/status/**` (with unit tests), and its registration in `packages/cli/src/run.ts` and `packages/cli/src/index.ts`. Its own work folder is allowed without listing. The shared modules (`story.ts`, the store, the check runner) are deliberately outside, so story one cannot change enforcement code.
+    - `Inputs:` `docs/TECH-SPEC.md` (section 3.2 specifies `status`) and the locked test file. The locked tests are the definition of done, so a builder that cannot read them cannot work, and binding their hash in the start record proves which version it was handed.
   - Both were checked as the commands read them: `approve 3`'s pattern finds the story; `parseStory` reads all three lists; the test path matches a locked pattern; the scope covers the command, its helpers and registration, and excludes `src/story.ts` and the tests.
   - No locked test pins the CLI usage text, so registering `status` breaks none.
 
@@ -37,6 +37,7 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - These are NB tests asserting displayed content. The rule that governs them is "fail on a real assertion for the stated reason, never a setup or import error". The unknown-command text as the received value is incidental.
   - Keep each test's reason in its comment.
   - This pull request's body says its verify is red by design, and that it is the single pull request where that is true.
+- From the design session's review of fbbab25: `packages/cli/src/status.ts` joins the scope, because `src/status/**` needs the folder, and widening scope after `approve 3` would change the bound hash and force a re-approval. Inputs keep the locked test file.
 - From the design session: the build plan and story file belong in this pull request, the same preparation step as the tests. The fixture-ID rename waits for phase 1b, as a harmless first use of `approve amendment`.
 - The count is the builder's to fix, not the approver's: making a document self-consistent before it is approved is not a scope decision.
 - Lesson from 8a, from the design session: after any formatter runs, read the diff you are about to ask a human to approve. If it is bigger than the change you made, find out why before pushing.

@@ -7,6 +7,7 @@ Tests:
 
 Scope:
 - packages/cli/src/commands/status.ts
+- packages/cli/src/status.ts
 - packages/cli/src/status/**
 - packages/cli/src/run.ts
 - packages/cli/src/index.ts
@@ -33,7 +34,7 @@ The three tests in `packages/cli/test/status.test.ts` pass: T-19-P1, T-19-N1 and
 ## Where the code goes
 
 - `packages/cli/src/commands/status.ts`: the command, `status(argv, io): number`, refusing any arguments.
-- `packages/cli/src/status/`: any helpers you want, and your own unit tests (`*.test.ts` there are allowed and unlocked).
+- `packages/cli/src/status.ts` or `packages/cli/src/status/`: any helpers you want, and your own unit tests (`*.test.ts` under `src/status/` are allowed and unlocked).
 - `packages/cli/src/run.ts`: register `status` in the command switch and in `USAGE`.
 - `packages/cli/src/index.ts`: export it.
 

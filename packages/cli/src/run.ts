@@ -7,6 +7,7 @@ import { APPROVE_USAGE, approve } from './commands/approve.js';
 import { hookPreToolUse } from './hook/pre-tool-use.js';
 import { Refusal, type CommandIO } from './commands/common.js';
 import { lock } from './commands/lock.js';
+import { REVOKE_USAGE, revoke } from './commands/revoke.js';
 import { GitError } from './records/git.js';
 import { RecordsReadError } from './records/store.js';
 import { RecordWriteError } from './records/write.js';
@@ -16,11 +17,14 @@ export const USAGE = `Usage: pod-factory <command>
 Commands:
   approve   approve a gate, a story, a bootstrap pull request or an amendment
   lock      lock the tests and enforcement files the gate-2 approval binds
+  revoke    revoke a record; the gate it opened closes and CI blocks what relied on it
   hook      answer a Claude Code hook event on standard input: pre-tool-use
   ci        run a check-runner job: lock-guard, verify, verify-record, gate-check,
             records-validate
 
-${APPROVE_USAGE}`;
+${APPROVE_USAGE}
+
+${REVOKE_USAGE}`;
 
 /** Runs one command; every stop is a plain-language message and a non-zero exit. */
 export async function run(argv: string[], io: CommandIO): Promise<number> {
@@ -28,6 +32,7 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
   try {
     if (command === 'approve') return await approve(rest, io);
     if (command === 'lock') return lock(rest, io);
+    if (command === 'revoke') return await revoke(rest, io);
     if (command === 'ci') return ci(rest, io);
     if (command === 'hook' && rest.length === 1 && rest[0] === 'pre-tool-use') {
       return hookPreToolUse(io.input?.() ?? '', io);

@@ -165,6 +165,13 @@ describe('hook pre-tool-use', () => {
     expect(answer.reason).toMatch(/cannot tell which file this Write changes/);
   });
 
+  it('refuses an event it cannot read, since the matcher sends only edits', () => {
+    const { f } = project();
+    const answer = hook('{"tool_name": "Write", "tool_input": ', f.work);
+    expect(answer.denied).toBe(true);
+    expect(answer.reason).toMatch(/could not read this hook event, so the edit is refused/);
+  });
+
   it('refuses the edit when something unexpected stops it from deciding', () => {
     const { f } = project();
     const gone = join(tempDir(), 'removed-worktree');

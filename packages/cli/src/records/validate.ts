@@ -246,7 +246,13 @@ function checkLock(record: Obj, block: Obj): void {
 }
 
 function checkRevocation(record: Obj, block: Obj): void {
-  const revokes = matching(block.revokes, RECORD_ID, 'revocation.revokes', 'a record ID');
+  const revokes = block.revokes;
+  if (
+    typeof revokes !== 'string' ||
+    !(RECORD_ID.test(revokes) || BOOTSTRAP_FILE_PATTERN.test(revokes))
+  ) {
+    fail('field "revocation.revokes" must be a record ID or a bootstrap record\'s file name');
+  }
   if (!(record.refs as unknown[]).includes(revokes)) {
     fail('field "refs" must include the record named in "revocation.revokes"');
   }

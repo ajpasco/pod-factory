@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { BOOTSTRAP_DIR, RECORDS_BRANCH, RECORDS_DIR, type FactoryRecord } from './format.js';
+import { CHECK_RUNNER_IDENTITY } from './actor.js';
 import { git, gitText, readBlobs } from './git.js';
 import { validateBootstrapRecord, validateRecord, type BootstrapRecord } from './validate.js';
 
@@ -121,6 +122,39 @@ function history(cwd: string, head: string): { commit: string; changes: Change[]
   return commits;
 }
 
+/** The committer email of every commit on `head`'s history. */
+function committers(cwd: string, head: string): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const line of gitText(cwd, ['log', '--format=%H %ce', head]).split('\n')) {
+    const [commit = '', email = ''] = line.split(' ');
+    if (commit !== '') map.set(commit, email);
+  }
+  return map;
+}
+
+/**
+ * The writer check at commit level (TECH-SPEC section 4): a human record pushed by the Actions
+ * bot, or a check result pushed by anyone else, is flagged. Returns the reason, or null.
+ */
+function wrongCommitter(
+  path: string,
+  type: string,
+  commit: string,
+  committer: string | undefined,
+): string | null {
+  if (committer === undefined) {
+    return `${path} was added in commit ${short(commit)}, whose committer cannot be read, so who wrote it cannot be checked; it is ignored`;
+  }
+  const byBot = committer === CHECK_RUNNER_IDENTITY.email;
+  if (type === 'check-result' && !byBot) {
+    return `${path} is a check result committed by ${committer}, not by the check runner ${CHECK_RUNNER_IDENTITY.email}; only CI writes check results, so it is ignored`;
+  }
+  if ((type === 'approval' || type === 'lock' || type === 'revocation') && byBot) {
+    return `${path} is a human ${type} record committed by the check runner ${CHECK_RUNNER_IDENTITY.email}; a human record must be pushed by a human, so it is ignored`;
+  }
+  return null;
+}
+
 function isRecordPath(path: string): boolean {
   return path.startsWith(`${RECORDS_DIR}/`);
 }
@@ -206,13 +240,18 @@ export function readRecords(cwd: string, ref: string = remoteRecordsRef('origin'
     cwd,
     counted.map(([, first]) => first.blob),
   );
+  const committedBy = committers(cwd, set.head);
   const seenIds = new Map<string, string>();
   for (const [path, first] of counted) {
     const bytes = blobs.get(first.blob) ?? Buffer.alloc(0);
     if (isBootstrapPath(path)) {
       const result = validateBootstrapRecord(path, bytes);
-      if (result.ok) set.bootstrap.push({ path, commit: first.commit, record: result.record });
-      else set.flagged.push({ path, reason: `${result.reason}; it is ignored` });
+      const wrong = result.ok
+        ? wrongCommitter(path, 'approval', first.commit, committedBy.get(first.commit))
+        : null;
+      if (!result.ok) set.flagged.push({ path, reason: `${result.reason}; it is ignored` });
+      else if (wrong !== null) set.flagged.push({ path, reason: wrong });
+      else set.bootstrap.push({ path, commit: first.commit, record: result.record });
       continue;
     }
     if (path.lastIndexOf('/') !== RECORDS_DIR.length) {
@@ -225,6 +264,16 @@ export function readRecords(cwd: string, ref: string = remoteRecordsRef('origin'
     const result = validateRecord(path, bytes);
     if (!result.ok) {
       set.flagged.push({ path, reason: `${result.reason}; it is ignored` });
+      continue;
+    }
+    const wrong = wrongCommitter(
+      path,
+      result.record.recordType,
+      first.commit,
+      committedBy.get(first.commit),
+    );
+    if (wrong !== null) {
+      set.flagged.push({ path, reason: wrong });
       continue;
     }
     const earlier = seenIds.get(result.record.recordId);

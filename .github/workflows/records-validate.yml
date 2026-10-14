@@ -2,7 +2,9 @@ name: records-validate
 # The alerting job (TECH-SPEC section 3.2): validates every record on pod-factory/records, each
 # on its own, and fails so that a flagged record is seen. It rejects, rewrites and deletes nothing.
 # A schedule runs only from the default branch, so this always runs main's code: the enforcing
-# copy, never a branch's. While the records branch does not exist it reports nothing to validate.
+# copy, never a branch's. The job itself passes on a project whose records branch does not exist
+# yet; this repository's branch was created on 2026-10-14 (root commit fc8eb23), so here its
+# absence fails the run: deleting the branch would delete every revocation.
 on:
   schedule:
     - cron: '*/15 * * * *'
@@ -20,6 +22,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: the records branch exists
+        run: |
+          if ! git ls-remote --exit-code --heads origin pod-factory/records > /dev/null; then
+            echo "The records branch pod-factory/records is missing from origin. It existed from 2026-10-14; a missing branch means every record, revocations included, is gone. Restore it from a clone that has it and tell the approver."
+            exit 1
+          fi
       - name: enforcing copy
         run: |
           echo "enforcing copy: main at ${{ github.sha }}"

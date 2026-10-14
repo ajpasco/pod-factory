@@ -319,7 +319,7 @@ describe('record store: reading', () => {
     writeFileSync(join(side, path), bytes);
     sh(side, ['add', path]);
     sh(side, ['commit', '--quiet', '-m', 'side record']);
-    writeRecord(f.work, checkResult(), 'verify');
+    writeRecord(f.work, gateApproval(), 'gate-2');
     sh(side, ['fetch', '--quiet', 'origin']);
     sh(side, ['merge', '--quiet', '--no-edit', `origin/${BRANCH}`]);
     sh(side, ['push', '--quiet', 'origin', `HEAD:refs/heads/${BRANCH}`]);

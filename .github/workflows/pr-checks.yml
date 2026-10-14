@@ -1,0 +1,139 @@
+name: pr-checks
+# The three required checks of milestone zero (TECH-SPEC sections 3.2 and 5): lock-guard, verify
+# and gate-check. Defined on main and triggered by pull_request_target, so a pull request never
+# changes the checks that judge it. Every job checks out and builds the enforcing copy, main at
+# github.sha, and prints that commit; the pull request's head is fetched as data. Only the verify
+# job runs the pull request's code, with a read-only token.
+#
+# Why the harness may be trusted to judge the code it runs: the tests, the runner configuration
+# and package-lock.json are locked paths, and lock-guard runs on the same tree as a required
+# check, so a pull request cannot change the harness that judges it.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+permissions: {}
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+env:
+  PR: ${{ github.event.pull_request.number }}
+  HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+jobs:
+  lock-guard:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # Full history: lock-guard diffs from the merge base of main and the head, which a
+      # depth-one clone cannot find when the branch started from an older main commit.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: enforcer
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: build the enforcing copy
+        working-directory: enforcer
+        run: npm ci && npm run build --workspace packages/cli
+      - name: lock-guard
+        working-directory: enforcer
+        run: node packages/cli/dist/cli.js ci lock-guard --pr "$PR" --head "$HEAD_SHA"
+
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: enforcer
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: subject
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: build the enforcing copy
+        working-directory: enforcer
+        run: npm ci && npm run build --workspace packages/cli
+      - name: run the locked test commands on the pull request's head
+        working-directory: enforcer
+        run: >-
+          node packages/cli/dist/cli.js ci verify --pr "$PR" --head "$HEAD_SHA"
+          --subject "$GITHUB_WORKSPACE/subject" --bundle "$GITHUB_WORKSPACE/bundle"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verify-evidence
+          path: bundle
+          if-no-files-found: ignore
+
+  # Runs no application code: only the enforcing copy, reading the bundle as data. The verdict
+  # comes from the verify job's own conclusion as well as the bundle, so a doctored manifest
+  # cannot turn a failed run into a passing record.
+  verify-record:
+    needs: verify
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: enforcer
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: build the enforcing copy
+        working-directory: enforcer
+        run: npm ci && npm run build --workspace packages/cli
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: verify-evidence
+          path: bundle
+      - name: write the check result to the records branch
+        working-directory: enforcer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          node packages/cli/dist/cli.js ci verify-record --pr "$PR" --head "$HEAD_SHA" \
+            --bundle "$GITHUB_WORKSPACE/bundle" --verify-result "$VERIFY_RESULT" \
+            --run-id "$GITHUB_RUN_ID" --run-url "$RUN_URL"
+
+  # Needs verify-record so it never runs before the check result exists. `if: always()` is
+  # required, not decoration: a job skipped because a needed job failed reports as skipped, and
+  # GitHub counts a skipped required check as passing.
+  gate-check:
+    needs: [verify-record]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: enforcer
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: build the enforcing copy
+        working-directory: enforcer
+        run: npm ci && npm run build --workspace packages/cli
+      - name: gate-check
+        working-directory: enforcer
+        run: node packages/cli/dist/cli.js ci gate-check --pr "$PR" --head "$HEAD_SHA"

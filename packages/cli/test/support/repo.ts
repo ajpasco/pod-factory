@@ -25,6 +25,8 @@ export function sh(cwd: string, args: string[], input?: string): string {
 }
 
 export const BRANCH = 'pod-factory/records';
+export const RUNNER_NAME = 'github-actions[bot]';
+export const RUNNER_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com';
 
 export interface Fixture {
   root: string;
@@ -34,8 +36,15 @@ export interface Fixture {
   work: string;
   /** Another clone of the same remote. */
   clone(name: string): string;
-  /** Commits raw file changes to the records branch, bypassing pod-factory (null deletes). */
-  plant(files: Record<string, string | null>, message?: string): string;
+  /**
+   * Commits raw file changes to the records branch, bypassing pod-factory (null deletes). With
+   * `by: 'runner'` the commit is made as the Actions bot, as CI's record-writing job makes it.
+   */
+  plant(
+    files: Record<string, string | null>,
+    message?: string,
+    options?: { by?: 'runner' },
+  ): string;
   /** Every file on the remote records branch. */
   filesOnBranch(): string[];
   /** Number of commits on the remote records branch. */
@@ -85,13 +94,21 @@ export function fixture(options: { recordsBranch?: boolean } = {}): Fixture {
   const work = clone('work');
 
   let planter: string | null = null;
-  const plant = (files: Record<string, string | null>, message = 'planted change'): string => {
+  const plant = (
+    files: Record<string, string | null>,
+    message = 'planted change',
+    options: { by?: 'runner' } = {},
+  ): string => {
     if (planter === null) planter = clone('planter');
     sh(planter, ['fetch', '--quiet', 'origin']);
     sh(planter, ['checkout', '--quiet', '-B', 'records', `origin/${BRANCH}`]);
     applyFiles(planter, files);
     sh(planter, ['add', '--all']);
-    sh(planter, ['commit', '--quiet', '-m', message]);
+    const identity =
+      options.by === 'runner'
+        ? ['-c', `user.name=${RUNNER_NAME}`, '-c', `user.email=${RUNNER_EMAIL}`]
+        : [];
+    sh(planter, [...identity, 'commit', '--quiet', '-m', message]);
     sh(planter, ['push', '--quiet', 'origin', `HEAD:refs/heads/${BRANCH}`]);
     return sh(planter, ['rev-parse', 'HEAD']);
   };

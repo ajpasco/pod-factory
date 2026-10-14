@@ -46,7 +46,13 @@ One npm package, TypeScript on Node, Vitest, in this repository under `packages/
 
 ## How to report
 
-At the end of each session leave a handoff note in the story's work folder: done, left, open questions, next step. Send questions to the approver, never decide product or security questions alone. The design session can be asked for a read-only review of a pull request; it will not edit code.
+At the end of each session leave a handoff note in the story's work folder: done, left, open questions, next step. Never decide product or security questions alone. The design session can be asked for a read-only review of a pull request; it will not edit code.
+
+Who answers what (confirmed by the approver on 2026-10-13):
+
+- Design and spec questions go to the design session directly, by message, one at a time. Act on its answers.
+- Three kinds go to the approver, never to the design session: product, scope and security decisions; approval records, locks and merges; creating or protecting the records branch.
+- Record every answer in the slice handoff under "Decisions made in session", naming who gave it, so the written trail survives without the approver relaying.
 
 ## Session setup, done by the design session on 2026-10-13
 

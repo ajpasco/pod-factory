@@ -10,6 +10,7 @@ import {
   COMMON_KEYS,
   HANDOFF_NOTE_KEYS,
   LEASE_KEYS,
+  BOOTSTRAP_FILE_PATTERN,
   RECORD_FILE_PATTERN,
   RECORD_TYPES,
   SCHEMA_VERSION,
@@ -24,7 +25,7 @@ import {
 /** A bootstrap record as written by hand before the approval path existed (schema bootstrap-0). */
 export interface BootstrapRecord {
   schemaVersion: 'bootstrap-0';
-  recordType: 'approval' | 'amendment';
+  recordType: 'approval' | 'amendment' | 'classification';
   factoryVersion: string;
   hashAlgorithm: typeof BOOTSTRAP_HASH_ALGORITHM;
   binds: Record<string, unknown>;
@@ -224,10 +225,21 @@ function checkApproval(record: Obj, block: Obj): void {
   text(block.statement, 'approval.statement');
 }
 
+function textList(value: unknown, field: string): string[] {
+  if (!Array.isArray(value) || value.length === 0)
+    fail(`field "${field}" must be a non-empty list`);
+  value.forEach((item, i) => text(item, `${field}.${i}`));
+  return value as string[];
+}
+
 function checkLock(record: Obj, block: Obj): void {
-  text(block.testCommand, 'lock.testCommand');
-  const files = (record.binds as { files: Obj }).files;
-  if (Object.keys(files).length === 0) fail('a lock must list at least one locked path');
+  const patterns = textList(block.patterns, 'lock.patterns');
+  patterns.forEach((pattern, i) => relativePath(pattern, `lock.patterns.${i}`));
+  if (new Set(patterns).size !== patterns.length) fail('field "lock.patterns" repeats a pattern');
+  textList(block.testCommands, 'lock.testCommands');
+  const binds = record.binds as { tree: unknown; files: Obj };
+  if (binds.tree === null) fail('a lock must bind the approved tree in "binds.tree"');
+  if (Object.keys(binds.files).length === 0) fail('a lock must list at least one locked path');
   if ((record.refs as unknown[]).length === 0) {
     fail('a lock must refer to the gate-2 approval it follows in "refs"');
   }
@@ -319,7 +331,11 @@ function validateSchema1(fileName: string, raw: string): FactoryRecord {
   checkBinds(record.binds, type, type === 'approval' && block.kind === 'amendment');
   oneOf(record.outcome, OUTCOMES[type], 'outcome');
   if (!Array.isArray(record.refs)) fail('field "refs" must be a list of record IDs');
-  record.refs.forEach((ref, i) => matching(ref, RECORD_ID, `refs.${i}`, 'a record ID'));
+  record.refs.forEach((ref, i) => {
+    if (typeof ref !== 'string' || !(RECORD_ID.test(ref) || BOOTSTRAP_FILE_PATTERN.test(ref))) {
+      fail(`field "refs.${i}" must be a record ID or a bootstrap record's file name`);
+    }
+  });
   BLOCK_CHECKS[type](record, block);
 
   const name = RECORD_FILE_PATTERN.exec(fileName);
@@ -358,7 +374,7 @@ export function validateRecord(
 }
 
 function validateBootstrap0(fileName: string, raw: string): BootstrapRecord {
-  if (!/^\d{4}-[a-z0-9][a-z0-9.-]*\.json$/.test(fileName)) {
+  if (!BOOTSTRAP_FILE_PATTERN.test(fileName)) {
     fail('has a file name that does not follow the bootstrap form NNNN-<subject>.json');
   }
   const record = parse(raw);
@@ -366,7 +382,7 @@ function validateBootstrap0(fileName: string, raw: string): BootstrapRecord {
     if (record.schemaVersion === undefined) fail('missing field "schemaVersion"');
     fail(`has schema ${JSON.stringify(record.schemaVersion)} where bootstrap-0 was expected`);
   }
-  oneOf(record.recordType, ['approval', 'amendment'], 'recordType');
+  oneOf(record.recordType, ['approval', 'amendment', 'classification'], 'recordType');
   if (record.factoryVersion === undefined) fail('missing field "factoryVersion"');
   text(record.factoryVersion, 'factoryVersion');
   if (record.hashAlgorithm === undefined) fail('missing field "hashAlgorithm"');

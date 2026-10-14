@@ -40,6 +40,22 @@ export interface Fixture {
   filesOnBranch(): string[];
   /** Number of commits on the remote records branch. */
   commitCount(): number;
+  /** Commits file changes to main on the remote (null deletes) and returns the commit. */
+  commitToMain(files: Record<string, string | null>, message?: string): string;
+  /** Publishes main plus `files` as refs/pull/<n>/head, as GitHub does, and returns the commit. */
+  pullRequest(n: number, files: Record<string, string | null>): string;
+}
+
+function applyFiles(dir: string, files: Record<string, string | null>): void {
+  for (const [path, content] of Object.entries(files)) {
+    const full = join(dir, path);
+    if (content === null) {
+      unlinkSync(full);
+    } else {
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, content);
+    }
+  }
 }
 
 /** A bare remote with a main branch and, unless told otherwise, an empty records branch. */
@@ -73,19 +89,23 @@ export function fixture(options: { recordsBranch?: boolean } = {}): Fixture {
     if (planter === null) planter = clone('planter');
     sh(planter, ['fetch', '--quiet', 'origin']);
     sh(planter, ['checkout', '--quiet', '-B', 'records', `origin/${BRANCH}`]);
-    for (const [path, content] of Object.entries(files)) {
-      const full = join(planter, path);
-      if (content === null) {
-        unlinkSync(full);
-      } else {
-        mkdirSync(dirname(full), { recursive: true });
-        writeFileSync(full, content);
-      }
-    }
+    applyFiles(planter, files);
     sh(planter, ['add', '--all']);
     sh(planter, ['commit', '--quiet', '-m', message]);
     sh(planter, ['push', '--quiet', 'origin', `HEAD:refs/heads/${BRANCH}`]);
     return sh(planter, ['rev-parse', 'HEAD']);
+  };
+
+  let author: string | null = null;
+  const onMain = (files: Record<string, string | null>, message: string, push: string): string => {
+    if (author === null) author = clone('author');
+    sh(author, ['fetch', '--quiet', 'origin']);
+    sh(author, ['checkout', '--quiet', '-B', 'work', 'origin/main']);
+    applyFiles(author, files);
+    sh(author, ['add', '--all']);
+    sh(author, ['commit', '--quiet', '--allow-empty', '-m', message]);
+    sh(author, ['push', '--quiet', '--force', 'origin', `HEAD:${push}`]);
+    return sh(author, ['rev-parse', 'HEAD']);
   };
 
   return {
@@ -94,6 +114,8 @@ export function fixture(options: { recordsBranch?: boolean } = {}): Fixture {
     work,
     clone,
     plant,
+    commitToMain: (files, message = 'project change') => onMain(files, message, 'refs/heads/main'),
+    pullRequest: (n, files) => onMain(files, `pull request ${n}`, `refs/pull/${n}/head`),
     filesOnBranch: () =>
       sh(remote, ['ls-tree', '-r', '--name-only', BRANCH])
         .split('\n')

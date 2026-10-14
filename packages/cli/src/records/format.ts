@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { HASH_ALGORITHM } from './hash.js';
+import { HASH_ALGORITHM, hashText } from './hash.js';
 
 export const SCHEMA_VERSION = 1;
 export const RECORDS_BRANCH = 'pod-factory/records';
@@ -67,10 +67,17 @@ export interface ApprovalRecord extends RecordBase {
   approval: ApprovalBlock;
 }
 
+export interface LockBlock {
+  /** The locked path patterns; a file added under one is a change to a locked path. */
+  patterns: string[];
+  /** The exact test commands, in order, starting with the install line. */
+  testCommands: string[];
+}
+
 export interface LockRecord extends RecordBase {
   recordType: 'lock';
   outcome: 'locked';
-  lock: { testCommand: string };
+  lock: LockBlock;
 }
 
 export interface RevocationRecord extends RecordBase {
@@ -135,7 +142,7 @@ export const COMMON_KEYS = [
 
 export const BLOCK_KEYS = {
   approval: ['kind', 'gate', 'story', 'pullRequest', 'shownHash', 'typedPrefix', 'statement'],
-  lock: ['testCommand'],
+  lock: ['patterns', 'testCommands'],
   revocation: ['revokes', 'reason'],
   transition: ['story', 'from', 'to', 'lease', 'handoffNote'],
   'check-result': ['check', 'pullRequest', 'runId', 'runUrl', 'bundleManifestSha256'],
@@ -167,6 +174,9 @@ export function utcNow(now: Date = new Date()): string {
 export function compactTimestamp(createdAt: string): string {
   return createdAt.replace(/[-:]/g, '');
 }
+
+/** A bootstrap record's file name under records/bootstrap/, e.g. 0001-gate-1-approval-prd-0.9.json. */
+export const BOOTSTRAP_FILE_PATTERN = /^\d{4}-[a-z0-9][a-z0-9.-]*\.json$/;
 
 export const SUBJECT_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -231,4 +241,19 @@ export function canonicalize(record: FactoryRecord): Record<string, unknown> {
 /** The exact bytes a record is stored as: two-space JSON in fixed key order, LF, final newline. */
 export function serializeRecord(record: FactoryRecord): string {
   return `${JSON.stringify(canonicalize(record), null, 2)}\n`;
+}
+
+/**
+ * The single hash `approve` shows: SHA-256 over everything it printed above the hash, in canonical
+ * form: the statement, the bound tree and files, and the records the approval refers to.
+ */
+export function shownHashOf(shown: { statement: string; binds: Binds; refs: string[] }): string {
+  const files: Record<string, FileBinding> = {};
+  for (const path of Object.keys(shown.binds.files).sort()) {
+    const value = shown.binds.files[path] as FileBinding;
+    files[path] = typeof value === 'string' ? value : { before: value.before, after: value.after };
+  }
+  return hashText(
+    JSON.stringify({ statement: shown.statement, tree: shown.binds.tree, files, refs: shown.refs }),
+  );
 }

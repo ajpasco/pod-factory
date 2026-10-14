@@ -4,17 +4,17 @@ Date: 2026-10-12. Status: accepted. Decided by: the approver (asked; recommended
 
 ## Defaults per story, until a project changes them
 
-| Kind | Default | Behavior in hard-stop mode |
-|---|---|---|
-| Cost | 5,000,000 tokens | park and ask |
-| Time | 8 wall-clock hours | park and ask |
-| Fix rounds | 3 per story | park and ask |
-| Reopen cycles | 3 per build plan | park and ask |
-| Re-reviews | 2 per story | park and ask |
-| Files touched | 10 | tripwire: written justification |
-| Lines changed | 400 | tripwire |
-| Nesting depth | 3 | tripwire |
-| Function complexity | 10 | tripwire |
+| Kind                | Default            | Behavior in hard-stop mode      |
+| ------------------- | ------------------ | ------------------------------- |
+| Cost                | 5,000,000 tokens   | park and ask                    |
+| Time                | 8 wall-clock hours | park and ask                    |
+| Fix rounds          | 3 per story        | park and ask                    |
+| Reopen cycles       | 3 per build plan   | park and ask                    |
+| Re-reviews          | 2 per story        | park and ask                    |
+| Files touched       | 10                 | tripwire: written justification |
+| Lines changed       | 400                | tripwire                        |
+| Nesting depth       | 3                  | tripwire                        |
+| Function complexity | 10                 | tripwire                        |
 
 ## Budget modes, a project profile setting
 

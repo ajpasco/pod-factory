@@ -15,10 +15,10 @@ Stacked on slice 7 (`bootstrap-07-doctor`, PR #8). This pull request targets tha
 - To make that work without shipped code reading a test variable:
   - `CommandIO.onKillPoint` is an optional hook that every command passes to its record write and its pending-write finish, through `writeOptions(io)`. Only the test child `test/support/flow-child.ts` sets it.
   - `approve` is idempotent. When a valid, unrevoked approval already carries the same shown hash, it writes nothing ("Already approved"), so a restart never approves the same content twice.
-  - `story finish` on a verifying story with no story approval yet reports that state and exits 0, still naming what done needs. On a done story it reports "already done" and exits 0. A story approval that exists but is not merged still refuses.
+  - `story finish` exits non-zero only when something is wrong, and reports with exit 0, writing nothing, whenever it is waiting on someone else: no story approval yet, or approved and not yet merged. A done story reports "already done" with exit 0. A pull request that changed after its approval is refused with exit 1, because it is wrong rather than waiting; a test covers that refusal.
 - Eval plan section 13: T-05-P2, T-05-N3 and T-05-N4 are removed, with the reason stated. Milestone zero's count is sixty, and `docs/HANDOFF-M0-opus.md` says 60.
 - TECH-SPEC section 3.2: `approve` is idempotent; `lock`, `story start` and `story finish` are safe to run again.
-- Tests: 155 passing on two runs. Typecheck, ESLint and Prettier are clean.
+- Tests: 156 passing. Typecheck, ESLint and Prettier are clean.
 - Mutation checks:
   - approve not idempotent fails four of the five kill-point runs;
   - approve not finishing pending writes fails the after-journal and before-push runs.
@@ -28,6 +28,7 @@ Stacked on slice 7 (`bootstrap-07-doctor`, PR #8). This pull request targets tha
 - By the design session:
   - T-05-P2, T-05-N3 and T-05-N4 leave milestone zero. Section 13 contradicted the phase table and rule 5, and an RB test of a command that does not exist cannot pass. The design session is telling the approver, because it changes the number approved at gate 2; there is nothing for him to decide.
   - The kill-and-resume test lands in this small pull request.
+  - From the review of 14b9c1b: one rule for `story finish`, made now, before these tests are locked. Exit 0 for every wait, exit 1 only for something wrong. The during-journal-write kill cannot exercise idempotency, since no record lands before it, so five passing kill points are not five proofs of it.
   - The status tests land last, in the gate-2 test pull request. That fixes the order below.
   - The design session states one exception to its rule against merging a red gate-check: the gate-2 test pull request, whose red verify is the designed outcome of classification. The authority for that merge is the approver's bootstrap approval plus the classification record.
 

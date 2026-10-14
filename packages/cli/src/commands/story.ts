@@ -260,9 +260,11 @@ export function storyFinish(argv: string[], io: CommandIO): number {
       git(io.cwd, ['merge-base', '--is-ancestor', head, main], { allowFail: true }).status === 0;
     const sameTree = treeOf(io.cwd, main) === approval.record.binds.tree;
     if (!ancestor && !sameTree) {
-      throw new Refusal(
-        `story finish refused: ${story} cannot be done until pull request ${pr} at ${short(head)} is merged into ${TRUNK}: that head is not in ${TRUNK}'s history, and ${TRUNK} does not hold the approved tree ${short(approval.record.binds.tree ?? '')}. Nothing was written.`,
+      // A wait, not an error: the approved content is waiting to be merged.
+      io.out(
+        `${story} is verifying and approved, and cannot be done until pull request ${pr} at ${short(head)} is merged into ${TRUNK}: that head is not in ${TRUNK}'s history, and ${TRUNK} does not hold the approved tree ${short(approval.record.binds.tree ?? '')}. Nothing was written.`,
       );
+      return 0;
     }
     const proof = ancestor
       ? `the approved head ${short(head)} is in ${TRUNK}'s history`

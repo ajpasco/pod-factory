@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "recordType": "check-result",
+  "recordId": "0ade1c15a348",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-14T17:40:57Z",
+  "actor": {
+    "name": "github-actions[bot]",
+    "email": "41898282+github-actions[bot]@users.noreply.github.com",
+    "kind": "check-runner"
+  },
+  "binds": {
+    "tree": "58add2e14ac50bf0bb20509e88def4811e6d9e35",
+    "files": {}
+  },
+  "outcome": "fail",
+  "refs": [],
+  "checkResult": {
+    "check": "verify",
+    "pullRequest": 13,
+    "runId": 38608489884,
+    "runUrl": "https://github.com/ajpasco/pod-factory/actions/runs/38608489884",
+    "bundleManifestSha256": "e299282baab4c20c433e1b6889f1cc582e05addb6bb727dbcae04e66316889cf"
+  }
+}

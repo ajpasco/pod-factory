@@ -540,9 +540,11 @@ These are the tests that must exist as code and be classified before gate 2 clos
 | T-06-P7, T-06-N6 | an amendment approval lets a locked change pass; without one it fails | RB |
 | T-06-P10, T-06-N9 | `lock-guard` passes an unlocked change on any branch and fails a locked change without an amendment | RB |
 | T-07-P3, T-07-N5 | `story start` proceeds with a valid gate-3 approval for the current plan and refuses without one, with an invalid one, or with one for an older plan | RB |
+| T-07-N7 | `story start` refuses when a story file gate 3 bound has changed, naming the file, and says gate 3 is open again; milestone zero keeps no reopen count | RB |
 | T-07-P4, T-07-N6 | ready rule: in-progress needs locked tests | RB |
 | T-08-P2, T-08-N2 | verifying needs the handoff note; done needs the approval and the merge | RB |
 | T-08-P3, T-08-N3 | handoff note recorded; missing note refused | RB |
+| T-08-P4 | the in-progress record binds exactly the story file and the inputs it lists, with their hashes | RB |
 | T-08-P5, T-08-N5 | diff inside file scope passes `verify`; outside fails naming the file | RB |
 | T-09-P9, T-09-N12 | the record-writing job can push a check result; test code in the verify job cannot | RB |
 | T-10-N3, T-10-P3 | no, invalid, or foreign approval blocks merge; a moved main re-runs tests without re-review | RB |
@@ -555,4 +557,4 @@ These are the tests that must exist as code and be classified before gate 2 clos
 | T-22-N6 | `revoke` reports pending until CI confirms every affected open pull request is blocked, and never claims enforcement earlier | RB |
 | T-22-N7 | a gate-check run that started before a revocation landed cannot report a pass after it | RB |
 
-Sixty tests. T-05-P2, T-05-N3 and T-05-N4 were listed here as RB and are removed (2026-10-14, by the design session): the classification command is phase 1b's (TECH-SPEC section 2), pod-factory's own gate 2 has no classifier and uses a bootstrap classification record (section 1, rule 5), and a test of a command that does not exist cannot pass as a baseline. They land in phase 1b with the command they test. T-22-N6 and T-22-N7 are new; T-22-N6 pairs with T-22-P1 and T-22-N7 with T-10-P1. Tests of mechanisms milestone zero defers (class-check, dispatch files, the question-tool hook, waivers, the validated ref, backend choice) are not in this set and are rewritten with their phase.
+Fifty-four tests, the count of distinct test IDs in this table. T-07-N7 and T-08-P4 joined it on 2026-10-14: milestone zero has their behaviour and a test asserts it. T-20-P4 stays out: milestone zero checks the bootstrap records' older algorithm wording (T-20-P2) and verifies their hashes with it (T-03-P5), but has no gate-reopen result for a bootstrap record to assert. T-05-P2, T-05-N3 and T-05-N4 were listed here as RB and are removed (2026-10-14, by the design session): the classification command is phase 1b's (TECH-SPEC section 2), pod-factory's own gate 2 has no classifier and uses a bootstrap classification record (section 1, rule 5), and a test of a command that does not exist cannot pass as a baseline. They land in phase 1b with the command they test. T-22-N6 and T-22-N7 are new; T-22-N6 pairs with T-22-P1 and T-22-N7 with T-10-P1. Tests of mechanisms milestone zero defers (class-check, dispatch files, the question-tool hook, waivers, the validated ref, backend choice) are not in this set and are rewritten with their phase.

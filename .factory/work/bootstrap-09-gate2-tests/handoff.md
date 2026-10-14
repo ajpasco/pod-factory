@@ -22,6 +22,14 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - The count sentence now reads "Fifty-four tests, the count of distinct test IDs in this table", so the number can be re-derived; the table holds 54, all in code. `docs/HANDOFF-M0-opus.md` says 54.
   - The documents changed only on those lines, the same with and without whitespace, edited without a formatter.
 - No `status` entry point, per TECH-SPEC section 3.3 and the design session's ruling.
+- Story one's plan, so `approve 3` has something on main to bind. It has to land in this pull request: once this is on main, every pull request's verify is red until story one, and a separate plan pull request would be a second red-verify exception.
+  - `.factory/work/plan/build-plan.md` names `.factory/work/story-1/story.md`, which is how `approve 3` finds it. It also covers REQ-07 in substance: requirement and test IDs, interface, file scope, budgets and caps, agent and model, no dependencies, and an estimate.
+  - `.factory/work/story-1/story.md` is the builder's brief:
+    - `Tests:` `packages/cli/test/status.test.ts` (a locked pattern; locked at its hash by `lock`).
+    - `Scope:` the new command `packages/cli/src/commands/status.ts`, its helpers and unit tests under `packages/cli/src/status/**`, and its registration in `packages/cli/src/run.ts` and `packages/cli/src/index.ts`. Its own work folder is allowed without listing. The shared modules (`story.ts`, the store, the check runner) are deliberately outside, so story one cannot change enforcement code.
+    - `Inputs:` `docs/TECH-SPEC.md` (section 3.2 specifies `status`) and the locked test file.
+  - Both were checked as the commands read them: `approve 3`'s pattern finds the story; `parseStory` reads all three lists; the test path matches a locked pattern; the scope covers the command, its helpers and registration, and excludes `src/story.ts` and the tests.
+  - No locked test pins the CLI usage text, so registering `status` breaks none.
 
 ## Decisions made in session
 
@@ -29,8 +37,19 @@ The gate-2 test pull request, stacked on 8a (`bootstrap-08a-kill-resume`, PR #9)
   - These are NB tests asserting displayed content. The rule that governs them is "fail on a real assertion for the stated reason, never a setup or import error". The unknown-command text as the received value is incidental.
   - Keep each test's reason in its comment.
   - This pull request's body says its verify is red by design, and that it is the single pull request where that is true.
+- From the design session: the build plan and story file belong in this pull request, the same preparation step as the tests. The fixture-ID rename waits for phase 1b, as a harmless first use of `approve amendment`.
 - The count is the builder's to fix, not the approver's: making a document self-consistent before it is approved is not a scope decision.
 - Lesson from 8a, from the design session: after any formatter runs, read the diff you are about to ask a human to approve. If it is bigger than the change you made, find out why before pushing.
+
+## Deferred to phase 1b: fixture strings that carry real test IDs
+
+Fixture file contents use real eval-plan IDs, so a tool that greps test IDs out of the tree finds tests that do not exist. Rename them to obviously unreal IDs (for example T-00-P0) when these tests are next amended. That is a harmless first use of `approve amendment`, which is the reason to defer it rather than change tests just before classification. All seven:
+
+- `packages/cli/test/support/ci.ts:23`: `it('T-01-P1 [M0] fixture', ...)`, the content of the fixture's `packages/cli/test/a.test.ts`.
+- `packages/cli/test/support/project.ts:20`: `it('T-03-N4 [M0] fixture', ...)`, the content of the fixture's `packages/cli/test/approve.test.ts`.
+- `packages/cli/test/lock.test.ts:143`: `it('T-03-N4 [M0] amended', ...)`.
+- `packages/cli/test/ci-jobs.test.ts:176` and `:188`: `it('T-03-N4 [M0] amended', ...)`.
+- `packages/cli/test/ci-jobs.test.ts:199` and `:200`: `it('T-03-N4 [M0] first amendment', ...)` and `it('T-03-N4 [M0] second amendment', ...)`.
 
 ## Expected on GitHub
 

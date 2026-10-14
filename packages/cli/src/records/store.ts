@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { BOOTSTRAP_DIR, RECORDS_BRANCH, RECORDS_DIR, type FactoryRecord } from './format.js';
 import { git, gitText, readBlobs } from './git.js';
 import { validateBootstrapRecord, validateRecord, type BootstrapRecord } from './validate.js';
@@ -29,20 +31,48 @@ export function remoteRecordsRef(remote: string): string {
 }
 
 /**
- * Fetches the records branch from `remote`. Returns false when the remote has no records branch;
- * throws when the remote cannot be reached.
+ * The records branch cannot be read safely. Every consumer stops with this message; nothing is
+ * treated as approved.
+ */
+export class RecordsReadError extends Error {}
+
+/**
+ * Fetches the records branch from `remote` with its full history, so the commit that first added
+ * each record can be read even in a shallow clone (the default in GitHub Actions). Returns false
+ * when the remote has no records branch; throws when the remote cannot be reached.
  */
 export function fetchRecords(cwd: string, remote = 'origin'): boolean {
   const heads = gitText(cwd, ['ls-remote', '--heads', remote, `refs/heads/${RECORDS_BRANCH}`]);
   if (heads === '') return false;
+  const shallow = gitText(cwd, ['rev-parse', '--is-shallow-repository']) === 'true';
   git(cwd, [
     'fetch',
     '--quiet',
     '--no-tags',
+    // git's own spelling of "all of it": deepens a shallow clone's copy of this branch only.
+    ...(shallow ? ['--depth=2147483647'] : []),
     remote,
     `+refs/heads/${RECORDS_BRANCH}:${remoteRecordsRef(remote)}`,
   ]);
   return true;
+}
+
+/** The first commit on `head`'s history that a shallow clone cut off, or null when it is whole. */
+function cutAt(cwd: string, head: string): string | null {
+  const file = gitText(cwd, ['rev-parse', '--git-path', 'shallow']);
+  const path = isAbsolute(file) ? file : join(cwd, file);
+  if (!existsSync(path)) return null;
+  const cut = new Set(
+    readFileSync(path, 'utf8')
+      .split('\n')
+      .filter((l) => l !== ''),
+  );
+  if (cut.size === 0) return null;
+  return (
+    gitText(cwd, ['rev-list', head])
+      .split('\n')
+      .find((c) => cut.has(c)) ?? null
+  );
 }
 
 interface FirstAdded {
@@ -114,6 +144,12 @@ export function readRecords(cwd: string, ref: string = remoteRecordsRef('origin'
   });
   if (head.status !== 0) return set;
   set.head = head.stdout.toString().trim();
+  const cut = cutAt(cwd, set.head);
+  if (cut !== null) {
+    throw new RecordsReadError(
+      `The records branch history in this clone stops at commit ${short(cut)} (a shallow clone), so pod-factory cannot tell what each record held when it was first added. Fetch the whole branch with "git fetch --unshallow" or a fresh clone and run it again. Nothing was read as approved.`,
+    );
+  }
 
   for (const merge of gitText(cwd, ['rev-list', '--min-parents=2', set.head]).split('\n')) {
     if (merge !== '') {

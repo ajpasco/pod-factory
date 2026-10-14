@@ -12,4 +12,5 @@ export * from './git-tree.js';
 export { approve, APPROVE_USAGE } from './commands/approve.js';
 export { lock } from './commands/lock.js';
 export { Refusal, requireHuman, type CommandIO } from './commands/common.js';
+export { recordsValidate } from './check-runner/records-validate.js';
 export { run, USAGE } from './run.js';

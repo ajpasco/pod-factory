@@ -1,0 +1,35 @@
+name: records-validate
+# The alerting job (TECH-SPEC section 3.2): validates every record on pod-factory/records, each
+# on its own, and fails so that a flagged record is seen. It rejects, rewrites and deletes nothing.
+# A schedule runs only from the default branch, so this always runs main's code: the enforcing
+# copy, never a branch's. While the records branch does not exist it reports nothing to validate.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: records-validate
+  cancel-in-progress: false
+jobs:
+  records-validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: enforcing copy
+        run: |
+          echo "enforcing copy: main at ${{ github.sha }}"
+          echo "enforcing copy: main at ${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build --workspace packages/cli
+      # The checkout is shallow; the job fetches pod-factory/records with its full history itself,
+      # because each record is read as it was when first added.
+      - name: validate every record
+        run: node packages/cli/dist/cli.js ci records-validate

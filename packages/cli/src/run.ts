@@ -1,4 +1,8 @@
+import { gateCheck } from './check-runner/gate-check.js';
+import { lockGuard } from './check-runner/lock-guard.js';
 import { recordsValidate } from './check-runner/records-validate.js';
+import { verifyRecord } from './check-runner/verify-record.js';
+import { verify } from './check-runner/verify.js';
 import { APPROVE_USAGE, approve } from './commands/approve.js';
 import { Refusal, type CommandIO } from './commands/common.js';
 import { lock } from './commands/lock.js';
@@ -11,7 +15,8 @@ export const USAGE = `Usage: pod-factory <command>
 Commands:
   approve   approve a gate, a story, a bootstrap pull request or an amendment
   lock      lock the tests and enforcement files the gate-2 approval binds
-  ci        run a check-runner job: records-validate
+  ci        run a check-runner job: lock-guard, verify, verify-record, gate-check,
+            records-validate
 
 ${APPROVE_USAGE}`;
 
@@ -49,8 +54,12 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
 
 function ci(argv: string[], io: CommandIO): number {
   const [job, ...rest] = argv;
+  if (job === 'lock-guard') return lockGuard(rest, io);
+  if (job === 'verify') return verify(rest, io);
+  if (job === 'verify-record') return verifyRecord(rest, io);
+  if (job === 'gate-check') return gateCheck(rest, io);
   if (job === 'records-validate') return recordsValidate(rest, io);
   throw new Refusal(
-    `pod-factory ci has no job "${job ?? ''}". Jobs: records-validate. Nothing was checked.`,
+    `pod-factory ci has no job "${job ?? ''}". Jobs: lock-guard, verify, verify-record, gate-check, records-validate. Nothing was checked.`,
   );
 }

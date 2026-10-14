@@ -91,12 +91,6 @@ export function globToRegExp(pattern: string): RegExp {
   return new RegExp(`^${source}$`);
 }
 
-const LOCKED = LOCKED_PATTERNS.map(globToRegExp);
-
-export function isLockedPath(path: string): boolean {
-  return LOCKED.some((re) => re.test(path));
-}
-
 /** The commands that apply to a tree holding `paths`, in their locked order. */
 export function testCommandsFor(paths: ReadonlySet<string>): string[] {
   return LOCKED_COMMANDS.filter((c) => paths.has(c.requires)).map((c) => c.command);

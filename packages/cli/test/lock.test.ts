@@ -25,7 +25,15 @@ async function approveGate2(f: Fixture): Promise<ApprovalRecord> {
       human(f.work, confirms('2')),
     ),
   ).toBe(0);
-  return loadRecords(f.work).records.at(-1)?.record as ApprovalRecord;
+  return latestApproval(f, 'gate');
+}
+
+/** The newest approval of `kind`. Records sort by file name, so same-second records may tie. */
+function latestApproval(f: Fixture, kind: ApprovalRecord['approval']['kind']): ApprovalRecord {
+  const approvals = loadRecords(f.work)
+    .records.map((s) => s.record)
+    .filter((r): r is ApprovalRecord => r.recordType === 'approval' && r.approval.kind === kind);
+  return approvals.at(-1) as ApprovalRecord;
 }
 
 function locks(f: Fixture): LockRecord[] {
@@ -147,7 +155,7 @@ describe('approve amendment', () => {
     ];
     expect(await run(['approve', 'amendment', '--pr', '9', ...paths], io)).toBe(0);
 
-    const amendment = loadRecords(f.work).records.at(-1)?.record as ApprovalRecord;
+    const amendment = latestApproval(f, 'amendment');
     expect(amendment.approval).toMatchObject({ kind: 'amendment', pullRequest: 9 });
     expect(amendment.binds.tree).toBe(sh(f.remote, ['rev-parse', `${head}^{tree}`]));
     expect(amendment.binds.files).toEqual({

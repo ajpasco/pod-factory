@@ -26,15 +26,16 @@ function validate(cwd: string): { status: number | null; out: string; err: strin
 /** One record of each of the five types, planted on the records branch. */
 function plantAllTypes(f: Fixture): FactoryRecord[] {
   const approval = gateApproval();
-  const records: FactoryRecord[] = [
+  const human: FactoryRecord[] = [
     approval,
     lockRecord(approval.recordId),
     revocation(approval.recordId),
     inProgress(),
-    checkResult(),
   ];
-  f.plant(Object.fromEntries(records.map((r) => stored(r))), 'one record of each type');
-  return records;
+  const fromCi = checkResult();
+  f.plant(Object.fromEntries(human.map((r) => stored(r))), 'human and builder records');
+  f.plant(Object.fromEntries([stored(fromCi)]), 'check result', { by: 'runner' });
+  return [...human, fromCi];
 }
 
 describe('ci records-validate', () => {
@@ -99,6 +100,26 @@ describe('ci records-validate', () => {
     expect(sh(f.remote, ['show', `${BRANCH}:${path}`]) + '\n').toBe(serializeRecord(edited));
   });
 
+  it('flags a human record pushed by the Actions bot and a check result pushed by anyone else', () => {
+    const f = fixture();
+    const approval = gateApproval();
+    const [approvalPath, approvalBytes] = stored(approval);
+    f.plant({ [approvalPath]: approvalBytes }, 'approval pushed by CI', { by: 'runner' });
+    const result = checkResult();
+    const [resultPath, resultBytes] = stored(result);
+    f.plant({ [resultPath]: resultBytes }, 'check result pushed by a person');
+
+    const run = validate(f.work);
+    expect(run.out).toMatch(/: 0 valid records, 2 flagged\./);
+    expect(run.out).toContain(
+      `${approvalPath} is a human approval record committed by the check runner`,
+    );
+    expect(run.out).toContain(
+      `${resultPath} is a check result committed by human@example.test, not by the check runner`,
+    );
+    expect(run.status).toBe(1);
+  });
+
   it('passes with nothing to validate when the records branch does not exist', () => {
     const f = fixture({ recordsBranch: false });
     const run = validate(f.work);
@@ -157,7 +178,7 @@ describe('ci records-validate', () => {
     const f = fixture();
     const result = runCli(f.work, ['ci', 'deploy'], cleanEnv());
     expect(result.stderr).toMatch(
-      /has no job "deploy"\. Jobs: records-validate\. Nothing was checked\./,
+      /has no job "deploy"\. Jobs: lock-guard, verify, verify-record, gate-check, records-validate\. Nothing was checked\./,
     );
     expect(result.status).toBe(1);
   });

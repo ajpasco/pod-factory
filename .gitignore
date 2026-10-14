@@ -7,3 +7,5 @@ claude-portable-*.zip
 # build output and dependencies
 node_modules/
 dist/
+# test reports from the locked runner configuration (evidence goes into verify's bundle)
+.factory/work/reports/

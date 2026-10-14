@@ -6,7 +6,6 @@ import {
   MAPPING_FILE,
   SPEC_DIR,
   STORY_FILE,
-  isLockedPath,
 } from '../lock-policy.js';
 import {
   contentAt,
@@ -30,15 +29,8 @@ import {
 } from '../records/format.js';
 import { loadRecords } from '../records/store.js';
 import { writeRecord } from '../records/write.js';
-import {
-  Refusal,
-  active,
-  finishPendingWrites,
-  isLock,
-  requireHuman,
-  short,
-  type CommandIO,
-} from './common.js';
+import { effectiveLock, isLockedBy } from '../lock-state.js';
+import { Refusal, finishPendingWrites, requireHuman, short, type CommandIO } from './common.js';
 
 export const APPROVE_USAGE = `Usage:
   pod-factory approve 2 --classification <bootstrap record file>
@@ -194,23 +186,24 @@ function pullRequestPlan(
 function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Plan {
   if (paths.length === 0)
     throw new Refusal(`approve amendment needs at least one locked path.\n${APPROVE_USAGE}`);
-  const unlocked = paths.filter((p) => !isLockedPath(p));
+  const set = loadRecords(io.cwd, io.remote);
+  const locked = effectiveLock(set);
+  if (locked === null)
+    throw new Refusal('There is no valid lock, so there is nothing to amend. Nothing was written.');
+  const lock = locked.lock;
+  const unlocked = paths.filter((p) => !isLockedBy(locked, p));
   if (unlocked.length > 0) {
     throw new Refusal(
       `${unlocked.join(', ')} ${unlocked.length === 1 ? 'is' : 'are'} not locked, so no amendment is needed. Nothing was written.`,
     );
   }
-  const set = loadRecords(io.cwd, io.remote);
-  const lock = active(set, isLock).at(-1);
-  if (lock === undefined)
-    throw new Refusal('There is no valid lock, so there is nothing to amend. Nothing was written.');
   const commit = fetchPullRequest(io.cwd, pr, io.remote);
   const files = filesAt(io.cwd, commit);
   const present = paths.filter((p) => files.has(p));
   const after = hashesAt(io.cwd, files, present);
   const bound: Record<string, FileBinding> = {};
   for (const path of paths) {
-    const before = (lock.record.binds.files[path] as string | undefined) ?? null;
+    const before = locked.hashes.get(path) ?? null;
     const now = after[path] ?? null;
     if (before === now) {
       throw new Refusal(

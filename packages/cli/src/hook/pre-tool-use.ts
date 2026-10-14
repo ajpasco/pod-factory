@@ -86,7 +86,8 @@ function decide(input: string, io: CommandIO): number {
   try {
     event = JSON.parse(input) as Record<string, unknown>;
   } catch {
-    return 0; // not an event this hook can read; Claude Code always sends JSON
+    // The matcher sends only file-edit events, so an unreadable one is still an edit.
+    return deny(io, 'pod-factory could not read this hook event, so the edit is refused.');
   }
   const field = EDIT_TOOLS[String(event.tool_name)];
   if (field === undefined) return 0;

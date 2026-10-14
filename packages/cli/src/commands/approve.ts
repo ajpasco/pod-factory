@@ -30,7 +30,14 @@ import {
 import { loadRecords } from '../records/store.js';
 import { writeRecord } from '../records/write.js';
 import { effectiveLock, isLockedBy } from '../lock-state.js';
-import { Refusal, finishPendingWrites, requireHuman, short, type CommandIO } from './common.js';
+import {
+  Refusal,
+  finishPendingWrites,
+  requireHuman,
+  revokedIds,
+  short,
+  type CommandIO,
+} from './common.js';
 
 export const APPROVE_USAGE = `Usage:
   pod-factory approve 2 --classification <bootstrap record file>
@@ -96,6 +103,11 @@ function gate2(io: CommandIO, classification: string | undefined): Plan {
   if (record === undefined) {
     throw new Refusal(
       `Gate 2 cannot be approved: there is no classification record ${path} on the records branch.`,
+    );
+  }
+  if (revokedIds(set).has(classification)) {
+    throw new Refusal(
+      `Gate 2 cannot be approved: classification record ${path} has been revoked. A new classification run and record are needed.`,
     );
   }
   if (record.recordType !== 'classification') {

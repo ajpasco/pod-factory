@@ -217,3 +217,100 @@ export function subjectAt(f: Fixture, pr: number, name = `subject-${pr}`): strin
 export function readManifest(bundle: string): BundleManifest {
   return JSON.parse(readFileSync(join(bundle, 'manifest.json'), 'utf8')) as BundleManifest;
 }
+
+export const CONFIG = 'packages/cli/vitest.config.ts';
+export const CONFIG_V0 = CI_FILES[CONFIG] as string;
+export const CONFIG_V1 = 'export default { amended: 1 };\n';
+export const CONFIG_V2 = 'export default { amended: 2 };\n';
+
+/** A locked project whose story one may change the locked runner configuration. */
+export function amendableProject(): { f: CiFixture; lock: LockRecord } {
+  const story = [
+    '# story-1: the app',
+    '',
+    'Tests:',
+    '- packages/cli/test/a.test.ts',
+    '',
+    'Scope:',
+    '- src/**',
+    `- ${CONFIG}`,
+    '',
+    'Inputs:',
+    '- package.json',
+    '',
+  ].join('\n');
+  const files = {
+    '.factory/work/plan/build-plan.md': '# Build plan\n\n1. .factory/work/story-1/story.md\n',
+    '.factory/work/story-1/story.md': story,
+  };
+  const f = ciProject();
+  f.commitToMain(files, 'build plan');
+  const lock = plantLock(f);
+  plantGate3(f, files);
+  return { f, lock };
+}
+
+/** An amendment approval for the runner configuration, as `approve amendment` writes it. */
+export function plantAmendment(
+  f: CiFixture,
+  lock: LockRecord,
+  pr: number,
+  tree: string,
+  before: string,
+  after: string,
+): ApprovalRecord {
+  const amendment: ApprovalRecord = {
+    ...recordBase(HUMAN),
+    recordType: 'approval',
+    binds: { tree, files: { [CONFIG]: { before: hashText(before), after: hashText(after) } } },
+    outcome: 'approved',
+    refs: [lock.recordId],
+    approval: {
+      kind: 'amendment',
+      gate: null,
+      story: null,
+      pullRequest: pr,
+      shownHash: SHA_A,
+      typedPrefix: SHA_A.slice(0, 8),
+      statement: `Amendment: a change to locked ${CONFIG} as pull request ${pr} stands, against lock ${lock.recordId}.`,
+    },
+  };
+  f.plant(Object.fromEntries([stored(amendment, `amendment-pr-${pr}`)]), 'amendment');
+  return amendment;
+}
+
+/** Pull request `pr` changing the configuration from `before` to `after`, amended, approved and verified. */
+export function amendedPullRequest(
+  f: CiFixture,
+  lock: LockRecord,
+  pr: number,
+  before: string,
+  after: string,
+): { head: string; amendment: ApprovalRecord } {
+  const head = f.pullRequest(pr, { 'src/app.js': `export const app = ${pr};\n`, [CONFIG]: after });
+  const tree = treeAt(f, head);
+  const amendment = plantAmendment(f, lock, pr, tree, before, after);
+  plantApproval(f, 'story', pr, tree);
+  plantVerify(f, pr, tree);
+  return { head, amendment };
+}
+
+export const ciCheck = (
+  f: CiFixture,
+  name: 'gate-check' | 'lock-guard',
+  pr: number,
+  head: string,
+) => job(f.work, [name, '--pr', String(pr), '--head', head]);
+
+/** Pull request `pr` with `files`, approved for story one and verified, with no amendment. */
+export function approvedChange(
+  f: CiFixture,
+  pr: number,
+  files: Record<string, string | null>,
+): string {
+  const head = f.pullRequest(pr, files);
+  const tree = treeAt(f, head);
+  plantApproval(f, 'story', pr, tree);
+  plantVerify(f, pr, tree);
+  return head;
+}

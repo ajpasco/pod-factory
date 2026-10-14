@@ -2,15 +2,24 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  effectiveLock,
   gateCheck,
   hashBytes,
+  hashText,
   loadRecords,
   run,
   type CheckResultRecord,
   type FactoryRecord,
 } from '../src/index.js';
 import {
+  CONFIG,
+  CONFIG_V0,
+  CONFIG_V1,
   TEST_COMMAND,
+  amendableProject,
+  amendedPullRequest,
+  approvedChange,
+  ciCheck,
   ciProject,
   job,
   mergeApproval,
@@ -212,6 +221,44 @@ describe('ci lock-guard with amendments approved through the CLI', () => {
       `${path}: changed under an amendment approval bound to this head.`,
     );
     expect(result.status).toBe(0);
+  });
+});
+
+// The locked-path rule judges what a merge leaves on main (ADR-015): a path the pull request
+// changes gates on what is locked now, a path it leaves alone gates on main holding content this
+// lock has approved. Each test below pins one half against being unified with the other.
+describe('the locked-path rule, changed and untouched paths', () => {
+  it('T-06-P12 [M0] an approved amendment whose pull request has not merged does not block a pull request that leaves the path alone', () => {
+    const { f, lock } = amendableProject();
+    const pending = amendedPullRequest(f, lock, 7, CONFIG_V0, CONFIG_V1);
+    expect(effectiveLock(loadRecords(f.work))?.hashes.get(CONFIG)).toBe(hashText(CONFIG_V1));
+
+    const other = approvedChange(f, 9, { 'src/app.js': 'export const app = 9;\n' });
+    const guarded = ciCheck(f, 'lock-guard', 9, other);
+    expect(guarded.out).toMatch(
+      /lock-guard passes: pull request 9 at [0-9a-f]{12} changes no locked path/,
+    );
+    expect(guarded.status).toBe(0);
+    const gated = ciCheck(f, 'gate-check', 9, other);
+    expect(gated.out).toMatch(/gate-check passes for pull request 9/);
+    expect(gated.status).toBe(0);
+    expect(ciCheck(f, 'gate-check', 7, pending.head).status).toBe(0);
+  });
+
+  it('T-06-N11 [M0] changing a locked path back to a version the lock once approved, but not what is locked now, still needs an amendment', () => {
+    const { f, lock } = amendableProject();
+    amendedPullRequest(f, lock, 7, CONFIG_V0, CONFIG_V1);
+    f.commitToMain({ 'src/app.js': 'export const app = 7;\n', [CONFIG]: CONFIG_V1 }, 'merge 7');
+    const held = effectiveLock(loadRecords(f.work))?.held.get(CONFIG);
+    expect(held).toEqual([hashText(CONFIG_V0), hashText(CONFIG_V1)]);
+
+    const older = approvedChange(f, 9, { [CONFIG]: CONFIG_V0 });
+    const gated = ciCheck(f, 'gate-check', 9, older);
+    expect(gated.out).toContain(
+      `${CONFIG} is locked, and pull request 9 changes it without an amendment approval bound to its head tree`,
+    );
+    expect(gated.out).not.toMatch(/changed to exactly what is locked now/);
+    expect(gated.status).toBe(1);
   });
 });
 

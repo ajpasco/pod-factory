@@ -83,7 +83,7 @@ function effect(target: RevocationTarget, unlocked: string[]): string {
     }
     if (a.kind === 'gate') return `Gate ${a.gate} is open again.`;
     if (a.kind === 'amendment') {
-      return `The amendment for pull request ${a.pullRequest} no longer counts; gate-check and lock-guard fail that change.`;
+      return `The amendment for pull request ${a.pullRequest} no longer counts; gate-check and lock-guard fail that change. If it has already merged, every pull request that leaves those paths alone fails until a pull request restores them to what is locked now, or an amendment approves what main holds.`;
     }
     return `Pull request ${a.pullRequest} has no valid approval for that content now; gate-check fails it.`;
   }

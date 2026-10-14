@@ -1,30 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
   effectiveLock,
-  hashText,
   loadRecords,
-  recordBase,
   run,
-  type ApprovalRecord,
   type CheckResultRecord,
   type InvocationContext,
-  type LockRecord,
   type RevocationRecord,
 } from '../src/index.js';
 import { runFlowChild } from './support/child.js';
 import {
-  CI_FILES,
+  CONFIG,
+  CONFIG_V0,
+  CONFIG_V1,
+  CONFIG_V2,
+  amendableProject,
+  amendedPullRequest,
+  approvedChange,
+  ciCheck,
   ciProject,
   job,
   plantApproval,
-  plantGate3,
   plantLock,
   plantVerify,
   treeAt,
   type CiFixture,
 } from './support/ci.js';
 import { fakeGitHub, type FakeGitHub } from './support/gh.js';
-import { HUMAN, SHA_A, stored } from './support/records.js';
 import {
   CLASSIFICATION_RECORD,
   confirms,
@@ -267,86 +268,6 @@ describe('the revocation relay', () => {
   });
 });
 
-const CONFIG = 'packages/cli/vitest.config.ts';
-const CONFIG_V0 = CI_FILES[CONFIG] as string;
-const CONFIG_V1 = 'export default { amended: 1 };\n';
-const CONFIG_V2 = 'export default { amended: 2 };\n';
-
-/** A locked project whose story one may change the locked runner configuration. */
-function amendableProject(): { f: CiFixture; lock: LockRecord } {
-  const story = [
-    '# story-1: the app',
-    '',
-    'Tests:',
-    '- packages/cli/test/a.test.ts',
-    '',
-    'Scope:',
-    '- src/**',
-    `- ${CONFIG}`,
-    '',
-    'Inputs:',
-    '- package.json',
-    '',
-  ].join('\n');
-  const files = {
-    '.factory/work/plan/build-plan.md': '# Build plan\n\n1. .factory/work/story-1/story.md\n',
-    '.factory/work/story-1/story.md': story,
-  };
-  const f = ciProject();
-  f.commitToMain(files, 'build plan');
-  const lock = plantLock(f);
-  plantGate3(f, files);
-  return { f, lock };
-}
-
-/** An amendment approval for the runner configuration, as `approve amendment` writes it. */
-function plantAmendment(
-  f: CiFixture,
-  lock: LockRecord,
-  pr: number,
-  tree: string,
-  before: string,
-  after: string,
-): ApprovalRecord {
-  const amendment: ApprovalRecord = {
-    ...recordBase(HUMAN),
-    recordType: 'approval',
-    binds: { tree, files: { [CONFIG]: { before: hashText(before), after: hashText(after) } } },
-    outcome: 'approved',
-    refs: [lock.recordId],
-    approval: {
-      kind: 'amendment',
-      gate: null,
-      story: null,
-      pullRequest: pr,
-      shownHash: SHA_A,
-      typedPrefix: SHA_A.slice(0, 8),
-      statement: `Amendment: a change to locked ${CONFIG} as pull request ${pr} stands, against lock ${lock.recordId}.`,
-    },
-  };
-  f.plant(Object.fromEntries([stored(amendment, `amendment-pr-${pr}`)]), 'amendment');
-  return amendment;
-}
-
-/** Pull request `pr` changing the configuration from `before` to `after`, amended, approved and verified. */
-function amendedPullRequest(
-  f: CiFixture,
-  lock: LockRecord,
-  pr: number,
-  before: string,
-  after: string,
-): { head: string; amendment: ApprovalRecord } {
-  const head = f.pullRequest(pr, { 'src/app.js': `export const app = ${pr};\n`, [CONFIG]: after });
-  const tree = treeAt(f, head);
-  const amendment = plantAmendment(f, lock, pr, tree, before, after);
-  plantApproval(f, 'story', pr, tree);
-  plantVerify(f, pr, tree);
-  return { head, amendment };
-}
-
-const check = (f: CiFixture, name: 'gate-check' | 'lock-guard', pr: number, head: string) =>
-  job(f.work, [name, '--pr', String(pr), '--head', head]);
-
 describe('revoking an amendment', () => {
   // gate-check applies the locked-path rule itself. lock-guard's earlier green check run and the
   // relay's red one are both GitHub check runs a re-run supersedes, so neither decides the merge.
@@ -355,12 +276,12 @@ describe('revoking an amendment', () => {
     const { head, amendment } = amendedPullRequest(f, lock, 7, CONFIG_V0, CONFIG_V1);
     const github = fakeGitHub({ pulls: { '7': { state: 'OPEN', head } } });
 
-    const guarded = check(f, 'lock-guard', 7, head);
+    const guarded = ciCheck(f, 'lock-guard', 7, head);
     expect(guarded.out).toContain(
       `${CONFIG}: changed under an amendment approval bound to this head.`,
     );
     expect(guarded.status).toBe(0);
-    const before = check(f, 'gate-check', 7, head);
+    const before = ciCheck(f, 'gate-check', 7, head);
     expect(before.out).toMatch(/gate-check passes for pull request 7/);
     expect(before.status).toBe(0);
 
@@ -368,30 +289,78 @@ describe('revoking an amendment', () => {
     const [revoked] = revocations(f);
     const sentence = `${CONFIG} is locked, and amendment ${amendment.recordId}, which let pull request 7 change it, was revoked by ${revoked?.recordId} (reason: approved the wrong content).`;
 
-    const after = check(f, 'gate-check', 7, head);
+    const after = ciCheck(f, 'gate-check', 7, head);
     expect(after.out).toMatch(/gate-check fails for pull request 7/);
     expect(after.out).toContain(sentence);
     expect(after.out).toMatch(/and verify result [0-9a-f]{12} .*, and neither is revoked\./);
     expect(after.status).toBe(1);
-    const guardedAfter = check(f, 'lock-guard', 7, head);
+    const guardedAfter = ciCheck(f, 'lock-guard', 7, head);
     expect(guardedAfter.out).toContain(sentence);
     expect(guardedAfter.status).toBe(1);
   });
 
-  it('T-22-N9 [M0] revoking the first of two chained amendments to one locked path fails the second closed', async () => {
+  it('T-22-N9 [M0] revoking the first of two chained amendments to one locked path fails the second closed, naming why, until it is amended again', async () => {
     const { f, lock } = amendableProject();
     const first = amendedPullRequest(f, lock, 7, CONFIG_V0, CONFIG_V1);
-    expect(check(f, 'gate-check', 7, first.head).status).toBe(0);
+    expect(ciCheck(f, 'gate-check', 7, first.head).status).toBe(0);
     f.commitToMain({ 'src/app.js': 'export const app = 7;\n', [CONFIG]: CONFIG_V1 }, 'merge 7');
     const second = amendedPullRequest(f, lock, 8, CONFIG_V1, CONFIG_V2);
-    expect(check(f, 'lock-guard', 8, second.head).out).toMatch(/with 2 amendments applied/);
-    expect(check(f, 'gate-check', 8, second.head).status).toBe(0);
+    expect(ciCheck(f, 'lock-guard', 8, second.head).out).toMatch(/with 2 amendments applied/);
+    expect(ciCheck(f, 'gate-check', 8, second.head).status).toBe(0);
 
     const github = fakeGitHub({ pulls: { '7': { state: 'MERGED', head: first.head } } });
     expect(await run(revokeCmd(first.amendment.recordId), at(f, github))).toBe(0);
+    const [revoked] = revocations(f);
 
-    const after = check(f, 'gate-check', 8, second.head);
+    const after = ciCheck(f, 'gate-check', 8, second.head);
+    expect(after.out).toContain(
+      `${CONFIG} is locked, and amendment ${second.amendment.recordId} for it was approved on top of amendment ${first.amendment.recordId}, which was revoked by ${revoked?.recordId} (reason: approved the wrong content), so it no longer matches what is locked now.`,
+    );
+    expect(after.out).not.toMatch(/changed it first/);
+    // Pull request 8 changes the path, so main's content there is not what its merge keeps.
+    expect(after.out).not.toMatch(/on main holds content/);
     expect(after.status).toBe(1);
+
+    // The recovery: a new amendment binds the change against what is locked now, v0 to v2.
+    const amend = human(f.work, confirms('amendment'));
+    expect(await run(['approve', 'amendment', '--pr', '8', CONFIG], amend)).toBe(0);
+    const recovered = ciCheck(f, 'gate-check', 8, second.head);
+    expect(recovered.out).toMatch(/gate-check passes for pull request 8/);
+    expect(recovered.status).toBe(0);
+  });
+
+  it('T-22-P4 [M0] after a merged amendment is revoked, a pull request restoring the path passes without an amendment, and an amendment can instead approve what main holds', async () => {
+    const { f, lock } = amendableProject();
+    const amended = amendedPullRequest(f, lock, 7, CONFIG_V0, CONFIG_V1);
+    f.commitToMain({ 'src/app.js': 'export const app = 7;\n', [CONFIG]: CONFIG_V1 }, 'merge 7');
+    const github = fakeGitHub({ pulls: { '7': { state: 'MERGED', head: amended.head } } });
+    const io = at(f, github);
+    expect(await run(revokeCmd(amended.amendment.recordId), io)).toBe(0);
+    expect(io.lines.join('\n')).toContain(
+      'If it has already merged, every pull request that leaves those paths alone fails until a pull request restores them to what is locked now, or an amendment approves what main holds.',
+    );
+
+    const other = approvedChange(f, 9, { 'src/app.js': 'export const app = 9;\n' });
+    const blocked = ciCheck(f, 'gate-check', 9, other);
+    expect(blocked.out).toContain(
+      `${CONFIG} on main holds content that neither the lock nor any amendment approved.`,
+    );
+    expect(blocked.status).toBe(1);
+
+    const restore = approvedChange(f, 10, { [CONFIG]: CONFIG_V0 });
+    const restored = ciCheck(f, 'gate-check', 10, restore);
+    expect(restored.out).toMatch(/gate-check passes for pull request 10/);
+    expect(ciCheck(f, 'lock-guard', 10, restore).out).toContain(
+      `${CONFIG}: changed to exactly what is locked now, which needs no amendment.`,
+    );
+    expect(restored.status).toBe(0);
+
+    // The other recovery: amend pull request 9, whose head holds what main holds, v0 to v1.
+    const amend = human(f.work, confirms('amendment'));
+    expect(await run(['approve', 'amendment', '--pr', '9', CONFIG], amend)).toBe(0);
+    const cleared = ciCheck(f, 'gate-check', 9, other);
+    expect(cleared.out).toMatch(/gate-check passes for pull request 9/);
+    expect(cleared.status).toBe(0);
   });
 });
 

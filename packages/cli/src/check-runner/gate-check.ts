@@ -74,7 +74,7 @@ function evaluate(io: CommandIO, set: RecordSet, pr: number, head: string, tree:
       ? ['Nothing is locked yet, so no locked path can change.']
       : lockRule.failures.length === 0
         ? [
-            `Lock ${lockRule.locked.lock.record.recordId}: pull request ${pr} changes ${lockRule.changed.length === 0 ? 'no locked path' : 'locked paths only under unrevoked amendments bound to this head'}, and main holds only approved locked content.`,
+            `Lock ${lockRule.locked.lock.record.recordId}: pull request ${pr} changes ${lockRule.changed.length === 0 ? 'no locked path' : 'locked paths only to what is locked now or under unrevoked amendments bound to this head'}, and every locked path it leaves alone holds approved content on main.`,
           ]
         : lockRule.failures),
   );

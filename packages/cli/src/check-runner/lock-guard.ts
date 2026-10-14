@@ -18,38 +18,74 @@ export interface LockedPaths {
   failures: string[];
 }
 
-/** The newest amendment for `pr` that bound this change at this head and was then revoked. */
-function revokedAmendment(
+/** Every valid amendment record, revoked or not, with its revocation if it has one; oldest first. */
+function amendmentRecords(
   set: RecordSet,
-  pr: number,
-  headTree: string,
-  path: string,
-  after: string | null,
-): { amendment: ApprovalRecord; revocation: RevocationRecord } | undefined {
+): { amendment: ApprovalRecord; revocation: RevocationRecord | undefined }[] {
   const revocations = set.records
     .map((s) => s.record)
     .filter((r): r is RevocationRecord => r.recordType === 'revocation');
   return set.records
     .filter(
       (s): s is StoredRecord<ApprovalRecord> =>
-        s.record.recordType === 'approval' &&
-        s.record.approval.kind === 'amendment' &&
-        s.record.approval.pullRequest === pr &&
-        s.record.binds.tree === headTree,
+        s.record.recordType === 'approval' && s.record.approval.kind === 'amendment',
     )
-    .flatMap((s) => {
-      const binding = s.record.binds.files[path];
-      if (typeof binding !== 'object' || binding.after !== after) return [];
-      const revocation = revocations.find((r) => r.revocation.revokes === s.record.recordId);
-      return revocation === undefined ? [] : [{ amendment: s.record, revocation }];
-    })
+    .map((s) => ({
+      amendment: s.record,
+      revocation: revocations.find((r) => r.revocation.revokes === s.record.recordId),
+    }));
+}
+
+function binding(
+  amendment: ApprovalRecord,
+  path: string,
+): { before: string | null; after: string | null } | undefined {
+  const bound = amendment.binds.files[path];
+  return typeof bound === 'object' ? bound : undefined;
+}
+
+const revokedBy = (revocation: RevocationRecord) =>
+  `revoked by ${revocation.recordId} (reason: ${revocation.revocation.reason})`;
+
+/** Why a stale amendment no longer applies, in words: what changed the content it was approved on. */
+function staleBecause(
+  set: RecordSet,
+  locked: EffectiveLock,
+  stale: ApprovalRecord,
+  path: string,
+): string {
+  const before = binding(stale, path)?.before ?? null;
+  const builtOn = amendmentRecords(set)
+    .filter(
+      (a) =>
+        a.revocation !== undefined &&
+        a.amendment.refs.includes(locked.lock.record.recordId) &&
+        binding(a.amendment, path)?.after === before,
+    )
     .at(-1);
+  if (builtOn?.revocation !== undefined) {
+    return `was approved on top of amendment ${builtOn.amendment.recordId}, which was ${revokedBy(builtOn.revocation)}, so it no longer matches what is locked now`;
+  }
+  const first = locked.amendments.find(
+    (a) => a.record.recordId !== stale.recordId && binding(a.record, path)?.before === before,
+  );
+  return first !== undefined
+    ? `no longer matches what is locked now: amendment ${first.record.recordId} changed it first`
+    : 'was approved against content that is no longer what is locked for it, so it no longer applies';
 }
 
 /**
- * The locked-path rule, the one place lock-guard and gate-check read it from. It fails when main
- * holds locked content the lock and its amendments never approved, or when the pull request
- * changes a locked path without a valid, unrevoked amendment approval bound to its head tree.
+ * The locked-path rule, the one place lock-guard and gate-check read it from (ADR-015). It judges
+ * the content a merge would leave on main, path by path:
+ * - a locked path the pull request changes passes when its head content is what is locked now,
+ *   or when a valid, unrevoked amendment approval bound to this pull request and head approves
+ *   exactly that content;
+ * - a locked path it leaves alone is what the merge keeps from main, so main's content there must
+ *   be one this lock has approved (`held`).
+ * The two halves differ on purpose. A changed path checked against `held` would let a pull
+ * request restore a superseded locked test without an amendment; an untouched path checked
+ * against the current hash would let one approved but unmerged amendment fail every other pull
+ * request. Neither half depends on branches being up to date with main.
  * The caller passes the records set it read, so the caller decides what "now" is; this never
  * reads the records branch itself.
  */
@@ -64,22 +100,25 @@ export function checkLockedPaths(
 
   const failures: string[] = [];
   const main = fetchTrunk(io.cwd, io.remote);
-  const mainFiles = filesAt(io.cwd, main);
-  const onMain = [...mainFiles.keys()].filter((p) => isLockedBy(locked, p));
-  const mainHashes = hashesAt(io.cwd, mainFiles, onMain);
-  for (const path of [...new Set([...locked.hashes.keys(), ...onMain])].sort()) {
-    const now = mainHashes[path] ?? null;
-    if (!(locked.held.get(path) ?? [null]).includes(now)) {
-      failures.push(
-        `${path} on main ${now === null ? 'is missing, which' : 'holds content that'} neither the lock nor any amendment approved. Main has drifted from the lock, so no pull request passes until that is restored or amended.`,
-      );
-    }
-  }
-
   const base = gitText(io.cwd, ['merge-base', main, head]);
   const changed = gitText(io.cwd, ['diff', '--name-only', '--no-renames', '-z', base, head])
     .split('\0')
     .filter((p) => p !== '' && isLockedBy(locked, p));
+  const touched = new Set(changed);
+
+  const mainFiles = filesAt(io.cwd, main);
+  const onMain = [...mainFiles.keys()].filter((p) => isLockedBy(locked, p) && !touched.has(p));
+  const mainHashes = hashesAt(io.cwd, mainFiles, onMain);
+  for (const path of [...new Set([...locked.hashes.keys(), ...onMain])].sort()) {
+    if (touched.has(path)) continue;
+    const now = mainHashes[path] ?? null;
+    if (!(locked.held.get(path) ?? [null]).includes(now)) {
+      failures.push(
+        `${path} on main ${now === null ? 'is missing, which' : 'holds content that'} neither the lock nor any amendment approved. Main has drifted from the lock, so every pull request that leaves it alone fails until one restores it to what is locked now or an amendment approves what main holds.`,
+      );
+    }
+  }
+
   const headFiles = filesAt(io.cwd, head);
   const headTree = treeOf(io.cwd, head);
   const headHashes = hashesAt(
@@ -91,27 +130,38 @@ export function checkLockedPaths(
   for (const path of changed) {
     const after = headHashes[path] ?? null;
     const isCovered = locked.amendments.some((a) => {
-      const binding = a.record.binds.files[path];
+      const bound = binding(a.record, path);
       return (
         a.record.approval.pullRequest === pr &&
         a.record.binds.tree === headTree &&
-        typeof binding === 'object' &&
-        binding.after === after
+        bound?.after === after
       );
     });
     if (isCovered) {
       covered.push(`${path}: changed under an amendment approval bound to this head.`);
       continue;
     }
+    if (after === (locked.hashes.get(path) ?? null)) {
+      covered.push(`${path}: changed to exactly what is locked now, which needs no amendment.`);
+      continue;
+    }
     const stale = locked.stale.find(
       (s) => s.path === path && s.amendment.record.approval.pullRequest === pr,
     );
-    const revoked = revokedAmendment(set, pr, headTree, path, after);
+    const revoked = amendmentRecords(set)
+      .filter(
+        (a) =>
+          a.revocation !== undefined &&
+          a.amendment.approval.pullRequest === pr &&
+          a.amendment.binds.tree === headTree &&
+          binding(a.amendment, path)?.after === after,
+      )
+      .at(-1);
     failures.push(
       stale !== undefined
-        ? `${path} is locked, and amendment ${stale.amendment.record.recordId} for it no longer matches what is locked now (another amendment changed it first). The approver runs "pod-factory approve amendment --pr ${pr} ${path}" again, in a terminal outside any agent session.`
-        : revoked !== undefined
-          ? `${path} is locked, and amendment ${revoked.amendment.recordId}, which let pull request ${pr} change it, was revoked by ${revoked.revocation.recordId} (reason: ${revoked.revocation.revocation.reason}). The change has no authority now: revert it, or the approver runs "pod-factory approve amendment --pr ${pr} ${path}" for a new amendment, in a terminal outside any agent session.`
+        ? `${path} is locked, and amendment ${stale.amendment.record.recordId} for it ${staleBecause(set, locked, stale.amendment.record, path)}. The approver runs "pod-factory approve amendment --pr ${pr} ${path}" again, which binds the change against what is locked now, in a terminal outside any agent session.`
+        : revoked?.revocation !== undefined
+          ? `${path} is locked, and amendment ${revoked.amendment.recordId}, which let pull request ${pr} change it, was ${revokedBy(revoked.revocation)}. The change has no authority now: revert it, or the approver runs "pod-factory approve amendment --pr ${pr} ${path}" for a new amendment, in a terminal outside any agent session.`
           : `${path} is locked, and pull request ${pr} changes it without an amendment approval bound to its head tree ${short(headTree)}. To change it, the approver runs "pod-factory approve amendment --pr ${pr} ${path}" in a terminal outside any agent session.`,
     );
   }

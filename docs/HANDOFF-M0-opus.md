@@ -3,7 +3,7 @@
 Written 2026-10-13 by the design session. You are building milestone zero of pod-factory. The approver is Allan Pasco; the design session (Fable) reviews only and writes no code. Read in this order, nothing else first:
 
 1. `docs/TECH-SPEC.md` section 3 (scope, what each piece does, the flow, what waits), then sections 4 to 12.
-2. `docs/eval-plan.md` section 13, the 57 tests milestone zero must have as code and classified before gate 2 closes.
+2. `docs/eval-plan.md` section 13, the 60 tests milestone zero must have as code and classified before gate 2 closes.
 3. `docs/PRD.md` 0.9.2, section 4 for REQ-03, REQ-06, REQ-07, REQ-08, REQ-10, REQ-19, REQ-20, REQ-22.
 4. `docs/adr/ADR-002` (repository layout), `ADR-004` (record storage) and `ADR-008` (the node-tool preset you build with). Everything else in `docs/adr/` is history; where it differs from the tech spec, the tech spec wins.
 
@@ -15,7 +15,7 @@ One npm package, TypeScript on Node, Vitest, in this repository under `packages/
 
 1. Open a `bootstrap/*` branch for each slice; every pull request needs the approver's written approval in chat until `approve bootstrap` exists, then through the command. Milestone zero has no automatic merging.
 2. Build the record store first (format, IDs journaled before the first push, fetch-then-retry, per-record validation at read), then `approve` and `lock`, then the three CI jobs, then the hook, then `revoke` and the relay, then `story start` and `story finish`, then `doctor`.
-3. Write the 57 tests as you go; scaffold behavior passes as baselines, `status` tests fail on their assertions until story one.
+3. Write the 60 tests as you go; scaffold behavior passes as baselines, `status` tests fail on their assertions until story one.
 4. When the scaffold is on main and the tests are classified, the approver runs `approve 2` and `lock`. Then story one, `status`, goes through the real loop: `approve 3`, `story start`, a builder subagent in its own worktree, `story finish`, the pull request, `approve story-1`, merge.
 5. Exercise the three refusals and kill-and-resume as the eval plan describes.
 

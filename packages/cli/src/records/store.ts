@@ -196,7 +196,9 @@ export function readRecords(cwd: string, ref: string = remoteRecordsRef('origin'
 
   const firstAdded = new Map<string, FirstAdded>();
   const changed = new Set<string>();
+  const position = new Map<string, number>();
   for (const { commit, changes } of history(cwd, set.head)) {
+    position.set(commit, position.size);
     for (const { status, blob, path } of changes) {
       if (!isRecordPath(path)) {
         set.flagged.push({
@@ -233,9 +235,13 @@ export function readRecords(cwd: string, ref: string = remoteRecordsRef('origin'
     }
   }
 
+  // In the order the records were added to the branch; file names tie within one second.
   const counted = [...firstAdded.entries()]
     .filter(([path]) => !changed.has(path))
-    .sort(([a], [b]) => a.localeCompare(b));
+    .sort(
+      ([a, x], [b, y]) =>
+        (position.get(x.commit) ?? 0) - (position.get(y.commit) ?? 0) || a.localeCompare(b),
+    );
   const blobs = readBlobs(
     cwd,
     counted.map(([, first]) => first.blob),

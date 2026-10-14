@@ -17,10 +17,15 @@ Session of 2026-10-14, Opus builder. Approver: Allan Pasco. Design session: scad
 - TECH-SPEC:
   - section 9: the hook's delivery, path resolution, protected set and lock reading; that it is a hygiene layer, not a boundary; and why phase 1b's `amend` exists;
   - section 12: L7 and L8 verified, L10 pending with what was observed.
-- Tests: 115 passing on two runs. Typecheck, ESLint and Prettier are clean.
+- Tests: 116 passing on two runs. Typecheck, ESLint and Prettier are clean.
   - T-06-P1 and T-06-N1.
   - Also tested: a subagent's worktree resolved from the event's `cwd`; the protected zone before any lock; symlinks to a locked file and through a symlinked folder; outside the checkout; a non-edit tool; no `.factory`; NotebookEdit; an edit naming no file; an unexpected error; the lock unreadable (shallow history); and the settings command with and without the binary.
 - Mutation checks, each failing a test: ignoring the event's `cwd`; letting unexpected errors allow; no realpath form; no protected zone; lock-read failure allowing.
+- A slice-3 bug, found by this pull request's own first `verify` run on Linux:
+  - Records were ordered by file name. File names start with a timestamp to the second, so two amendments in the same second tie, and `amendment-pr-10` sorts before `amendment-pr-9`. effectiveLock then applied the later amendment first and judged it stale.
+  - Records are now ordered by the commit that added them, with the path breaking ties, so "latest" and "in order" mean the order added.
+  - `test/lock-state.test.ts` pins it with two same-second amendments. It fails under file-name order.
+  - The pipeline itself worked end to end on that run: main's code judged the pull request, the section-4 commands ran, the bundle was uploaded, verify-record wrote a failing check result, and gate-check failed.
 
 ## Decisions made in session
 

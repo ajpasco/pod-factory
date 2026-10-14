@@ -71,7 +71,11 @@ Written 2026-10-14, after this pull request merged as 570f615. This is the seque
 Two rules fix the order:
 
 - **Every human change to main lands before the required-check swap.** From the swap on, verify fails every pull request until story one makes the three `status` tests pass.
-- **Every change to a path the lock will cover lands before the classification run.** After `lock`, `.github/workflows/**` is locked, so a later workflow change needs an amendment. Gate 2 also approves main's tree, and its classification must be the single run at that commit.
+- **Every change to a path the lock will cover lands before the classification run.** After `lock`, `.github/workflows/**` is locked, so a later workflow change needs an amendment. Gate 2 also approves main's tree, so nothing else may change between the run and `approve 2`.
+
+The classification cannot run at the exact tree gate 2 approves, because the report is the run's output and only exists in a later tree. The run happens at the parent of the commit that adds the report. The two trees differ only by `.factory/work/classification/gate-2.json`, and no test reads that file, so the classification still describes the approved tree's tests.
+
+Steps 1 to 4 each merge a pull request whose verify is red from the three `status` failures, and whose gate-check is red for the same reason. That is expected: each merges under `approve bootstrap` while `bootstrap-check` is still the only required check.
 
 Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615.
 
@@ -96,7 +100,7 @@ Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enf
      ```
    - Protect the records branch: no force pushes, no deletion, and no required checks or reviews, which would stop `verify-record` pushing.
    - `pod-factory doctor` should read every layer present, with no note that the placeholder is still required.
-7. **Story one.** A builder subagent in its own worktree implements `status`, and story one's pull request makes the three tests pass. Then `approve story-1 --pr <n>`, the design session merges, and `story finish` runs twice, to done.
+7. **Story one.** A builder subagent in its own worktree implements `status`, and story one's pull request makes the three tests pass. Then `approve story-1 --pr <n>`, the merge, and `story finish` runs twice, to done. The merge is the approver's. The design session's standing authority covers `bootstrap-*` pull requests only, so it does not reach story one. The approver may delegate this merge, in so many words, when the time comes; this document does not assume he will.
 
 `bootstrap-check.yml` is not deleted in this sequence. The review's fifth finding made the deletion a dead end. After the lock it needs an amendment, and an amendment's pull request cannot pass while gate-check rejects a bootstrap approval. The decision is to defer the deletion and drop the placeholder from the required checks at step 6. The file stays on main and still reports on every pull request. It fails on any branch not named `bootstrap-*`, story one's included, and that blocks nothing once it is no longer required.
 

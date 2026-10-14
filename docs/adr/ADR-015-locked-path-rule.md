@@ -43,6 +43,12 @@ The rule holds with GitHub's "require branches to be up to date" setting off, wh
   - `approve amendment` on a pull request whose head holds what main holds approves that content, and the drift clears once the record lands.
 - An amendment built on a revoked one no longer applies. Its pull request fails naming both amendments, until `approve amendment` binds the change against what is locked now (T-22-N9).
 
+## What an amendment does and does not bind
+
+Rule 1's restore branch is about content, not about which pull request carries it. Once an amendment approves content for a path, any pull request whose head holds exactly that content passes without an amendment of its own. That is sound, because the content is human-approved and gate-check still needs a tree-bound human approval for the pull request itself. It does mean an amendment does not grant one pull request alone the authority to land that content.
+
+An amendment's authority is not tied to its pull request merging. If pull request 7 is closed without merging, its amendment A1 stays valid, so what is locked now stays at A1's content indefinitely. Until someone revokes A1, a pull request restoring the lock's own content needs an amendment. Abandoning a pull request does not withdraw its amendment; only `revoke` does.
+
 ## Alternatives rejected
 
 - Keeping the two rules and documenting `approve 2` then `lock` as the recovery: it ships a known deadlock that arms itself when gate-check becomes a required check, and its remedy re-approves revoked content.

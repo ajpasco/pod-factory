@@ -37,7 +37,7 @@ The approver named two more before approving, and both are incorporated: REQ-10 
 
 `docs/PRD.md` is bound by record 0004, and three milestone-zero tests enforce that binding. The PRD cannot change without a new amendment record, and an amendment binds an `after` hash that exists only once the change is made, so the change comes first and the record second, as records 0002 and 0004 were written.
 
-A complete draft with the hashes computed is at `record-0006-draft.json` in this folder. `createdAt` and `actor.source` are deliberately unfilled. Verified while preparing it, after the corrections:
+A complete draft with the hashes computed is at `record-0006-draft.json` in this folder, to be written as `.factory/records/0006-amendment-prd-0.10-authorized-execution.json` and, on the records branch, as `records/bootstrap/0006-amendment-prd-0.10-authorized-execution.json`. `createdAt` and `actor.source` are deliberately unfilled, and they are the only two fields to supply: with plausible values in them, the draft under that file name passes the shipped `validateBootstrapRecord` (checked against the installed copy built from main at 570f615), so nothing but those two fields and the file name is left to get right. Verified while preparing it, after the corrections:
 
 - main's `docs/PRD.md` hashes to `69ec90c4`, exactly what record 0004 binds as its `after`.
 - All twenty-five requirement hashes on main match record 0001 as amended by 0002 and 0004. The chain is intact; this amendment continues it.
@@ -53,7 +53,7 @@ These bind the PRD's content and must chain through 0006 instead of stopping at 
 1. `packages/cli/test/bootstrap-records.test.ts`, T-20-P2: the file-name list becomes `['0001', '0002', '0003', '0004', '0006']`.
 2. Same file, T-03-P5: read 0006, assert today's PRD against **0006**'s `after`, lay 0006's `requirementsChanged` over 0002's and 0004's, and change `toHaveLength(25)` to `27`.
 3. Same file, T-03-P7: extend the chain, `r0004.after` to `r0006.before` to today's PRD.
-4. `packages/cli/test/hash.test.ts`, T-06-P6: read `0006-amendment-prd-0.10-...json` instead of 0004 and assert against its `after`.
+4. `packages/cli/test/hash.test.ts`, T-06-P6: read `0006-amendment-prd-0.10-authorized-execution.json` instead of 0004 and assert against its `after`.
 
 Do this only after record 0006 exists; before that there is nothing to chain to. `approvedRequirements` already handles a new requirement whose `before` is `null`, so REQ-26 and REQ-27 need no special case. These files are under `packages/*/test/**`, a locked pattern, but **nothing is locked yet** — no lock record exists. After `lock` the same four edits would need an amendment approval, which is one more reason this lands before gate 2.
 

@@ -58,7 +58,7 @@ Fixture file contents use real eval-plan IDs, so a tool that greps test IDs out 
 
 ## Left, for the approver only
 
-The sequence in `.factory/work/bootstrap-08a-kill-resume/handoff.md`, from step 3: merge this pull request; then at its merge commit run the locked command, commit `.factory/work/classification/gate-2.json`, write record 0005, and run `approve 2` and `lock`.
+The sequence in `.factory/work/bootstrap-08a-kill-resume/handoff.md`, from step 3: merge this pull request; then at its merge commit run the locked command, commit `.factory/work/classification/gate-2.json`, write record 0005, and run `approve 2` and `lock`. **Superseded on 2026-10-14:** follow "The approver's sequence" in `.factory/work/bootstrap-10-revocation-fixes/handoff.md`.
 
 ## Open questions
 

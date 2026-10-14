@@ -41,6 +41,8 @@ The copies under `.factory/records/` on main stay for now.
 
 No command writes 0005 in milestone zero. Once the classification report of the single run at the approval commit is on main at `.factory/work/classification/gate-2.json`, add 0005 by hand. It binds the report's hash, states the count per class and names the command that produced the report; the report itself carries each test's outcome, so 0005 does not restate the tests. Check the command it names.
 
+**Corrected on 2026-10-14.** The template's `command` first read `npm exec --workspace packages/cli -- vitest run --config vitest.config.ts --reporter=json --outputFile=.factory/work/classification/gate-2.json`. That is not the locked command. The JSON reporter moved into the locked `vitest.config.ts`, so the locked command alone writes `.factory/work/reports/cli.json`, and the approver copies that file to `gate-2.json`. The template below now names the locked command. The sequence to follow is in `.factory/work/bootstrap-10-revocation-fixes/handoff.md`.
+
 ```sh
 git fetch origin
 report_hash=$(git show origin/main:.factory/work/classification/gate-2.json | perl -pe 's/\r\n/\n/' | shasum -a 256 | cut -d' ' -f1)
@@ -60,7 +62,7 @@ cat > "$dir/records/bootstrap/0005-classification-gate-2.json" <<JSON
     "email": "ajpasco@gmail.com",
     "kind": "human"
   },
-  "command": "npm exec --workspace packages/cli -- vitest run --config vitest.config.ts --reporter=json --outputFile=.factory/work/classification/gate-2.json",
+  "command": "npm exec --workspace packages/cli -- vitest run --config vitest.config.ts",
   "binds": {
     ".factory/work/classification/gate-2.json": {
       "sha256": "$report_hash"

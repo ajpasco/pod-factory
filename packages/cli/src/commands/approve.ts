@@ -25,6 +25,7 @@ import {
   type ApprovalBlock,
   type ApprovalRecord,
   type Binds,
+  type FactoryRecord,
   type FileBinding,
 } from '../records/format.js';
 import { loadRecords } from '../records/store.js';
@@ -32,12 +33,16 @@ import { writeRecord } from '../records/write.js';
 import { effectiveLock, isLockedBy } from '../lock-state.js';
 import {
   Refusal,
+  active,
   finishPendingWrites,
   requireHuman,
   revokedIds,
   short,
+  writeOptions,
   type CommandIO,
 } from './common.js';
+
+const isApproval = (r: FactoryRecord): r is ApprovalRecord => r.recordType === 'approval';
 
 export const APPROVE_USAGE = `Usage:
   pod-factory approve 2 --classification <bootstrap record file>
@@ -300,6 +305,16 @@ export async function approve(argv: string[], io: CommandIO): Promise<number> {
   finishPendingWrites(io);
   const p = plan(io, argv);
   const shown = shownHashOf(p);
+  // Idempotent: a restart after a kill must not approve the same content twice.
+  const same = active(loadRecords(io.cwd, io.remote), isApproval).find(
+    (a) => a.record.approval.shownHash === shown,
+  );
+  if (same !== undefined) {
+    io.out(
+      `Already approved: ${same.path} approves exactly this (hash ${short(shown)}). Nothing was written.`,
+    );
+    return 0;
+  }
   show(io, p, shown);
   const expected = `${p.token} ${shown.slice(0, 8)}`;
   const typed = (
@@ -336,7 +351,7 @@ export async function approve(argv: string[], io: CommandIO): Promise<number> {
       statement: p.statement,
     },
   };
-  const landed = writeRecord(io.cwd, record, p.subject, { remote: io.remote });
+  const landed = writeRecord(io.cwd, record, p.subject, writeOptions(io));
   io.out(
     `Approved. Record ${landed.path} is on the records branch (record ID ${record.recordId}).`,
   );

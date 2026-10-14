@@ -278,13 +278,31 @@ describe('story finish', () => {
     });
     await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
     const unapproved = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
-    expect(unapproved.errors.join()).toMatch(
-      /there is no valid, unrevoked story approval for it on pull request 7/,
+    expect(unapproved.code).toBe(0);
+    expect(unapproved.lines.join('\n')).toMatch(
+      /story-1 is verifying .*cannot be done yet, because there is no valid, unrevoked story approval for it on pull request 7\. Nothing was written\./,
     );
     plantApproval(f, 'story', 7, tree);
     const unmerged = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
-    expect(unmerged.errors.join()).toMatch(
-      /cannot be done until pull request 7 at [0-9a-f]{12} is merged into main/,
+    expect(unmerged.code).toBe(0);
+    expect(unmerged.lines.join('\n')).toMatch(
+      /cannot be done until pull request 7 at [0-9a-f]{12} is merged into main.*Nothing was written\./,
+    );
+    expect(transitions(f).map((t) => t.transition.to)).toEqual(['in-progress', 'verifying']);
+  });
+
+  it('refuses done, as an error, when the pull request changed after its approval', async () => {
+    const { f, tree } = await inProgress({
+      'src/app.js': 'export const app = 1;\n',
+      [NOTE]: NOTE_TEXT,
+    });
+    await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
+    plantApproval(f, 'story', 7, tree);
+    f.pullRequest(7, { 'src/app.js': 'export const app = 2;\n', [NOTE]: NOTE_TEXT });
+    const changed = await orchestrator(f, ['finish', 'story-1', '--pr', '7']);
+    expect(changed.code).toBe(1);
+    expect(changed.errors.join()).toMatch(
+      /pull request 7 changed after approval [0-9a-f]{12}, so the approved content is not what would merge/,
     );
     expect(transitions(f).map((t) => t.transition.to)).toEqual(['in-progress', 'verifying']);
   });

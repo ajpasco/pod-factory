@@ -15,3 +15,23 @@ export function runChild(
     encoding: 'utf8',
   });
 }
+
+const flowScript = fileURLToPath(new URL('./flow-child.ts', import.meta.url));
+
+/** Runs one pod-factory command in flow-child.ts, killed at `killAt` when given. */
+export function runFlowChild(
+  cwd: string,
+  who: 'human' | 'agent',
+  token: string,
+  args: string[],
+  killAt?: string,
+): SpawnSyncReturns<string> {
+  const env: Record<string, string | undefined> = { ...process.env };
+  delete env.POD_FACTORY_TEST_KILL_AT;
+  if (killAt !== undefined) env.POD_FACTORY_TEST_KILL_AT = killAt;
+  return spawnSync(process.execPath, ['--import', 'tsx', flowScript, cwd, who, token, ...args], {
+    cwd: packageDir,
+    env,
+    encoding: 'utf8',
+  });
+}

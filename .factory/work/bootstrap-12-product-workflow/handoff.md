@@ -1,6 +1,6 @@
 # bootstrap-12: the product workflow in the PRD and tech spec
 
-Written by the design session on 2026-10-14, on the approver's direction of the same day, his five corrections to the first draft and his three to the second. The direction authorizes **preparation of the changes, not the creation of human approval records**, not merging the contract change, not automatic merging, and not deployment. The approver has accepted the direction and authorized these revisions; he has not approved the contract.
+Written by the design session on 2026-10-14, on the approver's direction of the same day, his five corrections to the first draft, his three to the second, and the two requirements he added when approving the third. **He approved the revised product direction and the contract on 2026-10-14**, in these words: "I approve the revised product direction and contract in PR #13." The approval is of the design. It is not a claim that phase-1b automation is implemented or verified, automatic merging stays disabled until the implementation passes its own acceptance tests, milestone zero finishes first under the per-story human approval, and the complete sequential workflow is then demonstrated on the reference application. The approval record that makes any of it binding is 0006, which is his to write; nothing here creates a human record, enables automatic merging or deploys anything.
 
 ## What is in this branch
 
@@ -26,6 +26,13 @@ The approver read the corrected branch and found two rules still loose and one s
 
 Both rules are normative, so they are in `docs/TECH-SPEC.md` section 5 as well as in the ADR: after gate 2 the tech spec is bound and the ADR is not, and a rule that lives only in decision history can be edited by any agent later.
 
+## The final two requirements, added with the approval
+
+The approver named two more before approving, and both are incorporated: REQ-10 and the build narrative carry the first, REQ-09 carries the second, tech spec section 5 carries both as rules and section 7 carries the worker side, and ADR-016 carries the reasoning, the cost and the alternatives.
+
+9. **Every automatic merge is of content verified and reviewed with main as it then stands.** The content judged is the merge candidate, not a head that predates main: the merge base must be main's current head, so the head tree is the tree the merge leaves, and when main moves the candidate is stale, the branch is refreshed, and verify and the review run again. REQ-10's existing rule that a content change after a review requires a new review is what makes the second review mandatory. This is the one place the design leans on a protection setting: `gate-check` checks the merge base itself, but main can still move between that run and the merge, so the up-to-date setting is required protection on a repository running the authorization path, where the locked-path rule treats it only as a backstop (ADR-015), and `doctor` checks it. It also generalises the recovery rule the second round added: a repair's head taken from the failing tree is this requirement applied to that case. The cost is recorded: in phase 2 merges serialise and every candidate behind one merge refreshes, re-verifies and is reviewed again.
+10. **A failing integration result must not trap the work that can fix it.** The story whose merge produced the failing main tree can be resumed for a bounded repair by the worker that built it, even when that story is already done, while everything unrelated stays blocked. It needs no new stage: done to in progress becomes a legal transition exactly when the latest integration result for main's current tree is failing and names that story, and nothing else reopens a done story. The resumption path and the fourth dispatch verb already exist; the bounds are the story's approved file scope, the loop cap, and the rule that a repair needing a path outside that scope, or a second repair that leaves the failure in place, is the human's. It is item 7 of ADR-016's implementation plan, which is now seven changes rather than six. Rejected with it: opening a new story for the repair, because a new story is outside the authorized plan and would need a human record, which is the interruption this direction removes.
+
 ## What the approver owes: bootstrap record 0006
 
 `docs/PRD.md` is bound by record 0004, and three milestone-zero tests enforce that binding. The PRD cannot change without a new amendment record, and an amendment binds an `after` hash that exists only once the change is made, so the change comes first and the record second, as records 0002 and 0004 were written.
@@ -34,7 +41,7 @@ A complete draft with the hashes computed is at `record-0006-draft.json` in this
 
 - main's `docs/PRD.md` hashes to `69ec90c4`, exactly what record 0004 binds as its `after`.
 - All twenty-five requirement hashes on main match record 0001 as amended by 0002 and 0004. The chain is intact; this amendment continues it.
-- The corrected PRD hashes to `8446de84`.
+- The corrected PRD hashes to **`15455bab`**. The first corrected draft hashed to `8446de84`; the second round of corrections touched no requirement and no PRD line, and the third changed REQ-09 and REQ-10 only, so the whole-file hash moved twice and the chain did not.
 - Ten requirements changed (REQ-04 to REQ-10, REQ-13, REQ-17, REQ-23), two are new (REQ-26, REQ-27, whose `before` is `null`), fifteen are untouched.
 
 It is numbered **0006**, not 0005: `0005-classification-gate-2.json` is a fixture name in six test files, and renumbering the classification would cost more than the gap in sequence is worth. 0005 remains the gate-2 classification, written on the records branch only. 0006 goes in the working tree under `.factory/records/` and on the records branch under `records/bootstrap/`, as 0001 to 0004 are.
@@ -56,6 +63,6 @@ Do this only after record 0006 exists; before that there is nothing to chain to.
 
 ## What is not in this branch, on purpose
 
-Nothing that enables automatic merging. `gate-check` still requires a human approval record bound to the head tree, exactly as on main. Authorized execution is phase-1b work, described in tech spec section 5 and ADR-016 as a design, not as shipped behavior. Milestone zero's own rules are unchanged: three required checks, a human approval for every pull request, one builder at a time, and story one's merge is the approver's.
+Nothing that enables automatic merging, which is also the approver's own condition on the approval: it stays disabled until phase 1b's implementation passes its acceptance tests. `gate-check` still requires a human approval record bound to the head tree, exactly as on main. Authorized execution is phase-1b work, described in tech spec section 5 and ADR-016 as a design, not as shipped behavior. Milestone zero's own rules are unchanged: three required checks, a human approval for every pull request, one builder at a time, and story one's merge is the approver's.
 
 The later-phase parts of `docs/spec/*.md` and `docs/eval-plan.md` still describe per-story approval and the pull-request classes. They are subordinate reference under tech spec section 13 and are revised by phase 1b's own classification amendment. Rewriting them now would cost an amendment against the lock for text no phase has reached.

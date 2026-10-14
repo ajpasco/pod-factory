@@ -1,7 +1,9 @@
+import { recordsValidate } from './check-runner/records-validate.js';
 import { APPROVE_USAGE, approve } from './commands/approve.js';
 import { Refusal, type CommandIO } from './commands/common.js';
 import { lock } from './commands/lock.js';
 import { GitError } from './records/git.js';
+import { RecordsReadError } from './records/store.js';
 import { RecordWriteError } from './records/write.js';
 
 export const USAGE = `Usage: pod-factory <command>
@@ -9,6 +11,7 @@ export const USAGE = `Usage: pod-factory <command>
 Commands:
   approve   approve a gate, a story, a bootstrap pull request or an amendment
   lock      lock the tests and enforcement files the gate-2 approval binds
+  ci        run a check-runner job: records-validate
 
 ${APPROVE_USAGE}`;
 
@@ -18,6 +21,7 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
   try {
     if (command === 'approve') return await approve(rest, io);
     if (command === 'lock') return lock(rest, io);
+    if (command === 'ci') return ci(rest, io);
     if (command === undefined || command === '--help' || command === 'help') {
       io.out(USAGE);
       return 0;
@@ -25,7 +29,11 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
     io.err(`pod-factory has no command "${command}".\n\n${USAGE}`);
     return 2;
   } catch (error) {
-    if (error instanceof Refusal || error instanceof RecordWriteError) {
+    if (
+      error instanceof Refusal ||
+      error instanceof RecordWriteError ||
+      error instanceof RecordsReadError
+    ) {
       io.err(error.message);
       return 1;
     }
@@ -37,4 +45,12 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
     }
     throw error;
   }
+}
+
+function ci(argv: string[], io: CommandIO): number {
+  const [job, ...rest] = argv;
+  if (job === 'records-validate') return recordsValidate(rest, io);
+  throw new Refusal(
+    `pod-factory ci has no job "${job ?? ''}". Jobs: records-validate. Nothing was checked.`,
+  );
 }

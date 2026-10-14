@@ -29,6 +29,8 @@ Session of 2026-10-14, Opus builder. Approver: Allan Pasco. Design session: scad
 
 ## Decisions made in session
 
+- By the design session, after review: the install command was wrong (a local-folder global install is a symlink to the checkout), corrected here with one more commit, settings.json included. A protected path is human-only from the moment it is live on main; before that, the pull request introducing it is the human act, and `approve bootstrap` approves its whole head.
+
 - By the design session:
   - The protected set is the enforcement layer plus the records, always protected. The gate-2-bound and work-zone files are not protected: a change to a bound file reopens gate 2, which is the control.
   - Ship the real `.claude/settings.json` in this pull request.
@@ -39,7 +41,7 @@ Session of 2026-10-14, Opus builder. Approver: Allan Pasco. Design session: scad
 
 ## Left, for the approver only, in this order
 
-1. Install the enforcing copy before merging this pull request: from a checkout of main, `npm install -g ./packages/cli`. Until then the committed hook refuses every agent file edit in this repository, deliberately, so a missing hook cannot fail open.
+1. Install the enforcing copy before merging this pull request. It must be a packed copy: `npm install -g ./packages/cli` makes the global `pod-factory` a symlink into that checkout, so whatever it has built, branch builds included, would judge. From a checkout of main: `git checkout main && git pull && npm ci && npm run build --workspace packages/cli`, then `cd packages/cli && npm pack && npm install -g ./pod-factory-0.0.0-m0.tgz`. Until then the committed hook refuses every agent file edit in this repository, deliberately, so a missing hook cannot fail open.
 2. This is the first pull request the new checks run on. Its gate-check fails until `pod-factory approve bootstrap <this PR's number>` succeeds, typed in a terminal outside any agent session. Then re-run gate-check and merge.
 3. Swap the required checks to `lock-guard`, `verify` and `gate-check`, bound to the GitHub Actions app (ID 15368), with `strict` recommended. The exact command is in `.factory/work/bootstrap-03-ci-jobs/handoff.md`. Then delete `bootstrap-check.yml`.
 4. Protect the records branch: forbid force-push and deletion, but do not require reviews or status checks on it, or `verify-record` can never push and every pull request stalls with no verify result.

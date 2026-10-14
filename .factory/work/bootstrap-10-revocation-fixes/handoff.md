@@ -77,9 +77,14 @@ The classification cannot run at the exact tree gate 2 approves, because the rep
 
 Steps 1 to 4 each merge a pull request whose verify is red from the three `status` failures, and whose gate-check is red for the same reason. That is expected: each merges under `approve bootstrap` while `bootstrap-check` is still the only required check.
 
-Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615.
+Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615. Step 1 is done too: #12 merged as **38638cf** under approval record 4ae9c449a6b9, and main's tree is exactly the tree that record binds. It changed documents only, so the enforcing copy built from 570f615 still matches main's enforcement code and was not rebuilt; a merge that touches `packages/**` is rebuilt and reinstalled before the next agent edit.
 
-1. **This pull request** merges under `pod-factory approve bootstrap <n>`.
+1. **This pull request** merges under `pod-factory approve bootstrap <n>`. Done: #12, merged as 38638cf.
+1b. **The product-workflow contract, pull request #13** (`bootstrap-12-product-workflow`): PRD 0.10, tech spec 1.1 and ADR-016, the direction the approver approved on 2026-10-14. Three acts, in this order, because the last one binds what the first two leave:
+   - Write bootstrap amendment record **0006** as `.factory/records/0006-amendment-prd-0.10-authorized-execution.json` on the pull request's branch, and push the same file to the records branch as `records/bootstrap/0006-amendment-prd-0.10-authorized-execution.json`. The complete draft is `.factory/work/bootstrap-12-product-workflow/record-0006-draft.json`; only `createdAt` and `actor.source` are unfilled, and with plausible values in them it passes `validateBootstrapRecord` under that file name. Hook 1 protects `.factory/records/**` from every agent, so this is the approver's own act.
+   - The builder makes the four assertion edits listed in that slice's handoff, which chain the three PRD-binding tests through 0006 and take the run back to 167 tests, 164 passed, 3 failed.
+   - Then `pod-factory approve bootstrap 13` for the head that holds both, and the design session merges it on the approver's say-so of 2026-10-14. Approving an earlier head approves a tree that is not what lands.
+   This step and step 2 may happen in either order, and both land before the classification run: gate 2 approves main's tree and binds `docs/PRD.md` and `docs/TECH-SPEC.md`, so a later word in either costs an amendment.
 2. **The relay workflow.** Replace `.github/workflows/records-validate.yml` on main with `.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml`. Use a pull request from a `bootstrap-*` branch, merged under `approve bootstrap <n>`. Main's current file validates records but does not relay, so until this lands, `revoke` blocks nothing.
 3. **Anything else the approver wants on main** lands now, the same way. After step 4 nothing merges until `lock`, and after step 6 nothing merges except story one.
 4. **Gate 2,** at main's commit after step 3:

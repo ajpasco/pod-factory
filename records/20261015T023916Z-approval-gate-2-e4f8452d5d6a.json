@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "e4f8452d5d6a",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-15T02:39:16Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "39b9814255c456c3fb110cb730f523bd828ad627",
+    "files": {
+      ".factory/work/classification/gate-2.json": "dea1a7c51cf1ec06af320fba109d73af5b15960671c89ec4683cdd976aebdab1",
+      "docs/PRD.md": "15455bab60855e710892ca52ab8835a77dfc75a41452c9b3437dde13f27494fd",
+      "docs/TECH-SPEC.md": "ce5e26945f7f7ac93377953d3bea787ff55f3b36965cec12f7b90b478d518397",
+      "docs/eval-plan.md": "7aeb721ba532ae1b6c6d99037b47941ca212ba21d2df9b9afe503b013576b269",
+      "docs/spec/criterion-to-control-mapping.md": "af8fbcca9e0593e2ead3b35650d01265cf723efc0926c756d95977c8e3778be0",
+      "docs/spec/interfaces-and-non-goals.md": "320eebbe84107d2c1f90a05bc6f96fbdc09239781e61afdae7a1c9db2b5813ff",
+      "docs/spec/plain-language-summary.md": "8bc635b6f8b38c8fcfdd58bacfad001d76d0b6a5a13860cd6eff223b86d712ed",
+      "docs/spec/threat-review-and-production-readiness.md": "f8095b0ba83bbe0e0f0920de0624c8044d0ed26d83666dd0e828c18f0910d4d1"
+    }
+  },
+  "outcome": "approved",
+  "refs": [
+    "0005-classification-gate-2.json"
+  ],
+  "approval": {
+    "kind": "gate",
+    "gate": 2,
+    "story": null,
+    "pullRequest": null,
+    "shownHash": "dde8f71120606ea10ea95607c55edd6053f6845b43b1e08b4202c8a8d74d779e",
+    "typedPrefix": "dde8f711",
+    "statement": "Gate 2: the PRD, the design, the eval plan and the classification as they are on main at commit bd6c7349726b7098a5aea5976f0a6515c2ecf0a5."
+  }
+}

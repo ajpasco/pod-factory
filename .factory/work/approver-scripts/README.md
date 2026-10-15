@@ -36,15 +36,23 @@ Every one of them holds to the same shape, which is the point of them:
 - They derive, never assume. Record 0005's numbers and its approved failures are read out of the
   classification report it binds; step 5's app id is read from a live check run before anything is
   bound to it.
-- **The classification result is enforced exactly, in one place.** `classification-check.py` holds
-  the approved result — 167 tests, 164 passed, and exactly T-19-P1, T-19-N1 and T-19-N2 failing.
-  Script 2 applies it to the run it just made and pushes nothing if the run differs; script 3
-  applies it again to the bytes on main and writes no record if they differ. A different total, a
-  different pass count, a fourth failure, an approved failure that passed, a skipped test, or a
-  failing test with no test ID are each refused by name. The record is the only written trace of
-  which failures were approved, so it is never written for a run that was not the approved one. If
-  a run legitimately differs, that is a new classification for the design session to review and the
-  constants change by that deliberate act; they are not relaxed to make a run pass.
+- **The classification result is enforced exactly, in one place, and the whole report is judged.**
+  `classification-check.py` holds the approved result: 167 tests in 17 files, 164 passed, exactly
+  T-19-P1, T-19-N1 and T-19-N2 failing, all three in `packages/cli/test/status.test.ts`, and the
+  reporter's own counters — tests, suites, pending, todo, success — each at their approved value and
+  each agreeing with a recount of the report's body. Script 2 applies it to the run it just made and
+  pushes nothing if the run differs; script 3 applies it again to the bytes on main and writes no
+  record if they differ. Refused by name: a different total or pass count, a fourth failure, an
+  approved failure that passed, a skipped test, a failing test with no test ID, a file that failed
+  while none of its tests did, a file that produced no test at all, a file carrying an error message
+  no test produced, a failing file that is not the approved one, a header that contradicts the body,
+  and an unreadable or empty report. Counting assertions alone was not enough: in the installed
+  reporter's format a module that throws while being collected leaves the test counts untouched, so
+  a report could carry the three approved failures and a runner error and still look right. The
+  record is the only written trace of which failures were approved, so it is never written for a run
+  that was not the approved one. If a run legitimately differs, that is a new classification for the
+  design session to review and the constants change by that deliberate act; they are not relaxed to
+  make a run pass.
 - **They never claim nothing happened when something did.** A refusal before any write says
   "Nothing was written." A failure after a write reports `Completed:` and `Not completed:` line by
   line and exits non-zero — script 3 when `approve 2` or `lock` fails after record 0005 is

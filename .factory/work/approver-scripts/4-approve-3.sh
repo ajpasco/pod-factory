@@ -12,7 +12,8 @@ STORY=.factory/work/story-1/story.md
 cd "$REPO"
 die() { echo "REFUSED: $*"; echo "Nothing was written."; exit 1; }
 
-git fetch --quiet origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}"
+git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}" \
+  || die "cannot read main and $RECORDS_BRANCH from origin: git fetch failed. Nothing here knows what is on the remote until it succeeds."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 RC=$(git rev-parse "refs/remotes/origin/${RECORDS_BRANCH}")
 

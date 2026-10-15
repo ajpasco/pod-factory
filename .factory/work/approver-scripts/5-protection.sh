@@ -15,10 +15,28 @@ APP_ID=15368
 
 cd "$REPO"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+
+# die() is for refusals before anything has been changed, and says so.
 die() { echo "REFUSED: $*"; echo "Nothing was changed."; exit 1; }
+# stop() is for a failure after something has been changed. It never claims nothing happened.
+DONE=""
+LEFT="main's required checks and protection
+the records branch's protection"
+stop() {
+  echo
+  echo "STOPPED: $*"
+  echo
+  echo "Changed:"
+  if [ -n "$DONE" ]; then printf '%s\n' "$DONE" | sed 's/^/  - /'; else echo "  - nothing"; fi
+  echo "Not changed:"
+  if [ -n "$LEFT" ]; then printf '%s\n' "$LEFT" | sed 's/^/  - /'; else echo "  - nothing"; fi
+  echo
+  echo "This script applies the same settings whether it has run before or not, so re-running it is safe."
+  exit 1
+}
 
 SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner) || die "gh cannot read this repository."
-git fetch --quiet origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}" 2>/dev/null || die "cannot fetch main and $RECORDS_BRANCH. The records branch must exist before it can be protected."
+git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}" || die "cannot read main and $RECORDS_BRANCH from origin: git fetch failed, or the records branch does not exist yet. It must exist before it can be protected, and git's own message above says which it is."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 
 # The app id is checked live, so protection can never be bound to a guessed id.
@@ -64,7 +82,10 @@ main_payload = {
 }
 records_payload = {
     'required_status_checks': None,
-    'enforce_admins': False,
+    # Administrators are bound here as they are on main. Nobody, the approver included, can then
+    # force-push or delete the record history. Ordinary fast-forward pushes are untouched, which is
+    # all that verify-record's relay and a hand-written record ever need.
+    'enforce_admins': True,
     'required_pull_request_reviews': None,
     'restrictions': None,
     'allow_force_pushes': False,
@@ -108,26 +129,49 @@ read -r TYPED
 
 echo
 echo "--- main ---"
-gh api -X PUT "repos/${SLUG}/branches/main/protection" --input "$TMP/main.json" > "$TMP/main-after.json" || die "GitHub refused the change to main. Main's protection is whatever it was; read it with: gh api repos/${SLUG}/branches/main/protection"
+if ! gh api -X PUT "repos/${SLUG}/branches/main/protection" --input "$TMP/main.json" > "$TMP/main-after.json"; then
+  stop "GitHub refused the change to main. Read what is in force now with: gh api repos/${SLUG}/branches/main/protection"
+fi
 python3 -c "
 import json,sys
 d=json.load(open(sys.argv[1]))
 for c in (d.get('required_status_checks') or {}).get('checks') or []: print(f\"  required: {c['context']} from app {c['app_id']}\")
 print('  administrators bound:', (d.get('enforce_admins') or {}).get('enabled'))
 " "$TMP/main-after.json"
+DONE="main's required checks bound to app $APP_ID, administrators bound, no force pushes or deletion"
+LEFT="the records branch's protection"
 
 echo "--- $RECORDS_BRANCH ---"
-gh api -X PUT "repos/${SLUG}/branches/$(printf '%s' "$RECORDS_BRANCH" | sed 's|/|%2F|g')/protection" --input "$TMP/records.json" > "$TMP/records-after.json" || die "main is updated but GitHub refused the records branch. Re-run this script; it is safe to apply twice."
+if ! gh api -X PUT "repos/${SLUG}/branches/$(printf '%s' "$RECORDS_BRANCH" | sed 's|/|%2F|g')/protection" --input "$TMP/records.json" > "$TMP/records-after.json"; then
+  stop "main is protected but GitHub refused the records branch, so the record history is not yet protected from a force push or a deletion."
+fi
 python3 -c "
 import json,sys
 d=json.load(open(sys.argv[1]))
-print('  force pushes:', (d.get('allow_force_pushes') or {}).get('enabled'), ' deletion:', (d.get('allow_deletions') or {}).get('enabled'))
+print('  administrators bound:', (d.get('enforce_admins') or {}).get('enabled'), ' force pushes:', (d.get('allow_force_pushes') or {}).get('enabled'), ' deletion:', (d.get('allow_deletions') or {}).get('enabled'))
 print('  required checks:', d.get('required_status_checks'), ' required reviews:', d.get('required_pull_request_reviews'))
 " "$TMP/records-after.json"
+DONE="$DONE
+the records branch protected: administrators bound, no force pushes, no deletion, no required checks or reviews"
+LEFT=""
+
+echo
+echo "Changed:"
+printf '%s\n' "$DONE" | sed 's/^/  - /'
 
 echo
 echo "--- pod-factory doctor ---"
-pod-factory doctor || true
+set +e
+pod-factory doctor
+DOCTOR=$?
+set -e
 echo
-echo "If doctor reports every layer present, milestone zero's enforcement is in place and story"
-echo "one is the only pull request that can merge. Tell the design session; it dispatches the builder."
+if [ "$DOCTOR" -ne 0 ]; then
+  echo "Both protections were applied, and doctor exits $DOCTOR: it reports at least one layer MISSING"
+  echo "above. That is a real gap, not noise, and this script exits non-zero so it is not read as done."
+  echo "Read the MISSING lines, fix what they name, and run doctor again. Milestone zero's enforcement"
+  echo "is not complete until it reads every layer present."
+  exit "$DOCTOR"
+fi
+echo "doctor reads every layer present. Milestone zero's enforcement is in place, and story one is"
+echo "now the only pull request that can merge. Tell the design session; it dispatches the builder."

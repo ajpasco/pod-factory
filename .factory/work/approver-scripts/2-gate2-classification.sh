@@ -8,13 +8,17 @@ REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
 BRANCH=bootstrap-15-gate2-classification
 TARGET=.factory/work/classification/gate-2.json
 REPORT=.factory/work/reports/cli.json
-APPROVED_FAILURES="T-19-P1 T-19-N1 T-19-N2"
+DIR=$(cd "$(dirname "$0")" && pwd)
+CHECK="$DIR/classification-check.py"
 
 cd "$REPO"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 die() { echo "REFUSED: $*"; echo "Nothing was pushed."; exit 1; }
 
-git fetch --quiet origin 'refs/heads/main:refs/remotes/origin/main'
+[ -f "$CHECK" ] || die "$CHECK is missing. It holds the one definition of the approved classification result, and this script will not judge a run without it."
+
+git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' \
+  || die "cannot read main from origin: git fetch failed. Nothing here knows what is on the remote until it succeeds."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 SHORT=$(git rev-parse --short "$MAIN")
 
@@ -52,38 +56,15 @@ echo
 [ -f "$RUNDIR/$REPORT" ] || die "the run produced no $REPORT, so there is nothing to classify."
 cp "$RUNDIR/$REPORT" "$TMP/gate-2.json"
 
-SUMMARY=$(python3 - "$TMP/gate-2.json" "$APPROVED_FAILURES" <<'PY'
-import json, re, sys
-d = json.load(open(sys.argv[1]))
-approved = set(sys.argv[2].split())
-total = passed = 0
-failing = []
-for t in d.get('testResults', []):
-    for a in t.get('assertionResults', []):
-        total += 1
-        if a['status'] == 'passed':
-            passed += 1
-        else:
-            m = re.search(r'T-\d+-[PN]\d+', a.get('fullName') or a.get('title') or '')
-            failing.append((m.group(0) if m else '(no test ID)', a['status'], (a.get('fullName') or '')[:100]))
-ids = [f[0] for f in failing]
-unexpected = [i for i in ids if i not in approved]
-print(f'COUNTS total={total} passed={passed} failed={len(failing)}')
-for i, status, name in failing:
-    print('FAILING', i, status, name)
-if unexpected:
-    print('UNEXPECTED', ' '.join(sorted(set(unexpected))))
-if total == 0:
-    print('UNEXPECTED', 'no tests ran')
-PY
-)
-printf '%s\n' "$SUMMARY" | grep -v '^UNEXPECTED' | sed 's/^COUNTS /tests: /;s/^FAILING /  failing /'
-if printf '%s\n' "$SUMMARY" | grep -q '^UNEXPECTED'; then
+echo "--- the classification result, judged against the approved one ---"
+set +e
+python3 "$CHECK" "$TMP/gate-2.json"
+CHECKED=$?
+set -e
+if [ "$CHECKED" -ne 0 ]; then
   echo
-  echo "REFUSED: this run failed something outside the three failures you have agreed to approve:"
-  printf '%s\n' "$SUMMARY" | grep '^UNEXPECTED' | sed 's/^UNEXPECTED /  /'
-  echo "The classification record is the only written trace of which failures were approved, so it"
-  echo "cannot be written for a run with a different failure set. Nothing was pushed."
+  echo "REFUSED: this run is not the classification that may be recorded. Nothing was pushed."
+  echo "The run itself is kept at $RUNDIR if you want to look at it."
   exit 1
 fi
 

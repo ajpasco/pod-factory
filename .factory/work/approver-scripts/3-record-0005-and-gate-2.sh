@@ -10,12 +10,35 @@ RECORDS_BRANCH=pod-factory/records
 NAME=0005-classification-gate-2.json
 TARGET=.factory/work/classification/gate-2.json
 VALIDATOR=/Users/jay/.local/lib/node_modules/pod-factory/dist/index.js
+DIR=$(cd "$(dirname "$0")" && pwd)
+CHECK="$DIR/classification-check.py"
 
 cd "$REPO"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
-die() { echo "REFUSED: $*"; echo "Nothing was written."; exit 1; }
 
-git fetch --quiet origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}"
+# die() is for refusals before anything has been written, and says so.
+die() { echo "REFUSED: $*"; echo "Nothing was written."; exit 1; }
+# stop() is for a failure after something has been written. It never claims nothing happened:
+# DONE and LEFT carry the truth, one line each, and the exit code is non-zero.
+DONE=""
+LEFT="publish record 0005
+pod-factory approve 2 --classification $NAME
+pod-factory lock"
+stop() {
+  echo
+  echo "STOPPED: $*"
+  echo
+  echo "Completed:"
+  if [ -n "$DONE" ]; then printf '%s\n' "$DONE" | sed 's/^/  - /'; else echo "  - nothing"; fi
+  echo "Not completed:"
+  if [ -n "$LEFT" ]; then printf '%s\n' "$LEFT" | sed 's/^/  - /'; else echo "  - nothing"; fi
+  exit 1
+}
+
+[ -f "$CHECK" ] || die "$CHECK is missing. It holds the one definition of the approved classification result, and record 0005 is not written without it."
+
+git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}" \
+  || die "cannot read main and $RECORDS_BRANCH from origin: git fetch failed. Nothing here knows what is on the remote until it succeeds."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 RC=$(git rev-parse "refs/remotes/origin/${RECORDS_BRANCH}")
 
@@ -26,6 +49,21 @@ case "$ON_RECORDS" in *"/0005-"*)
   echo "Nothing was written."; exit 1;; esac
 WHO_NAME=$(git config user.name || true); WHO_MAIL=$(git config user.email || true)
 if [ -z "$WHO_NAME" ] || [ -z "$WHO_MAIL" ]; then die "this repository has no git user.name or user.email."; fi
+
+# The record describes a run, so the run is judged before the record exists. The same definition
+# step 2 used, applied again here to the bytes that are actually on main.
+git show "${MAIN}:${TARGET}" > "$TMP/on-main.json"
+echo "=== The classification report on main, judged against the approved result ==="
+echo "file  $TARGET at main ${MAIN%${MAIN#???????}}"
+set +e
+python3 "$CHECK" "$TMP/on-main.json"
+CHECKED=$?
+set -e
+if [ "$CHECKED" -ne 0 ]; then
+  echo
+  die "the report on main is not the approved classification result, so record 0005 cannot certify it."
+fi
+echo
 
 MAIN="$MAIN" TARGET="$TARGET" NAME="$NAME" OUT="$TMP/$NAME" WHO_NAME="$WHO_NAME" WHO_MAIL="$WHO_MAIL" python3 - <<'PY'
 import collections, datetime, hashlib, json, os, re, subprocess, sys
@@ -164,6 +202,9 @@ if [ "$(printf '%s\n' "$DIFF" | wc -l | tr -d ' ')" != "1" ] || [ "${DIFF%%	*}" 
 fi
 git push origin "$COMMIT:refs/heads/$RECORDS_BRANCH"
 echo "Published record 0005 as ${COMMIT%${COMMIT#???????}} on $RECORDS_BRANCH."
+DONE="record 0005 published as ${COMMIT%${COMMIT#???????}} on $RECORDS_BRANCH"
+LEFT="pod-factory approve 2 --classification $NAME
+pod-factory lock"
 echo
 
 echo "=== Gate 2 and the lock ==="
@@ -175,15 +216,34 @@ read -r GO
 case "$GO" in
   y|Y|yes|YES) ;;
   *) echo
-     echo "Stopped after publishing the record. When you are ready, in this directory:"
-     echo "  pod-factory approve 2 --classification $NAME"
-     echo "  pod-factory lock"
+     echo "Stopped at your word, after publishing the record."
+     echo
+     echo "Completed:"
+     printf '%s\n' "$DONE" | sed 's/^/  - /'
+     echo "Not completed, in this directory when you are ready:"
+     printf '%s\n' "$LEFT" | sed 's/^/  - /'
+     echo
+     echo "Record 0005 stays valid while the report it binds is the one on main, so this script does"
+     echo "not need to run again: the two commands above are all that is left."
      exit 0 ;;
 esac
 echo
-pod-factory approve 2 --classification "$NAME" || die "approve 2 did not complete, so nothing is locked. Record 0005 is published and still valid; fix what it reported and run approve 2 again, then lock."
+if ! pod-factory approve 2 --classification "$NAME"; then
+  stop "approve 2 did not complete, so gate 2 is not approved and nothing is locked. Record 0005 is published and stays valid; fix what approve 2 reported, then run the two commands above."
+fi
+DONE="$DONE
+gate 2 approved by approve 2 --classification $NAME"
+LEFT="pod-factory lock"
 echo
-pod-factory lock || die "the gate-2 approval exists but lock did not complete. Run \"pod-factory lock\" again before anything else merges."
+if ! pod-factory lock; then
+  stop "lock did not complete. Gate 2 is approved, so the locked paths are approved but not guarded: a change to one of them would pass lock-guard until lock runs. Run \"pod-factory lock\" before anything else merges."
+fi
+DONE="$DONE
+locked paths guarded by lock"
+LEFT=""
+echo
+echo "Completed:"
+printf '%s\n' "$DONE" | sed 's/^/  - /'
 echo
 echo "Gate 2 is approved and the locked paths are guarded."
-echo "Next: 4-approve-3-and-story-start.sh, then 5-protection.sh."
+echo "Next: 4-approve-3.sh, then 5-protection.sh."

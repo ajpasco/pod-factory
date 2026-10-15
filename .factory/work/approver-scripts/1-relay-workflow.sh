@@ -13,7 +13,8 @@ cd "$REPO"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 die() { echo "REFUSED: $*"; echo "Nothing was pushed."; exit 1; }
 
-git fetch --quiet origin 'refs/heads/main:refs/remotes/origin/main'
+git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' \
+  || die "cannot read main from origin: git fetch failed. Nothing here knows what is on the remote until it succeeds."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 
 git cat-file -e "${MAIN}:${STAGED}" 2>/dev/null || die "main has no staged relay workflow at $STAGED."

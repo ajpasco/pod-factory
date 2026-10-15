@@ -14,6 +14,8 @@ export { lock } from './commands/lock.js';
 export { ACTIONS_APP_ID, REQUIRED_CHECKS, doctor } from './commands/doctor.js';
 export { REVOKE_USAGE, revoke } from './commands/revoke.js';
 export { STORY_USAGE, storyFinish, storyStart } from './commands/story.js';
+export { STATUS_USAGE, status } from './commands/status.js';
+export * from './status/report.js';
 export * from './story.js';
 export * from './revocation.js';
 export * from './github.js';

@@ -9,6 +9,7 @@ import { Refusal, type CommandIO } from './commands/common.js';
 import { doctor } from './commands/doctor.js';
 import { lock } from './commands/lock.js';
 import { REVOKE_USAGE, revoke } from './commands/revoke.js';
+import { STATUS_USAGE, status } from './commands/status.js';
 import { STORY_USAGE, storyFinish, storyStart } from './commands/story.js';
 import { GitError } from './records/git.js';
 import { RecordsReadError } from './records/store.js';
@@ -21,6 +22,7 @@ Commands:
   lock      lock the tests and enforcement files the gate-2 approval binds
   revoke    revoke a record; the gate it opened closes and CI blocks what relied on it
   story     start a story for a builder, or finish it (verifying, then done)
+  status    show every story's stage, owner and what it waits on, and each gate
   doctor    report each enforcement layer present or missing
   hook      answer a Claude Code hook event on standard input: pre-tool-use
   ci        run a check-runner job: lock-guard, verify, verify-record, gate-check,
@@ -30,7 +32,9 @@ ${APPROVE_USAGE}
 
 ${REVOKE_USAGE}
 
-${STORY_USAGE}`;
+${STORY_USAGE}
+
+${STATUS_USAGE}`;
 
 /** Runs one command; every stop is a plain-language message and a non-zero exit. */
 export async function run(argv: string[], io: CommandIO): Promise<number> {
@@ -39,6 +43,7 @@ export async function run(argv: string[], io: CommandIO): Promise<number> {
     if (command === 'approve') return await approve(rest, io);
     if (command === 'lock') return lock(rest, io);
     if (command === 'doctor') return doctor(rest, io);
+    if (command === 'status') return status(rest, io);
     if (command === 'revoke') return await revoke(rest, io);
     if (command === 'story') {
       const [verb, ...args] = rest;

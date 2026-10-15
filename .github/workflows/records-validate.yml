@@ -1,6 +1,9 @@
 name: records-validate
-# The alerting job (TECH-SPEC section 3.2): validates every record on pod-factory/records, each
-# on its own, and fails so that a flagged record is seen. It rejects, rewrites and deletes nothing.
+# The alerting job and the revocation relay (TECH-SPEC sections 3.2 and 6): validates every
+# record on pod-factory/records, each on its own, and fails so that a flagged record is seen; it
+# rejects, rewrites and deletes nothing. Then it relays revocations: a failing gate-check check
+# run on every open pull request whose approval or verify result was revoked, recorded on the
+# records branch so `revoke` can report the block as enforced.
 # A schedule runs only from the default branch, so this always runs main's code: the enforcing
 # copy, never a branch's. The job itself passes on a project whose records branch does not exist
 # yet; this repository's branch was created on 2026-10-14 (root commit fc8eb23), so here its
@@ -16,8 +19,12 @@ concurrency:
 jobs:
   records-validate:
     runs-on: ubuntu-latest
+    # contents: write pushes the relay's records; checks: write posts the failing gate-check;
+    # pull-requests: read lists the open pull requests. The job runs main's code only.
     permissions:
-      contents: read
+      contents: write
+      checks: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,5 +46,11 @@ jobs:
       - run: npm run build --workspace packages/cli
       # The checkout is shallow; the job fetches pod-factory/records with its full history itself,
       # because each record is read as it was when first added.
-      - name: validate every record
-        run: node packages/cli/dist/cli.js ci records-validate
+      - name: validate every record and relay revocations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          node packages/cli/dist/cli.js ci records-validate --relay --run-id "$GITHUB_RUN_ID" --run-url "$RUN_URL"

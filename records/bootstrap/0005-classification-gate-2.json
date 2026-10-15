@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "classification",
+  "gate": 2,
+  "project": "pod-factory",
+  "factoryVersion": "bootstrap (decision 23)",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "2026-10-14T22:36:11-04:00",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human",
+    "source": "the approver ran the locked command list against a clean export of main at bd6c7349726b in their own terminal, read the result, and wrote this record. Direction of 2026-10-14: \"Prepare the remaining human-action scripts and finish milestone zero first.\" The script derived every number and every failing test ID below from the report it binds; none was typed."
+  },
+  "subject": "The gate-2 classification: the locked command list run against main at bd6c7349726b, 167 tests, 164 passed, 3 failed. The failures are approved as known and expected, each one a test of the status command, which milestone zero’s story one builds.",
+  "binds": {
+    "tree": "39b9814255c456c3fb110cb730f523bd828ad627",
+    ".factory/work/classification/gate-2.json": {
+      "sha256": "dea1a7c51cf1ec06af320fba109d73af5b15960671c89ec4683cdd976aebdab1"
+    }
+  },
+  "run": {
+    "commit": "bd6c7349726b7098a5aea5976f0a6515c2ecf0a5",
+    "commands": [
+      "npm ci",
+      "npm exec --workspace packages/cli -- vitest run --config vitest.config.ts"
+    ],
+    "tests": 167,
+    "passed": 164,
+    "failed": 3
+  },
+  "approvedFailures": [
+    {
+      "id": "T-19-P1",
+      "test": "status T-19-P1 [M0] prints every story with its stage, owner, what it waits on and the record that holds it"
+    },
+    {
+      "id": "T-19-N1",
+      "test": "status T-19-N1 [M0] flags a story file that claims a stage its records do not justify"
+    },
+    {
+      "id": "T-19-N2",
+      "test": "status T-19-N2 [M0] shows an approval record that fails validation as invalid, never as approved"
+    }
+  ],
+  "scope": "Only the failures listed in approvedFailures are approved, and only because the status command is deliberately not built in milestone zero: story one builds it and these tests are its acceptance tests. Any other failing test, or a different count, invalidates this classification; it needs a fresh run and a new record, not an amendment.",
+  "bootstrapExceptions": [
+    "prepared by a script the design session wrote; it is a record only once the approver runs it",
+    "the run was the approver’s own, in a clean export of main, outside any agent session",
+    "the records branch only: .factory/records/ holds 0001 to 0004 and 0006, and a locked test asserts that list, so this record is not added there"
+  ],
+  "outcome": "approved"
+}

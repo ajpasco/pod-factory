@@ -77,23 +77,25 @@ The classification cannot run at the exact tree gate 2 approves, because the rep
 
 Steps 1 to 4 each merge a pull request whose verify is red from the three `status` failures, and whose gate-check is red for the same reason. That is expected: each merges under `approve bootstrap` while `bootstrap-check` is still the only required check.
 
-Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615. Step 1 is done too: #12 merged as **38638cf** under approval record 4ae9c449a6b9, and main's tree is exactly the tree that record binds. It changed documents only, so the enforcing copy built from 570f615 still matches main's enforcement code and was not rebuilt; a merge that touches `packages/**` is rebuilt and reinstalled before the next agent edit.
+Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enforcing copy is installed from 570f615. Step 1 is done too: #12 merged as **38638cf** under approval record 4ae9c449a6b9, and main's tree is exactly the tree that record binds. Step 1b is done as well: record **0006** is published in both locations, the four assertion edits are made, and #13 merged as **39c4fbb** under approval record 7ec02b6175a3, whose bound tree `1efc0cbd2198` is exactly main's tree. Neither merge touched `packages/cli/src`, `package.json` or `package-lock.json`, so the enforcing copy built from 570f615 still matches main's enforcement code and was not rebuilt; a merge that changes any of those three is rebuilt and reinstalled before the next agent edit, and the "enforcing copy: commit" line a check job prints is the current directory's HEAD, not the installed build's, so it does not answer that question.
+
+**The mechanics for steps 2 to 6 are prepared.** `.factory/work/approver-scripts/` holds one script per step, each read-only until it asks for a hash prefix. The order below is still the authority; the scripts only remove the typing.
 
 1. **This pull request** merges under `pod-factory approve bootstrap <n>`. Done: #12, merged as 38638cf.
-1b. **The product-workflow contract, pull request #13** (`bootstrap-12-product-workflow`): PRD 0.10, tech spec 1.1 and ADR-016, the direction the approver approved on 2026-10-14. Three acts, in this order, because the last one binds what the first two leave:
+1b. **Done. The product-workflow contract, pull request #13** (`bootstrap-12-product-workflow`): PRD 0.10, tech spec 1.1 and ADR-016, the direction the approver approved on 2026-10-14. Three acts, in this order, because the last one binds what the first two leave:
    - Write bootstrap amendment record **0006** as `.factory/records/0006-amendment-prd-0.10-authorized-execution.json` on the pull request's branch, and push the same file to the records branch as `records/bootstrap/0006-amendment-prd-0.10-authorized-execution.json`. The complete draft is `.factory/work/bootstrap-12-product-workflow/record-0006-draft.json`; only `createdAt` and `actor.source` are unfilled, and with plausible values in them it passes `validateBootstrapRecord` under that file name. Hook 1 protects `.factory/records/**` from every agent, so this is the approver's own act.
    - The builder makes the four assertion edits listed in that slice's handoff, which chain the three PRD-binding tests through 0006 and take the run back to 167 tests, 164 passed, 3 failed.
    - Then `pod-factory approve bootstrap 13` for the head that holds both, and the design session merges it on the approver's say-so of 2026-10-14. Approving an earlier head approves a tree that is not what lands.
    This step and step 2 may happen in either order, and both land before the classification run: gate 2 approves main's tree and binds `docs/PRD.md` and `docs/TECH-SPEC.md`, so a later word in either costs an amendment.
-2. **The relay workflow.** Replace `.github/workflows/records-validate.yml` on main with `.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml`. Use a pull request from a `bootstrap-*` branch, merged under `approve bootstrap <n>`. Main's current file validates records but does not relay, so until this lands, `revoke` blocks nothing.
+2. **The relay workflow** — `1-relay-workflow.sh`. Replace `.github/workflows/records-validate.yml` on main with `.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml`. Use a pull request from a `bootstrap-*` branch, merged under `approve bootstrap <n>`. Main's current file validates records but does not relay, so until this lands, `revoke` blocks nothing.
 3. **Anything else the approver wants on main** lands now, the same way. After step 4 nothing merges until `lock`, and after step 6 nothing merges except story one.
-4. **Gate 2,** at main's commit after step 3:
+4. **Gate 2,** at main's commit after step 3 — `2-gate2-classification.sh` for the run and its pull request, then `3-record-0005-and-gate-2.sh` for record 0005, `approve 2` and `lock`:
    - From the repository root: `npm ci`, then the locked command `npm exec --workspace packages/cli -- vitest run --config vitest.config.ts`. Expect 167 tests: 164 pass, and exactly T-19-P1, T-19-N1 and T-19-N2 fail.
    - Copy `.factory/work/reports/cli.json` to `.factory/work/classification/gate-2.json`. Commit it on a `bootstrap-*` branch and merge it under `approve bootstrap <n>`. That merge is the tree gate 2 approves.
    - Write record 0005 by hand, following records-branch.md step 2. Its `command` names the locked command above.
    - `pod-factory approve 2 --classification 0005-classification-gate-2.json`, then `pod-factory lock` at once.
-5. **`pod-factory approve 3`, then `pod-factory story start story-1`.** Before the story's builder starts, the builder session checks that every Inputs path in `.factory/work/story-1/story.md` hashes on main to what the start record binds, and that the Tests path is locked at the lock's hash.
-6. **The swap,** before story one's pull request opens, so that story one is the first pull request the real checks gate:
+5. **`pod-factory approve 3`, then `pod-factory story start story-1`** — `4-approve-3.sh` for the approval; `story start` is the orchestrator's act, which the build plan gives to the design session, not the approver. Before the story's builder starts, the builder session checks that every Inputs path in `.factory/work/story-1/story.md` hashes on main to what the start record binds, and that the Tests path is locked at the lock's hash.
+6. **The swap,** before story one's pull request opens, so that story one is the first pull request the real checks gate — `5-protection.sh` does both halves and then runs `doctor`:
    - Main's required checks become `lock-guard`, `verify` and `gate-check`, each from the GitHub Actions app (ID 15368). `bootstrap-check` leaves the list. `strict` is the approver's call:
      ```sh
      gh api -X PATCH repos/ajpasco/pod-factory/branches/main/protection/required_status_checks --input - <<'JSON'
@@ -115,4 +117,4 @@ Done: #5 to #11 are merged, the gate-2 test pull request among them, and the enf
 
 ## Next step
 
-The design session reviewed and merged this pull request as 570f615. The approver follows the sequence above, from step 1.
+The design session reviewed and merged this pull request as 570f615. Steps 1 and 1b are done; the approver follows the sequence above from step 2, with the prepared scripts.

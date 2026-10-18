@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recordType": "revocation",
+  "recordId": "057921cf93bd",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-18T18:13:44Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": null,
+    "files": {}
+  },
+  "outcome": "revoked",
+  "refs": [
+    "be0a85b73df2"
+  ],
+  "revocation": {
+    "revokes": "be0a85b73df2",
+    "reason": "Open the reviewed bootstrap window for the Opus 5.5 and Sonnet 5.5 comparison: merge preparation PRs, then restore the expanded lock before either builder starts."
+  }
+}

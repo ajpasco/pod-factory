@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "bootstrap-0",
+  "recordType": "classification",
+  "factoryVersion": "milestone-one application trial, two-candidate model comparison",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8",
+  "createdAt": "2026-10-18T19:23:37.224Z",
+  "actor": {
+    "kind": "human",
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "source": "The approver reviewed the bound classification and confirmed this prepared record in their own terminal. Runs were performed by agents; this is human acceptance of that evidence, not a claim that the approver ran the tests."
+  },
+  "binds": {
+    "tree": "6f298f9281269140fae46a0b6e8fcdd2b7c7551c",
+    ".factory/work/classification/gate-2.json": {
+      "sha256": "16e4deb47c4b24c496c6ba15f920b06f22a72a04058a61e55634f35b65dc6d61"
+    }
+  },
+  "run": {
+    "source": "Premerge runs in one isolated input-hash-bound tree, described in the report; not a run at the eventual main commit.",
+    "tests": 219,
+    "passed": 189,
+    "failed": 30
+  },
+  "approvedFailures": [
+    {
+      "id": "30bed3729243e8d6a82a-f8d2d66e61295bc8b7db",
+      "file": "modal.spec.ts",
+      "title": "lists the snapshot with no modal, then opens exactly one modal with the event’s start and end"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-fd1058d325662d85d104",
+      "file": "modal.spec.ts",
+      "title": "close hides the modal, leaves the list usable and nothing reopens within five seconds"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-2ae164de6d7c540352c2",
+      "file": "modal.spec.ts",
+      "title": "reopens once and shows the other item’s own details"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-a11d07119c0cb61e477e",
+      "file": "modal.spec.ts",
+      "title": "the keyboard alone opens the dialog, keeps focus inside, closes it and returns focus"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-928bffbfd8b43796837c",
+      "file": "modal.spec.ts",
+      "title": "the item button carries the event title, its time and a timezone in its accessible name"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-bed014e6d18a85d13d3b",
+      "file": "modal.spec.ts",
+      "title": "renders source, the snapshot’s own fetched time, the window and all three items"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-1475f4aca54e298cd93f",
+      "file": "modal.spec.ts",
+      "title": "calendar text is rendered as text in the list and in the dialog, never as HTML"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-5998612207a2240a53de",
+      "file": "modal.spec.ts",
+      "title": "a snapshot naming a different calendar is refused, not displayed"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-f66e37b404b8e7f1ed01",
+      "file": "modal.spec.ts",
+      "title": "a valid empty snapshot shows the empty state"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-680ae9b2100567d52aeb",
+      "file": "modal.spec.ts",
+      "title": "a snapshot that is not valid JSON shows an error and never the empty state"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-75977f672889ac24c69f",
+      "file": "modal.spec.ts",
+      "title": "valid JSON of the wrong shape shows an error and never the empty state"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-2776b1c21e4723e64391",
+      "file": "modal.spec.ts",
+      "title": "an event missing its times shows an error and never the empty state"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-977310f7bd1933dd7298",
+      "file": "modal.spec.ts",
+      "title": "an unavailable snapshot shows an error and never the empty state"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-9527d67605eb0a23bd91",
+      "file": "modal.spec.ts",
+      "title": "loads only same-origin assets, reads once, writes nothing and stores nothing"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-ad30d34cf51ad6a78e9d",
+      "file": "modal.spec.ts",
+      "title": "the only controls are one per meeting and Close, with nothing extra or unnamed"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-23a9d3fbd555ede9f797",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where the calendar carries no id"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-4b67a6c407c2ecb598c7",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where the calendar id is blank"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-89b971962ca75d0ce3cb",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where the calendar id is not a string"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-17b2d6572203d5c9538c",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where an event carries no id"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-bf632dd78bead4c78d6a",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where an event id is blank"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-430f6576089c02fd4396",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a timed start carries no offset"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-e52eaad28f558eccb474",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a timed end carries no offset"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-f6ca4ceeb43d97840d73",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where the fetched time carries no offset"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-4089506ff7b9d625ee42",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where the window carries no offset"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-e676bc3a742221176baf",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a date-only value names a day that does not exist"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-8da26e6efe771eda79d1",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a timed value names a day that does not exist"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-2785b39148a25de8a5d7",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a timed value names a month that does not exist"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-dcf216481b286bb98ce1",
+      "file": "modal.spec.ts",
+      "title": "refuses a snapshot where a timed value names an hour that does not exist"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-543ad67cfa53be2e7180",
+      "file": "modal.spec.ts",
+      "title": "accepts the offset forms the contract allows"
+    },
+    {
+      "id": "30bed3729243e8d6a82a-4bccdb5f061382fcc14e",
+      "file": "modal.spec.ts",
+      "title": "a meeting title that reads like a feature stays calendar data, not a control"
+    }
+  ],
+  "outcome": "approved",
+  "gate": 2
+}

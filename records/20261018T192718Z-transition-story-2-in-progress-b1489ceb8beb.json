@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "recordType": "transition",
+  "recordId": "b1489ceb8beb",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-18T19:27:18Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "agent"
+  },
+  "binds": {
+    "tree": "6f298f9281269140fae46a0b6e8fcdd2b7c7551c",
+    "files": {
+      ".factory/work/story-2/story.md": "ea5639f094877dd63c5ca055f71f0e587847beeb6a90096764d6d9f0c206ad2c",
+      "docs/projects/meeting-reminder/web/index.html": "deb585624d2425ac7fb5e40b4d493b313195a7264d4d73a7307c31ec666d7bce",
+      "docs/projects/meeting-reminder/web/package-lock.json": "ee74b8c7e3544700c176e9432010be202ecff5807ab1face2ae3363658a77487",
+      "docs/projects/meeting-reminder/web/package.json": "313303678f879d2a354e298ce78b4814351480320da2d9ff0b82b19e18afea4b",
+      "docs/projects/meeting-reminder/web/playwright.config.ts": "078353e99f5acf87a977abde79d212f73a3c9eec6e5df4e169e928d40d5ac3fa",
+      "docs/projects/meeting-reminder/web/public/meetings.json": "84568c17e20148c6082a94784cec677a4d220008c6cebc94bcfffc8053892321",
+      "docs/projects/meeting-reminder/web/src/style.css": "d9b8a4f4b7ff693df0e178cf1ec7b47008f6dada57fbe6447e13dcd8512e5a2c",
+      "docs/projects/meeting-reminder/web/test/modal.spec.ts": "3285086c8e4d06bf40cd66d4bf1368e4121f90f4aaa0d9454f9bac669df213b9",
+      "docs/projects/meeting-reminder/web/test/observer-probe.spec.ts": "1690ce226421e32980658ee6bfeb36b4e288a1ce3aae66d2fe7dfb0f44c1c6ba",
+      "docs/projects/meeting-reminder/web/test/observers.ts": "b1c6030959d7b53f7cf8d3c31699640d4c8a7a591d65583145f7a798a98f4629",
+      "docs/projects/meeting-reminder/web/tsconfig.json": "4cc75bf62b7dc88d09bdfbc1d7c99ffdcd27b07f7636faea7d65fde05ae2328b",
+      "docs/spec/meeting-reminder-contract.md": "bdaf61906de2f0e724fd9f481c9152ec4a3b3524b9c890b163f7993230754a87"
+    }
+  },
+  "outcome": "in-progress",
+  "refs": [
+    "457d804ac529"
+  ],
+  "transition": {
+    "story": "story-2",
+    "from": "ready",
+    "to": "in-progress",
+    "lease": {
+      "holder": "claude-opus-5-5",
+      "expiresAt": "2026-10-18T23:27:18Z"
+    },
+    "handoffNote": null
+  }
+}

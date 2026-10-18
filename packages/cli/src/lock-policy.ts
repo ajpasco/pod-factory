@@ -7,6 +7,13 @@
 export const LOCKED_PATTERNS: readonly string[] = [
   'packages/*/test/**',
   'templates/test/**',
+  'docs/projects/meeting-reminder/web/test/**',
+  'docs/projects/meeting-reminder/web/public/**',
+  'docs/projects/meeting-reminder/web/package.json',
+  'docs/projects/meeting-reminder/web/package-lock.json',
+  'docs/projects/meeting-reminder/web/tsconfig.json',
+  'docs/projects/meeting-reminder/web/playwright.config.ts',
+  'docs/projects/meeting-reminder/web/scripts/**',
   'docs/eval-plan.md',
   'packages/*/vitest.config.ts',
   'packages/check-runner/vitest.ai-evals.config.ts',
@@ -56,6 +63,10 @@ export const LOCKED_COMMANDS: readonly LockedCommand[] = [
     command:
       'npm exec --workspace packages/check-runner -- vitest run --config vitest.ai-evals.config.ts',
     requires: 'packages/check-runner/vitest.ai-evals.config.ts',
+  },
+  {
+    command: 'node docs/projects/meeting-reminder/web/scripts/run-browser-trial.mjs',
+    requires: 'docs/projects/meeting-reminder/web/package.json',
   },
 ];
 

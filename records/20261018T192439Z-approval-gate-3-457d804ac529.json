@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "457d804ac529",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-18T19:24:39Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "6f298f9281269140fae46a0b6e8fcdd2b7c7551c",
+    "files": {
+      ".factory/work/plan/build-plan.md": "fd4cb7db5eb67a2fd627311741840b383b5b49274ab7c07cd7b2500af9cd7916",
+      ".factory/work/story-1/story.md": "d6e8b81be453d6295ebbcb54d5d4c44444f17cffef95b9deb1b60ccae8faa813",
+      ".factory/work/story-2/story.md": "ea5639f094877dd63c5ca055f71f0e587847beeb6a90096764d6d9f0c206ad2c",
+      ".factory/work/story-3/story.md": "84262c989833c4579036f428fcd4c29e66fd002751b3a0da913c724a153b4ff3"
+    }
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "gate",
+    "gate": 3,
+    "story": null,
+    "pullRequest": null,
+    "shownHash": "1545a50f02c5297ca393bab7fcd2e3f4624b6b7cb7ded7495c8f0a3acd1d3ba5",
+    "typedPrefix": "1545a50f",
+    "statement": "Gate 3: the build plan and its 3 stories as they are on main at commit a82a857346ce07b55faaa80fce4626c5406bd9d9."
+  }
+}

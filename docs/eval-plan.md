@@ -399,6 +399,9 @@ Vitest per ADR-008 (node-tool preset), in an npm workspace (ADR-001, ADR-002). E
 | packages/release-executor | `npm exec --workspace packages/release-executor -- vitest run --config vitest.config.ts` |
 | templates | `npm exec --workspace templates -- vitest run --config vitest.config.ts` |
 | AI behavior evals (section 6) | `npm exec --workspace packages/check-runner -- vitest run --config vitest.ai-evals.config.ts` |
+| Meeting reminder browser trial | `node docs/projects/meeting-reminder/web/scripts/run-browser-trial.mjs` |
+
+Only commands whose required package or configuration file exists in the approved tree are pinned. The meeting reminder command joins only when docs/projects/meeting-reminder/web/package.json exists. Its protected runner installs the app dependencies, builds the app and runs the browser suite from the application directory; a failing install, build, browser test or report validation fails the command. The browser suite must report all 38 tests passing without skipped tests, retries or errors. This is one hardcoded application adapter.
 
 story-verify and gate-check read these strings from the validated lock record, never from a package's test script (T-06-P4, T-06-N4). pod-factory's own CI runs the five suite commands on Linux, macOS and Windows; ADR-006 requires at least the hook and lock suite on all three.
 
@@ -407,16 +410,17 @@ story-verify and gate-check read these strings from the validated lock record, n
 | REQ-06 category | Locked paths |
 |---|---|
 | Tests | `packages/*/test/**`, `templates/test/**`; a locked folder is locked whole, so adding, renaming or deleting a file in it is a change |
+| Meeting reminder browser harness | `docs/projects/meeting-reminder/web/test/**`, `docs/projects/meeting-reminder/web/public/**`, `docs/projects/meeting-reminder/web/package.json`, `docs/projects/meeting-reminder/web/package-lock.json`, `docs/projects/meeting-reminder/web/tsconfig.json`, `docs/projects/meeting-reminder/web/playwright.config.ts`, `docs/projects/meeting-reminder/web/scripts/**`; these patterns also cover files added after approval |
 | Fixtures | inside those folders: fixture repositories and records, pinned Claude Code hook events, canary values, AI-eval scenarios |
 | Eval plan | `docs/eval-plan.md`, this draft once approved; TECH-SPEC section 10 points to it |
 | Runner configuration | `packages/*/vitest.config.ts`, `packages/check-runner/vitest.ai-evals.config.ts`, `templates/vitest.config.ts` |
-| Exact test command | the seven strings in section 4, stored in the lock record |
+| Exact test command | the eight strings in section 4, conditional on the required file existing, stored in the lock record |
 | Lockfiles | `package-lock.json` and the published `npm-shrinkwrap.json` (ADR-010 item 34); adding or upgrading any dependency is therefore an amendment |
 | Smoke tests | `release/smoke/**`: post-publish install checks for the package, plugin and skills (ADR-006) |
 | Runbook scripts | `release/scripts/**`: publish, tag, and the Orca plugin branch split (ADR-002); `release/runbook.yaml`, the step file the executor runs (ADR-010 item 36) |
 | Enforcement code | `.github/workflows/**`, `.github/CODEOWNERS`, `.claude/settings.json`, `templates/checklists/**` (ADR-011 item 10). The pre-commit configuration, .pre-commit-config.yaml, joins the patterns when that file first lands. The enforcing-version pin (REQ-20) is stated in TECH-SPEC section 1 and covered by the gate-2 binding until the project profile file exists, then locked there. (In this table a backticked path is a locked pattern; the lock-constants test reads them.) |
 
-Bound by the gate-2 record but not locked, so a change reopens gate 2: `docs/PRD.md`, `docs/TECH-SPEC.md`, every `docs/spec/*.md` including the criterion-to-control mapping, and the classification report `.factory/work/classification/gate-2.json` (TECH-SPEC section 3.3). `docs/adr/` is history and is not bound. The release runbook narrative, rollback plan and step file do not exist in milestone zero and join by amendment in phase 3. The locked `docs/eval-plan.md` is protected on every pull-request class by the lock comparison (ADR-012 item 2). No mockup is bound, since pod-factory has no interactive UI in version one (record 0001). Not locked: `packages/*/src/**` including builder tests, `skills/`, the rest of `templates/`, `claude-plugin/`, `orca-plugin/`. Under decision 23 the enforcement code being developed is story code: what enforces pod-factory's own work is the pinned copy, first the bootstrap scaffold at the commit its bootstrap records bind and then the released 0.1, and CI runs that copy, never the branch's.
+Bound by the gate-2 record but not locked, so a change reopens gate 2: `docs/PRD.md`, `docs/TECH-SPEC.md`, every `docs/spec/*.md` including the criterion-to-control mapping, and the classification report `.factory/work/classification/gate-2.json` (TECH-SPEC section 3.3). `docs/adr/` is history and is not bound. The release runbook narrative, rollback plan and step file do not exist in milestone zero and join by amendment in phase 3. The locked `docs/eval-plan.md` is protected on every pull-request class by the lock comparison (ADR-012 item 2). No mockup is bound, since pod-factory has no interactive UI in version one (record 0001). The meeting reminder application source, including docs/projects/meeting-reminder/web/src/main.ts, stays outside these lock patterns. Not locked: `packages/*/src/**` including builder tests, `skills/`, the rest of `templates/`, `claude-plugin/`, `orca-plugin/`. Under decision 23 the enforcement code being developed is story code: what enforces pod-factory's own work is the pinned copy, first the bootstrap scaffold at the commit its bootstrap records bind and then the released 0.1, and CI runs that copy, never the branch's.
 
 ## 6. AI behavior evals
 

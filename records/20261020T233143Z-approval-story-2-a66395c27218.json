@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "a66395c27218",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-20T23:31:43Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "ca22af404861cac9d9026064ef66f0e402d05a73",
+    "files": {}
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "story",
+    "gate": null,
+    "story": "story-2",
+    "pullRequest": 23,
+    "shownHash": "f3e8046a82b53babf9520e95ce24101ccdda752d7a0718587fc2b6459b9f2c15",
+    "typedPrefix": "f3e8046a",
+    "statement": "Gate 4: story-2 as pull request 23 stands at commit cb4f994eff0069789328bf86222b1192d2a12aff."
+  }
+}

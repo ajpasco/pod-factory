@@ -879,6 +879,11 @@ python3.12 --version
 node --version
 docker --version
 docker compose version
+# The host port C4 publishes must be free. Without this check a container that fails to bind
+# leaves an earlier database of someone else's listening there, and the D rows then pass or
+# fail against the wrong store with no error to show for it. Observed, not hypothetical.
+! (command -v lsof >/dev/null && lsof -nP -iTCP:55432 -sTCP:LISTEN) \
+  || { echo "port 55432 is in use; C4 cannot bind it" >&2; exit 1; }
 
 # C2  API tools in a clean environment: the application's own packages when its list exists,
 #     then the frozen, hash-pinned test tools (pytest 8.3, httpx 0.27 and their dependencies).
@@ -887,6 +892,12 @@ docker compose version
 #     first into the same environment. Without it, a builder that names pytest, pluggy or any
 #     other pinned test package in api/requirements.txt supplies the runner of its own exam,
 #     and the frozen line reports "Requirement already satisfied" and exits 0.
+#     It reaches substitution of a pinned package and nothing further. A package the builder
+#     ADDS, carrying a pytest11 entry point, is loaded by pytest's plugin autoload however the
+#     pinned tools were installed, and one such hook can swallow every failure: a build
+#     implementing nothing then reports all of S1 green. That is why every pytest command below
+#     sets PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, and why a command needing a third-party plugin must
+#     name it explicitly with -p rather than rely on discovery.
 python3.12 -m venv .eval-venv
 . .eval-venv/bin/activate
 if [ -f api/requirements.txt ]; then python -m pip install -r api/requirements.txt; fi
@@ -894,7 +905,8 @@ python -m pip install --require-hashes --force-reinstall -r harness/api/requirem
 
 # C3  U: the unit tree, with no database and no application setting in the environment
 export PYTHONPATH="$PWD/api"
-env -u DATABASE_URL -u TEST_DATABASE_URL python -m pytest -c harness/api/pytest.ini --rootdir api \
+env -u DATABASE_URL -u TEST_DATABASE_URL PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+  python -m pytest -c harness/api/pytest.ini --rootdir api \
   api/tests/unit -q --junitxml=api/reports/unit.xml
 
 # C4  a real PostgreSQL 16, test-only credentials, wait for the second "ready" line
@@ -905,10 +917,15 @@ until [ "$(docker logs eval-pg 2>&1 | grep -c 'ready to accept connections')" -g
 export TEST_DATABASE_URL='postgresql+psycopg://eval:eval-only@127.0.0.1:55432/equipment_eval'
 
 # C5  D: the data store written to directly
-python -m pytest -c harness/api/pytest.ini --rootdir api api/tests/db -q --junitxml=api/reports/db.xml
+env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+  python -m pytest -c harness/api/pytest.ini --rootdir api api/tests/db -q --junitxml=api/reports/db.xml
 
-# C6  I: TestClient on app.main:app, including the threaded concurrency tests
-python -m pytest -c harness/api/pytest.ini --rootdir api api/tests/api -q --junitxml=api/reports/integration.xml
+# C6  I: TestClient on app.main:app, including the threaded concurrency tests.
+#     -p anyio is explicit because autoload is off (C2); if an I row needs no async plugin the
+#     entry is harmless, and if one does, discovery must not be what supplies it.
+env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+  python -m pytest -c harness/api/pytest.ini --rootdir api -p anyio api/tests/api -q \
+  --junitxml=api/reports/integration.xml
 
 # C7  tear down the test database and the environment
 docker rm -f eval-pg

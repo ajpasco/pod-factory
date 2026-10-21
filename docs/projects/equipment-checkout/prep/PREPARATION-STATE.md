@@ -33,7 +33,7 @@
 | Blueprint (earlier, input) | `inputs/technical-rev41.md` | `1eabe4839ad844f2234d0d3402e2cb1cc69874a95470f05fa7e75e217a1fd5ee` | 41 | yes |
 | Requirements extract | `inputs/requirements-rev41.json` | `4f56f5092ec511c7eb73c6a2ade99e74af61a6c99100c0052a5232e536a8b434` | from rev 41 | yes |
 | PRD | `PRD.md` | `df48931e09ca1762cccb0c437cd1b5a12a99bdd6bd6e01889bf6ceac727c63c6` | 6 | yes |
-| Eval plan and stories | `eval-plan.md` | `f8d41e6d9157c6dfd8acb0e5f6b1b5d0ade2b8644c73aed5b5d566a8004b054a` | 5 | yes |
+| Eval plan and stories | `eval-plan.md` | `2ae73498b21e8cf7703b4fa2908a38244f18610256112b97f13e1e49ed8d99cc` | 5 | amended after acceptance, see below |
 | Review findings R3 | `findings-R3.md` | `185bfe420ac7ca410ec351756d615228fadfcabfd3ae8371485b06d2d7148383` | R3 | yes |
 | Review findings R2 | `findings-R2.md` | `1af3e072b39de72cca348edfa57d9eb45b3bcdfa779b2b1de308656882869e8d` | R2 | yes |
 | Review findings R1 | `findings-R1.md` | `0ae1db89f985aaa912bca0087f48c4463e785773299b477b550b0e2fc9257862` | R1 | yes |
@@ -563,3 +563,34 @@ Both are held back only to avoid editing a file the running drafter is reading.
   files sit on a docs-only branch that cannot reach main under the current rules, and the acceptance
   test files do not exist yet. A freeze run today could therefore only be a local record of hashes,
   not the factory's protection. The two must not be described as the same thing.
+
+## Amendments to the accepted plan, after gate 6
+
+Gate 6 was accepted on 20 October. The eval plan has been amended twice since, both times to close
+a defect that would otherwise have been frozen, and both times recorded here rather than applied
+quietly. Its hash is now `2ae73498b21e8cf7703b4fa2908a38244f18610256112b97f13e1e49ed8d99cc`.
+
+1. **C2 installed the frozen test tools with `--require-hashes` alone**, after the builder's own
+   `api/requirements.txt` and into the same environment. pip skips verification of anything already
+   satisfied at the pinned version, so a builder naming a pinned test package supplied the runner of
+   its own exam. Demonstrated, then closed with `--force-reinstall`.
+
+2. **That fix was necessary and insufficient.** It reaches substitution of a pinned package and not
+   a package the builder *adds*. A new distribution with a `pytest11` entry point is loaded by
+   plugin autoload regardless, and one hook in it swallows every failure: against a stub build that
+   applies no rule, the frozen unit tree went from `13 failed, 3 passed` to `16 passed`, every row
+   carrying its `row` and `criterion` properties. Closed by `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` on
+   every pytest command, with `-p` naming any plugin a command needs; the same stub build then
+   returns `13 failed, 3 passed`. Found by the gate-7 orchestrator session, not by the three
+   checkers that reviewed the tests before it.
+
+3. **1.1's title rule** now records that in Python a title is a function name, that the id and the
+   criterion labels are therefore spelled with underscores, and that `api/tests/conftest.py`
+   recovers the canonical forms into the JUnit properties the register reads.
+
+**By section 7 of `ORCHESTRATOR.md` a changed eval plan invalidates the planning review**, so gate
+6's acceptance no longer covers the current plan. What it covered is unchanged in substance — no
+requirement, criterion or test id was created, changed or renumbered, and the coverage tables are
+untouched — but the acceptance is for the earlier text and the difference is these three entries. A
+fresh checker reading the amended plan against `rubrics/eval-plan.md`, and the user's re-acceptance,
+are outstanding. Gate 7 cannot close over an invalidated gate 6.

@@ -27,6 +27,12 @@ hashes on the trunk to the effective lock's hash for it; and that every `Inputs:
 trunk. Gate 2 and the lock are implied rather than checked, since a lock record exists only after
 `lock` checked a gate-2 approval.
 
+`story start` is also not a dry run: it writes the transition when it passes, so there is no way to
+rehearse a dispatch. The read-only pre-check of these same conditions belongs to gate 7 and to the
+preparation orchestrator, which reads the records and hashes directly and writes nothing
+([ORCHESTRATOR.md](ORCHESTRATOR.md) gate 7). The two are different acts on the same conditions: one
+confirms the project is ready to dispatch, the other dispatches.
+
 What it cannot check stays the orchestrator's to confirm from gate 7's own record: that the tests
 fail for the reason the plan predicts, that they were shown satisfiable, that a session which did not
 write them has reviewed them, and the classification. No tool can establish those. A clean
@@ -52,13 +58,21 @@ It would not stop one built to evade it, and it is written here so nobody mistak
 
 2. **Orchestrator:** dispatch one builder. It is given the story file and nothing more
    persuasive: the `Scope:` globs it may write, the `Tests:` that will judge it, the `Inputs:` it
-   may read, and the locked commands it must run. It is told plainly that it may not change a
+   may read, and the locked commands it must run — which are not in the story file and not printed
+   by `story start`. They live in the lock record, as `lock.testCommands`, and are read from the
+   records branch (section 10). They are the same commands CI will run, which is the whole point of
+   handing them over verbatim rather than describing them. It is told plainly that it may not change a
    test, the harness, the configuration or the commands, and that a demonstrated test defect is
    reported to the orchestrator rather than repaired.
 
 3. **Builder:** implements inside its scope, runs the locked commands, and writes its handoff
    note at `.factory/work/story-<n>/handoff.md` — that exact path, which `story finish` requires by
-   name — then commits and pushes it with the rest of its work.
+   name — then commits and pushes it with the rest of its work, **opens the pull request, and
+   reports its number.** Nothing else in the loop produces that number, and no record will ever hold
+   it, so this is where it enters the orchestrator's state (section 3). The orchestrator does not
+   take the number on the builder's word alone: it fetches that pull request's head and confirms the
+   head contains the handoff note at the expected path before using it. A number that does not
+   resolve to a branch carrying this story's note is reported, not used.
 
 4. **Orchestrator:** `pod-factory story finish story-<n> --pr <pr>` moves the story from
    in-progress to verifying. It refuses if the builder's session ended without a handoff note; see
@@ -131,6 +145,33 @@ because the builder's session ended without one. The note records that the build
 without it; it does not invent what the builder would have said, and it never reports work the
 orchestrator did not see evidence of.
 
+It has no `Write` or `Edit` tool, so this happens through `Bash`, on a checkout of the builder's
+branch, and it needs push access to that branch:
+
+```
+git fetch origin refs/pull/<n>/head
+git worktree add /tmp/story-<n> FETCH_HEAD
+mkdir -p /tmp/story-<n>/.factory/work/story-<n>
+cat > /tmp/story-<n>/.factory/work/story-<n>/handoff.md <<'NOTE'
+# story-<n> handoff
+
+The builder session (holder: <holder>) ended without writing this note. It was written by the
+build orchestrator so that `story finish` could proceed.
+
+What the orchestrator observed, and nothing more:
+- the branch at <head>
+- the locked commands it ran, and their results, or that it did not run them
+- what it did not observe, named as not observed
+NOTE
+git -C /tmp/story-<n> add .factory/work/story-<n>/handoff.md
+git -C /tmp/story-<n> commit -m "Add the missing handoff note for story-<n>"
+git -C /tmp/story-<n> push origin HEAD:<branch>
+```
+
+The note is a record of absence. It states who held the story, that the session ended without the
+note, and only what the orchestrator itself observed — never a summary of work it did not watch.
+Pushing it moves the head, so it happens before the verification and the approval, never after.
+
 It writes that note **before the verification and the approval, never after** — which is why the
 order in section 2 is load-bearing rather than tidy. The verifying transition hashes the note's
 content, and the verify result and the story approval each bind the branch's head tree. A note added
@@ -139,17 +180,21 @@ after the approval invalidated the approval and the verify result together, cost
 and a second ceremony from the user. `story finish` enforces half of this by refusing to move a story
 to verifying without a note; nothing enforces the other half, so it is written down here.
 
-It writes **its own state and findings**, in one file — `BUILD-STATE.md`, kept beside the
-project's `PREPARATION-STATE.md` under `docs/projects/<project>/build/`. It holds, per story: the
+It writes **its own state and findings**, in one file — `BUILD-STATE.md`, holding per story: the
 pull request number, the holder, the head commit and tree at each verification, the record IDs of
 every approval and verify result it read, each failure and re-dispatch, and the user's decisions with
-who decided. Any session must be able to resume from it alone, which is not a nicety — no record
-holds the pull request number, so this file is the only place it exists.
+who decided. Any session must be able to resume from it alone, which is not a nicety: no record holds
+the pull request number, so this file is the only place it exists.
 
-One constraint on where it lands. That path is outside every story's `Scope:`, so committing it on a
-story's branch fails the scope check and takes the pull request down with it. The state file is
-updated locally through a story and landed on the trunk between stories. Anything that must travel
-with a story goes in `.factory/work/story-<n>/`, which scope exempts in full.
+**It is kept outside the repository**, in the orchestrator's own working directory, and that is a
+constraint rather than a preference. The path it would naturally want — beside the project's
+`PREPARATION-STATE.md` — is outside every story's `Scope:`, so committing it on a story's branch
+fails the scope check and takes the pull request down with it. Landing it separately is worse: while
+a lock is in force `gate-check` counts only story approvals, so a pull request carrying nothing but
+the state file cannot pass the gate at all. There is no route for it onto the trunk during a build,
+and inventing one means a ceremony nobody planned. Anything that genuinely must travel with a story
+goes in `.factory/work/story-<n>/`, which scope exempts in full; everything else stays local and is
+handed to the next session as a file.
 
 It writes **nothing else**. Not the application, not a test, not the harness, not a command, not
 the PRD, the blueprint or the eval plan. In particular it does not fix a failing test to unblock a
@@ -194,6 +239,9 @@ and making it anything more needs a change to the CLI's own constants.
 The story's `Scope:` is a whitelist: `gate-check` fails on any changed path that does not match it,
 including a path nobody predicted, so a builder cannot add a file that interferes with its own exam
 and still merge. That is the strongest guarantee on this side, and most imagined attacks die there.
+(The lab runs referred to throughout as "the L7 lab" are recorded in
+[L7-GOVERNED-BUILD-ROUTE.md](../projects/equipment-checkout/prep/L7-GOVERNED-BUILD-ROUTE.md); every
+claim this document attributes to them is reproducible from there.)
 
 Three edges are worth knowing exactly. The story's **own** work folder, `.factory/work/story-<n>/`,
 is exempt in full — not merely its handoff note — so a builder may add arbitrary files there
@@ -349,8 +397,8 @@ at both ends, so `api/app/**` and `api/app/models/*.py` overlap completely while
 Expand both against the trunk and intersect:
 
 ```
-git ls-files | grep -E '^api/app/.*$'                  # story A's glob, compiled as the tool does
-git ls-files | grep -E '^api/app/models/[^/]*\.py$'    # story B's
+git ls-tree -r --name-only origin/main | grep -E '^api/app/.*$'
+git ls-tree -r --name-only origin/main | grep -E '^api/app/models/[^/]*\.py$'
 ```
 
 A non-empty intersection means the stories are not independent, and the orchestrator reports that
@@ -474,7 +522,7 @@ revocation.
 
 ```
 pod-factory ci verify --pr <n> --head <commit> --subject <dir> --bundle <dir>
-pod-factory ci verify-record --pr <n> --head <commit> --bundle <dir> --verify-result <path> \
+pod-factory ci verify-record --pr <n> --head <commit> --bundle <dir> --verify-result <conclusion> \
   --run-id <id> --run-url <url>
 pod-factory ci lock-guard --pr <n> --head <commit>
 pod-factory ci records-validate
@@ -482,19 +530,32 @@ pod-factory ci records-validate
 
 `verify-record` requires the check-runner actor and refuses every agent session. That refusal is what
 makes a verify result evidence rather than a claim, which is why the orchestrator never tries to
-produce one.
+produce one. Note that `--verify-result` takes the verify job's **conclusion**, not a path: the job
+treats anything other than `success` as a failure and says so in the record it writes.
 
 **Git, for the facts the records are about:**
 
 ```
+git fetch origin refs/pull/<n>/head                  # a pull request's head, as the tool fetches it
+git rev-parse FETCH_HEAD                             # the head commit, for --head
+git rev-parse FETCH_HEAD^{tree}                      # the head tree an approval must bind
+
 git fetch origin pod-factory/records                 # before trusting any record read
-git fetch origin refs/pull/<n>/head                   # a pull request's head, as the tool fetches it
-git rev-parse FETCH_HEAD                              # the head commit, for --head
-git rev-parse FETCH_HEAD^{tree}                       # the head tree an approval must bind
-git rev-parse origin/main^{tree}                      # the trunk's tree
-git show origin/pod-factory/records:records/<file>    # one record, verbatim
-git ls-files                                          # the trunk's files, for a scope overlap check
+git ls-tree -r --name-only origin/pod-factory/records records/   # every record, newest names last
+git show origin/pod-factory/records:records/<file>   # one record, verbatim
+
+git rev-parse origin/main^{tree}                     # the trunk's tree
+git ls-tree -r --name-only origin/main               # the trunk's files, for a scope overlap check
 ```
 
-The records branch is read from `refs/remotes/origin/pod-factory/records`, and neither the hook nor a
-stale clone fetches it for you, so any read that a decision rests on is preceded by that fetch.
+`FETCH_HEAD` is overwritten by the next fetch, so both `rev-parse` calls run straight after the pull
+request fetch and before the records fetch. The records branch is read from
+`refs/remotes/origin/pod-factory/records`, and neither the hook nor a stale clone fetches it for you,
+so any read a decision rests on is preceded by that fetch. In a shallow clone — the default in
+GitHub Actions — pod-factory refuses to read the records at all and says so; the remedy it names is
+`git fetch --unshallow`.
+
+Record files live in `records/` on that branch and each name ends `-<recordId>.json`. Reading one,
+what matters is: `binds.tree` (must equal the head tree), whether its ID appears in any revocation,
+and for an approval `approval.kind`, `approval.story` and `approval.pullRequest`. A record whose
+`binds.tree` is not the current head is the case section 6.3 covers, not a record to work around.

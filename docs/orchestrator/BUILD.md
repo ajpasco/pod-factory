@@ -67,20 +67,24 @@ It would not stop one built to evade it, and it is written here so nobody mistak
 5. **CI:** re-runs the locked commands on the pull request's own tree and writes a verify result
    bound to that tree. This, not the builder's report, is the evidence.
 
-6. **Orchestrator:** runs `pod-factory ci gate-check --pr <pr>` and reports to the user what it
-   found — including a failure, in full, with the condition that failed. `gate-check` is a `ci`
-   job, not a top-level command; it only reads records, and it requires no particular actor, so the
-   orchestrator may run it.
+6. **Orchestrator:** runs `pod-factory ci gate-check --pr <pr> --head <commit>` and reports to the
+   user what it found — including a failure, in full, with the condition that failed. `gate-check`
+   is a `ci` job, not a top-level command; it reads records only and requires no particular actor,
+   so the orchestrator may run it. It needs the head commit as well as the number, which comes from
+   `git fetch origin refs/pull/<pr>/head && git rev-parse FETCH_HEAD`; see section 10.
 
 7. **User:** `pod-factory approve story-<n> --pr <pr>`, typed in a terminal outside any agent
    session.
 
 8. **Orchestrator:** verifies the record that was written — that it exists, is unrevoked, names
    this story and this pull request, and binds the exact head tree — then re-runs
-   `pod-factory ci gate-check --pr <pr>`. A ceremony is never recorded as done because the user said
-   it was done.
+   `pod-factory ci gate-check --pr <pr> --head <commit>`. A ceremony is never recorded as done
+   because the user said it was done. If the approval binds anything other than the current head,
+   section 6.3 applies.
 
-9. **User or orchestrator, per the project's rule:** merge, once `gate-check` succeeds.
+9. **User:** merge, once `gate-check` succeeds. Merge authority is the user's unless they have
+   recorded otherwise for this project in the build state file; no document grants it to an agent by
+   describing it, and an orchestrator that has not been given it in words does not have it.
 
 10. **Orchestrator:** `pod-factory story finish story-<n> --pr <pr>` again, which moves verifying
     to done. Of its three waiting conditions only one is a refusal: a pull request that changed
@@ -110,7 +114,7 @@ result and any earlier approval are void the moment the head moves, so every fix
 and a fresh ceremony from the user — which is the argument for the builder running the locked
 commands itself before step 4, not after. And the orchestrator does not re-dispatch to retry, because
 `story start` refuses any story that is not at stage `ready`. A builder that has gone silent is a
-different problem; see section 8.
+different problem; see sections 6.4 and 9.
 
 ## 3. What the orchestrator writes during a build
 
@@ -135,7 +139,17 @@ after the approval invalidated the approval and the verify result together, cost
 and a second ceremony from the user. `story finish` enforces half of this by refusing to move a story
 to verifying without a note; nothing enforces the other half, so it is written down here.
 
-It writes **its own state and findings**.
+It writes **its own state and findings**, in one file — `BUILD-STATE.md`, kept beside the
+project's `PREPARATION-STATE.md` under `docs/projects/<project>/build/`. It holds, per story: the
+pull request number, the holder, the head commit and tree at each verification, the record IDs of
+every approval and verify result it read, each failure and re-dispatch, and the user's decisions with
+who decided. Any session must be able to resume from it alone, which is not a nicety — no record
+holds the pull request number, so this file is the only place it exists.
+
+One constraint on where it lands. That path is outside every story's `Scope:`, so committing it on a
+story's branch fails the scope check and takes the pull request down with it. The state file is
+updated locally through a story and landed on the trunk between stories. Anything that must travel
+with a story goes in `.factory/work/story-<n>/`, which scope exempts in full.
 
 It writes **nothing else**. Not the application, not a test, not the harness, not a command, not
 the PRD, the blueprint or the eval plan. In particular it does not fix a failing test to unblock a
@@ -264,7 +278,95 @@ the convenient path to editing a file. It does not remove `Bash`, which the role
 checked by nothing until CI. That seat is kept by its definition plus section 3 and the fact that its
 own output is the evidence a user reads — not by a sandbox.
 
-## 6. When a requirement changes while building
+## 6. When something goes wrong
+
+Section 2 is the happy path, and most of this document is about staying on it. These are the
+situations that actually arise. None of them is the orchestrator's to resolve alone: each ends either
+in work going back to the builder or in a report to the user.
+
+### 6.1 The locked commands fail on the builder's branch
+
+This is before step 4, and it is the common case rather than an incident. The orchestrator reads the
+command output rather than the builder's summary of it, and decides which of two things it is:
+
+- **The implementation is wrong.** It goes back to the builder with the failing assertion quoted.
+  No record changes, no ceremony is spent, and no new dispatch is needed: the story is still
+  in-progress and the builder still holds it.
+- **The test is wrong.** That is a claim to be demonstrated, not asserted. The orchestrator
+  reproduces the failure from the locked command, shows what the test asserts and why no
+  implementation inside the story's `Scope:` could satisfy it, and reports that to the user. It does
+  not edit the test and it does not ask the builder to work around it. A defect in a locked test is a
+  gate-7 failure arriving late, and the route back is section 7's.
+
+Two passes at the same failure is the limit before it goes to the user. Past that the orchestrator is
+guessing, and the user is cheaper than a third guess.
+
+### 6.2 The verification fails after step 4
+
+Section 2 covers the mechanics. What belongs here is the rule that follows from them: **the
+orchestrator does not ask for the approval until the verification on that exact head is green.**
+Asking earlier spends a ceremony that the next push will void, and the user's ceremonies are the
+scarcest thing in this loop.
+
+### 6.3 The approval does not match what is being verified
+
+Step 8 exists for this, and it is not hypothetical: an approval can name the right story and the
+right pull request and still bind an earlier head, if the branch moved between the user reading it
+and the user typing. The orchestrator reports exactly that and changes nothing. The repair is the
+user's, in this order — a fresh verification on the current head, then
+`pod-factory revoke <record ID> --reason "<why>"` for the stale approval, then the ceremony again.
+
+The revoke is not housekeeping. `gate-check` counts the latest approval whose bound tree matches the
+head, so a stale approval left in place is a record asserting that a tree was approved when it was
+not. Leaving it is the one thing here that corrupts the evidence rather than merely blocking it.
+
+### 6.4 The builder goes silent
+
+The signal is the absence of a handoff note, never the lease, which decides nothing (section 9). The
+orchestrator waits the lease it set and then reports; it does not invent a longer timeout because
+work might still be happening. What it reports depends on what the builder left behind:
+
+- **A pull request with a handoff note.** Nothing needs the user. Continue from step 4.
+- **A pull request without one.** The orchestrator writes the note (section 3) and continues. An
+  expired lease is irrelevant here: `story finish` from in-progress never reads it.
+- **No pull request at all.** This is the only truly wedged case. The story cannot advance and
+  cannot be re-dispatched, because `story start` refuses any story not at stage `ready`. The
+  orchestrator reports the in-progress transition record's ID and the one command that frees it,
+  which is the user's: `pod-factory revoke <record ID> --reason "<why>"`. Revoking that transition
+  drops it from the active set, the story falls back to `ready`, and it can be dispatched again.
+
+### 6.5 Which story is next, and whether two may run at once
+
+The build plan's order is the order. A story file declares only `Tests:`, `Scope:` and `Inputs:` —
+there is no dependency field — so nothing in the records can express "story 5 needs story 4 first".
+Where an order matters it is prose in the build plan, and the orchestrator follows it rather than
+improving on it.
+
+Before starting a story alongside one in flight, the orchestrator checks that their scopes do not
+overlap, because nothing else will (section 5.1). This is not a string comparison. `Scope:` globs
+compile with `**` meaning any characters at all and `*` meaning any characters except `/`, anchored
+at both ends, so `api/app/**` and `api/app/models/*.py` overlap completely while sharing no text.
+Expand both against the trunk and intersect:
+
+```
+git ls-files | grep -E '^api/app/.*$'                  # story A's glob, compiled as the tool does
+git ls-files | grep -E '^api/app/models/[^/]*\.py$'    # story B's
+```
+
+A non-empty intersection means the stories are not independent, and the orchestrator reports that
+rather than dispatching. The limit of the check, stated plainly: it sees only files that already
+exist, and creating files is most of what a builder does. So where two scopes share a directory
+prefix at all, treat them as overlapping whatever today's file list says.
+
+### 6.6 A second project wants to build at the same time
+
+Unconstrained, untested, and not endorsed here. Records, locks and story numbers are all
+per-repository: story IDs are a single flat namespace, and `effectiveLock` resolves to one lock for
+the whole repository. Two build orchestrators in one repository would contend for both. Nothing in
+the tool prevents it and nothing here supports it — one build orchestrator per repository, and the
+second project waits.
+
+## 7. When a requirement changes while building
 
 The orchestrator does not edit the plan. For the eval plan, the hook will refuse a `Write` or
 `Edit` once the lock covers it, and CI's lock-guard will fail the pull request regardless of how the
@@ -289,7 +391,7 @@ for a *change*, the test was not protected before the code was written. The huma
 re-lock afterwards are what stand in for it. This is a real limitation of the current design and not
 a step anyone forgot.
 
-## 7. What the build orchestrator refuses
+## 8. What the build orchestrator refuses
 
 It says which rule applies, what it did not do, and what the user can do next:
 
@@ -314,7 +416,7 @@ It says which rule applies, what it did not do, and what the user can do next:
 - Also act as the preparation orchestrator for the same project, or review work it helped produce.
 - Merge, or ask for a merge, while `gate-check` fails.
 
-## 8. Known limits
+## 9. Known limits
 
 - This side checks that the standard set during preparation is the standard applied. It cannot tell
   you the standard was right; that was gates 1 to 6, and a frozen test can be both unfakeable and
@@ -330,11 +432,69 @@ It says which rule applies, what it did not do, and what the user can do next:
   exit codes reads a refused dispatch as a successful one and must read the output instead. The lease
   makes the holder visible and blocks a takeover; it releases nothing, and it does not stop a second
   agent editing the same branch.
-- **A builder that dies mid-story is only half stuck.** `story finish` from in-progress ignores the
-  lease entirely and needs only the handoff note on the pull request's head, so if the builder left a
-  pull request behind, the story can still be moved on — by the orchestrator writing the note, per
-  section 3. Only a story with no pull request at all is wedged until the user revokes its transition
-  record.
+- A builder that dies mid-story is only half stuck, and only one of the three cases needs the user.
+  Section 6.4 has them.
 - Everything here assumes the records are trustworthy, which rests on the records branch being
   protected and the enforcing binary being the one installed from the trunk. Both are properties of
   the installation, not of this document.
+
+## 10. The commands, exactly
+
+Every command this role touches, with who may run it. None of them replaces reading the refusal: each
+one names the condition it stopped on, and that text is what gets reported.
+
+**The orchestrator's own. An agent session may run all of these:**
+
+```
+pod-factory story start story-<n> --holder <builder> [--lease <minutes>]
+pod-factory story finish story-<n> --pr <pull request>
+pod-factory status
+pod-factory ci gate-check --pr <pull request> --head <commit>
+pod-factory doctor
+```
+
+`status` reads and never writes, and exits 0 however blocked everything is. `ci gate-check` reads
+records only and requires no particular actor, so the orchestrator may run it; it needs **both**
+`--pr` and `--head`, and it exits non-zero when the gate fails. `doctor` reports which enforcement
+layers are present.
+
+**The user's, in a terminal with no agent session. Both refuse an agent by its marker:**
+
+```
+pod-factory approve story-<n> --pr <pull request>
+pod-factory revoke <record ID> --reason "<why>" [--wait <seconds>]
+```
+
+The orchestrator prepares these and never types them: the exact command, the pull request, the head
+tree it expects the approval to bind, and confirmation that the verification on that head is already
+green. Running `revoke` again for an already-revoked record reports whether CI has enforced the
+revocation.
+
+**CI's. No session runs these by hand:**
+
+```
+pod-factory ci verify --pr <n> --head <commit> --subject <dir> --bundle <dir>
+pod-factory ci verify-record --pr <n> --head <commit> --bundle <dir> --verify-result <path> \
+  --run-id <id> --run-url <url>
+pod-factory ci lock-guard --pr <n> --head <commit>
+pod-factory ci records-validate
+```
+
+`verify-record` requires the check-runner actor and refuses every agent session. That refusal is what
+makes a verify result evidence rather than a claim, which is why the orchestrator never tries to
+produce one.
+
+**Git, for the facts the records are about:**
+
+```
+git fetch origin pod-factory/records                 # before trusting any record read
+git fetch origin refs/pull/<n>/head                   # a pull request's head, as the tool fetches it
+git rev-parse FETCH_HEAD                              # the head commit, for --head
+git rev-parse FETCH_HEAD^{tree}                       # the head tree an approval must bind
+git rev-parse origin/main^{tree}                      # the trunk's tree
+git show origin/pod-factory/records:records/<file>    # one record, verbatim
+git ls-files                                          # the trunk's files, for a scope overlap check
+```
+
+The records branch is read from `refs/remotes/origin/pod-factory/records`, and neither the hook nor a
+stale clone fetches it for you, so any read that a decision rests on is preceded by that fetch.

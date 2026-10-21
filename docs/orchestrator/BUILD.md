@@ -106,8 +106,8 @@ It would not stop one built to evade it, and it is written here so nobody mistak
     merged* each print what they are waiting on and **exit 0, writing nothing**. A story is done
     when the command says it is done, never because the command exited 0.
 
-**Where the pull request number comes from: the orchestrator's own state, written at step 4 and
-never re-derived.** Not from `pod-factory status`. A transition record cannot name a pull request —
+**Where the pull request number comes from: the orchestrator's own state, written at step 3 and
+never re-derived from `pod-factory status`.** A transition record cannot name a pull request —
 the record format's transition block is exactly `story`, `from`, `to`, `lease` and `handoffNote`,
 with no field for one — so nothing in the records ties a verifying story to the pull request being
 verified. `status` fills that hole by inference: for a verifying story it takes the *latest* story
@@ -119,6 +119,14 @@ approval naming this story *and* this pull request — so a number taken from `s
 a loud failure. It produces a quiet exit 0 saying there is no valid approval, for a story that is
 approved on a different pull request. Read `status` for a story's stage. Never read it to decide what
 to merge.
+
+**And if the state is lost, the number is recoverable** — a resuming session is not stuck, which
+matters because the state file lives outside the repository (section 3). Rediscover the candidate
+with `gh pr list --head <branch>` or a search, then confirm it with the two checks the tool itself
+makes: the head of that pull request must contain `.factory/work/story-<n>/handoff.md`, and there
+must be an active story approval naming this story *and* that pull request. Both hold for exactly one
+pull request. That is re-derivation from the records and the tree, which is sound; what is forbidden
+is taking the number from `status`, which infers it.
 
 **When the verification comes back red.** The story stays in `verifying`. There is no transition back
 to `in-progress` and none is needed: the builder pushes its fix to the same pull request, CI
@@ -149,6 +157,9 @@ It has no `Write` or `Edit` tool, so this happens through `Bash`, on a checkout 
 branch, and it needs push access to that branch:
 
 ```
+BRANCH=$(gh pr view <n> --json headRefName --jq .headRefName)   # refs/pull/<n>/head has no name
+gh pr view <n> --json isCrossRepository --jq .isCrossRepository  # must be false; see below
+
 git fetch origin refs/pull/<n>/head
 git worktree add /tmp/story-<n> FETCH_HEAD
 mkdir -p /tmp/story-<n>/.factory/work/story-<n>
@@ -165,8 +176,26 @@ What the orchestrator observed, and nothing more:
 NOTE
 git -C /tmp/story-<n> add .factory/work/story-<n>/handoff.md
 git -C /tmp/story-<n> commit -m "Add the missing handoff note for story-<n>"
-git -C /tmp/story-<n> push origin HEAD:<branch>
+git -C /tmp/story-<n> push origin HEAD:"$BRANCH"
+git worktree remove /tmp/story-<n>
+
+git fetch origin refs/pull/<n>/head                              # the ref lags the push
+git ls-tree --name-only FETCH_HEAD .factory/work/story-<n>/      # confirm the note is on it
 ```
+
+Five things that block this in practice, none of them obvious from the commands:
+
+- **The branch name is not in `refs/pull/<n>/head`**, which carries no name, so it is looked up
+  first. The commit also needs a configured git identity.
+- **A fork's pull request cannot be pushed to through `origin`.** If `isCrossRepository` is true,
+  the orchestrator stops and reports it rather than guessing at a remote.
+- **`refs/pull/<n>/head` lags the push.** `story finish` fetches that ref, so running it too soon
+  reads the old head and refuses again for the same reason. Re-fetch and confirm the note is on the
+  head before running `finish` — the last two lines above.
+- **A "silent" builder may be alive.** If it pushes while this is happening the push is rejected as
+  a non-fast-forward, and if it pushes afterwards the head moves and voids whatever followed. The
+  orchestrator confirms the builder has finished before writing anything, and treats a rejected push
+  as evidence that it has not.
 
 The note is a record of absence. It states who held the story, that the session ended without the
 note, and only what the orchestrator itself observed — never a summary of work it did not watch.
@@ -187,14 +216,24 @@ who decided. Any session must be able to resume from it alone, which is not a ni
 the pull request number, so this file is the only place it exists.
 
 **It is kept outside the repository**, in the orchestrator's own working directory, and that is a
-constraint rather than a preference. The path it would naturally want — beside the project's
-`PREPARATION-STATE.md` — is outside every story's `Scope:`, so committing it on a story's branch
-fails the scope check and takes the pull request down with it. Landing it separately is worse: while
-a lock is in force `gate-check` counts only story approvals, so a pull request carrying nothing but
-the state file cannot pass the gate at all. There is no route for it onto the trunk during a build,
-and inventing one means a ceremony nobody planned. Anything that genuinely must travel with a story
-goes in `.factory/work/story-<n>/`, which scope exempts in full; everything else stays local and is
-handed to the next session as a file.
+constraint rather than a preference. Precisely why, because the reasoning decides where anything
+else goes too:
+
+- **Beside the project's `PREPARATION-STATE.md` it cannot land at all.** That path is outside every
+  story's `Scope:`, so it fails the scope check on a story's branch and takes the pull request with
+  it. Landing it on its own is no better: while a lock is in force `gate-check` counts only story
+  approvals, and a story approval triggers the scope check, which fails it for the same reason.
+- **Inside `.factory/work/story-<n>/` it can land**, on that story's own pull request. Scope exempts
+  a story's own folder in full, and the only locked path under `.factory/` is the classification
+  report. So per-story material that must be durable has a legal home, and cross-story material
+  could ride the next story's folder.
+- **But the pull request number cannot go in the pull request it describes.** Writing it changes the
+  tree, which voids the approval and the verify result bound to that tree. The number is knowable
+  only after the thing it would be recorded in is already sealed.
+
+So the state file stays local and is handed to the next session as a file. That is survivable rather
+than fragile, because the number is recoverable from the records and the tree — section 2 gives the
+two checks — but it is a real limitation and section 9 records it as one.
 
 It writes **nothing else**. Not the application, not a test, not the harness, not a command, not
 the PRD, the blueprint or the eval plan. In particular it does not fix a failing test to unblock a
@@ -482,6 +521,12 @@ It says which rule applies, what it did not do, and what the user can do next:
   agent editing the same branch.
 - A builder that dies mid-story is only half stuck, and only one of the three cases needs the user.
   Section 6.4 has them.
+- **No record holds a pull request number, so the orchestrator's cross-story state has no home
+  inside the repository during a build.** It lives in the session's own working directory and is
+  handed on as a file. This is a limitation of the record format, not a convention anyone chose, and
+  the workaround is the recovery procedure in section 2 rather than a route onto the trunk. A build
+  that changes hands between sessions without that file being passed along has to rediscover each
+  story's pull request.
 - Everything here assumes the records are trustworthy, which rests on the records branch being
   protected and the enforcing binary being the one installed from the trunk. Both are properties of
   the installation, not of this document.
@@ -551,11 +596,27 @@ git ls-tree -r --name-only origin/main               # the trunk's files, for a 
 `FETCH_HEAD` is overwritten by the next fetch, so both `rev-parse` calls run straight after the pull
 request fetch and before the records fetch. The records branch is read from
 `refs/remotes/origin/pod-factory/records`, and neither the hook nor a stale clone fetches it for you,
-so any read a decision rests on is preceded by that fetch. In a shallow clone — the default in
-GitHub Actions — pod-factory refuses to read the records at all and says so; the remedy it names is
-`git fetch --unshallow`.
+so any read a decision rests on is preceded by that fetch. pod-factory deepens its own fetch of
+that branch, so a shallow clone — the default in GitHub Actions — is usually not a problem. It
+becomes one only when the history is still cut afterwards, and then the tool says so by naming the
+commit it stops at; that message is the signal to run `git fetch --unshallow`, which errors on a
+complete repository and is not run speculatively.
 
-Record files live in `records/` on that branch and each name ends `-<recordId>.json`. Reading one,
-what matters is: `binds.tree` (must equal the head tree), whether its ID appears in any revocation,
-and for an approval `approval.kind`, `approval.story` and `approval.pullRequest`. A record whose
-`binds.tree` is not the current head is the case section 6.3 covers, not a record to work around.
+Record files live in `records/` on that branch, named
+`<timestamp>-<recordType>-<subject>-<recordId>.json`, so they sort chronologically and a type can be
+found by the `-<recordType>-` in the name — `-lock-` for the lock record whose `lock.testCommands`
+step 2 hands the builder.
+
+Which record decides, stated as the tool decides it rather than left to judgement:
+
+- **A revocation** is itself a record: `recordType: "revocation"`, with `revocation.revokes` naming
+  the ID it kills. A record is active when no valid revocation names it. A revocation can itself be
+  invalid or flagged, so `pod-factory ci records-validate` is the check, not an eyeball.
+- **The approval that counts** is the *last* active story approval for this pull request whose
+  `binds.tree` equals the head tree — not simply one that names the story. A story can collect
+  several approvals for one pull request as the head moves, and picking an earlier one is how a
+  session convinces itself a stale approval is current.
+- **The verify result that counts** is a `recordType: "check-result"` with
+  `checkResult.check == "verify"`, `outcome == "pass"`, and `binds.tree` equal to the head tree.
+- A record whose `binds.tree` is not the current head is the case section 6.3 covers, not a record to
+  work around.

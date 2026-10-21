@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Equipment Checkout Mockup</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f;-webkit-font-smoothing:antialiased}
+.banner{background:#fff8e1;color:#8a6d00;text-align:center;font-size:12px;padding:5px}
+.wrap{max-width:700px;margin:0 auto;padding:0 16px}
+.demo{margin:14px 0;font-size:12px;color:#6e6e73;background:#fff;border-radius:12px;padding:6px 12px;box-shadow:0 0 0 1px rgba(0,0,0,.06);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.demo span.l{margin-left:6px}
+header{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.1);padding:10px 0}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+h1{font-size:20px;font-weight:600;margin:0}
+h2{font-size:12px;margin:20px 0 6px 6px;color:#6e6e73;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.who{display:flex;align-items:center;gap:8px;font-size:13px;color:#6e6e73}
+select,input{font:inherit;padding:6px 10px;border:1px solid #d2d2d7;border-radius:8px;background:#fff;color:#1d1d1f;outline:none}
+select:focus,input:focus{border-color:#0071e3;box-shadow:0 0 0 3px rgba(0,113,227,.25)}
+.role{font-size:11px;text-transform:capitalize;background:#e8e8ed;color:#6e6e73;padding:2px 10px;border-radius:99px}
+.card{background:#fff;border-radius:12px;padding:0 12px 0 16px;margin:6px 0;box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.04)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;height:48px;overflow:hidden}
+.info{display:flex;align-items:center;gap:10px;min-width:0}
+.act{display:flex;align-items:center;justify-content:flex-end;gap:6px;height:32px;flex:none}
+.name{font-weight:600}
+.tag{white-space:nowrap;font-size:12px;font-weight:500;padding:1px 10px;border-radius:99px}
+.available{background:#e3f8e8;color:#1a7f37}.loan{background:#e1efff;color:#0058b0}.out{background:#ececf0;color:#6e6e73}
+button{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:50%;border:none;background:#e8e8ed;color:#1d1d1f;cursor:pointer;font:inherit}
+button:hover{background:#dcdce1}button.p{background:#0071e3;color:#fff}button.p:hover{background:#0062c4}button.d{color:#d70015}
+svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.note{font-size:13px;margin:8px 6px 0;color:#6e6e73}.note.err{color:#d70015}.note:empty{display:none}
+.muted{color:#6e6e73;text-align:center;padding:22px 16px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid #d2d2d7;border-top-color:#0071e3;border-radius:50%;animation:s .7s linear infinite;margin:0 7px}
+@keyframes s{to{transform:rotate(360deg)}}
+.add{padding:10px 12px;display:flex;gap:8px;align-items:center}.add input{flex:1}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:10}
+.ov.on{display:flex}
+.modal{background:rgba(255,255,255,.95);border-radius:16px;width:300px;padding:22px 20px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal h3{margin:0 0 6px;font-size:17px}.modal p{margin:0 0 16px;font-size:13px;color:#6e6e73}
+.modal .bt{display:flex;gap:10px;justify-content:center}.modal button{width:40px;height:40px}
+.modal .bt.pl{flex-direction:column;margin-bottom:12px}
+.modal .bt button.pk{width:100%;height:40px;border-radius:10px;justify-content:flex-start;gap:10px;padding:0 12px;font-size:14px}
+</style></head><body>
+<div class="banner">Mockup only – sample data, nothing is saved.</div>
+<div class="wrap"><div class="demo"><b>State demos:</b>
+<span class="l">Loading</span><button title="Loading" aria-label="Show loading" onclick="state='loading';render();setTimeout(function(){state='ready';render()},900)"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></button>
+<span class="l">Empty</span><button title="Empty list" aria-label="Show empty list" onclick="items=[];render()"><svg viewBox="0 0 24 24"><path d="M4 13h5l1 3h4l1-3h5M5 13l2-8h10l2 8v6H5z"/></svg></button>
+<span class="l">API failure</span><button title="API failure" aria-label="Show API failure" onclick="fail(function(){})"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 17v.01M10 3L2 18h20L14 3z"/></svg></button>
+<span class="l">Access denied</span><button title="Access denied" aria-label="Show access denied" onclick="modal('Access denied','You do not have permission to do that.')"><svg viewBox="0 0 24 24"><path d="M6 11h12v9H6zM8 11V7a4 4 0 018 0v4"/></svg></button></div></div>
+<header><div class="wrap"><h1>Shared Equipment</h1>
+<label class="who">Acting as <select id="u"></select> <span id="role" class="role"></span></label></div></header>
+<main class="wrap"><div id="note" class="note"></div><div id="view"></div></main>
+<div id="ov" class="ov"><div class="modal" role="alertdialog"><h3 id="mt"></h3><p id="mp"></p><div class="bt" id="mb"></div></div></div>
+<script>
+var users=[{n:"Ada Admin",r:"admin"},{n:"Mia Member",r:"member"},{n:"Sam Member",r:"member"}];
+var items=[{id:1,n:"Projector",s:"available",h:null},{id:2,n:"Laptop",s:"loan",h:"Sam Member"},{id:3,n:"Camera",s:"out",h:null},{id:4,n:"Tripod",s:"loan",h:"Mia Member"},{id:5,n:"Microphone",s:"available",h:null}];
+var P={borrow:"M12 4v12m0 0l-4-4m4 4l4-4M5 20h14",ret:"M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3",out:"M12 3a9 9 0 100 18 9 9 0 000-18zM5.6 5.6l12.8 12.8",restore:"M4 12a8 8 0 0114-5.3M20 4v5h-5M20 12a8 8 0 01-14 5.3M4 20v-5h5",del:"M6 6l12 12M18 6L6 18",plus:"M12 5v14M5 12h14",ok:"M5 13l4 4L19 7",retry:"M4 12a8 8 0 0114-5.3M20 4v5h-5",user:"M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0"};
+var T={borrow:"Borrow",ret:"Return",out:"Mark out of service",restore:"Restore",del:"Delete",plus:"Add equipment",ok:"OK",retry:"Retry",close:"Close"};
+var cur=0,state="loading",pend={};
+var u=document.getElementById("u"),v=document.getElementById("view"),nt=document.getElementById("note"),ov=document.getElementById("ov");
+users.forEach(function(x,i){var o=document.createElement("option");o.value=i;o.textContent=x.n;u.appendChild(o)});
+u.value=cur;u.onchange=function(){cur=+u.value;note("");render()};
+function note(t,c){nt.className="note "+(c||"");nt.textContent=t}
+function me(){return users[cur]}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return "&#"+c.charCodeAt(0)+";"})}
+function lbl(i){return i.s=="available"?"Available":i.s=="loan"?"On loan – "+i.h:"Out of service"}
+function find(id){return items.filter(function(i){return i.id==id})[0]}
+function ic(k){return "<svg viewBox='0 0 24 24'><path d='"+P[k==="close"?"del":k]+"'/></svg>"}
+function btn(id,a,cls){return "<button class='"+(cls||"")+"' title='"+T[a]+"' aria-label='"+T[a]+"' onclick='act("+id+",\""+a+"\")'>"+ic(a)+"</button>"}
+function modal(t,p,retry){document.getElementById("mt").textContent=t;document.getElementById("mp").textContent=p;
+ var b=document.getElementById("mb");b.className="bt";b.innerHTML="";
+ if(retry){mk(b,"close",null,0);mk(b,"retry",retry,1)}else{mk(b,"ok",null,1)}
+ ov.className="ov on"}
+function mk(b,k,f,pr,l){var e=document.createElement("button");e.innerHTML=ic(k);e.title=l||T[k];e.setAttribute("aria-label",l||T[k]);if(pr)e.className=pr==2?"p d":"p";e.onclick=function(){ov.className="ov";if(f)f()};b.appendChild(e)}
+function confirmDel(id){var i=find(id);document.getElementById("mt").textContent="Delete "+i.n+"?";document.getElementById("mp").textContent="This removes the equipment from the list.";
+ var b=document.getElementById("mb");b.className="bt";b.innerHTML="";
+ mk(b,"close",null,0,"Cancel");mk(b,"ok",function(){call(id,"del")},1,"Confirm delete");ov.className="ov on"}
+function picker(id){document.getElementById("mt").textContent="Who is borrowing?";document.getElementById("mp").textContent="Choose a member for "+find(id).n+".";
+ var b=document.getElementById("mb");b.className="bt pl";b.innerHTML="";
+ users.forEach(function(x){if(x.r!="member")return;var e=document.createElement("button");e.className="pk";e.title="Borrow for "+x.n;e.setAttribute("aria-label","Borrow for "+x.n);e.innerHTML=ic("user")+x.n;e.onclick=function(){ov.className="ov";call(id,"borrow",x.n)};b.appendChild(e)});
+ var c=document.createElement("div");c.className="bt";mk(c,"close",null,0);b.appendChild(c);ov.className="ov on"}
+function fail(retry){modal("Request failed","The server returned an error. Nothing was changed.",retry)}
+var failNext=false;
+function call(id,a,who){var i=find(id);note("");pend[id]=1;render();
+ setTimeout(function(){delete pend[id];
+  if(failNext){failNext=false;render();fail(function(){call(id,a,who)});return}
+  if(a=="borrow"){i.s="loan";i.h=who}else if(a=="ret"){i.s="available";i.h=null}else items=items.filter(function(x){return x.id!=id});
+  render()},1200)}
+function act(id,a){var i=find(id),adm=me().r=="admin";
+ if(a=="borrow")return adm?picker(id):call(id,"borrow",me().n);
+ if(a=="ret"){if(i.h!=me().n&&!adm)return modal("Access denied","You do not have permission to do that.");return call(id,a)}
+ if(!adm)return modal("Access denied","You do not have permission to do that.");
+ if(a=="del")return confirmDel(id);
+ if(a=="out"&&i.s=="available"){i.s="out";note(i.n+" marked out of service")}
+ else if(a=="restore"&&i.s=="out"){i.s="available";note(i.n+" restored")}
+ render()}
+function add(){var n=document.getElementById("nn").value.trim();
+ if(!n)return note("Name is required.","err");
+ items.push({id:Date.now(),n:n,s:"available",h:null});note("Added "+n);render();document.getElementById("nn").focus()}
+function render(){
+ document.getElementById("role").textContent=me().r;
+ if(state=="loading"){v.innerHTML="<div class='card muted'><span class='spin'></span>Loading equipment…</div>";return}
+ var h="",adm=me().r=="admin";
+ if(adm)h+="<h2>Add equipment</h2><div class='card add'><input id='nn' placeholder='Equipment name, then press Enter' onkeydown=\"if(event.key=='Enter')add()\"><button class='p' title='Add equipment' aria-label='Add equipment' onclick='add()'>"+ic("plus")+"</button></div>";
+ h+="<h2>Equipment</h2>";
+ if(!items.length)h+="<div class='card muted'>No equipment yet."+(adm?" Add the first item above.":"")+"</div>";
+ items.forEach(function(i){var a="";
+  if(pend[i.id])a="<span class='spin'></span>";
+  else{
+   if(i.s=="available")a+=btn(i.id,"borrow","p")+(adm?btn(i.id,"out"):"");
+   if(i.s=="loan"&&(i.h==me().n||adm))a+=btn(i.id,"ret","p");
+   if(i.s=="out"&&adm)a+=btn(i.id,"restore","p");
+   if(adm&&i.s!="loan")a+=btn(i.id,"del","d")}
+  h+="<div class='card row'><span class='info'><span class='name'>"+esc(i.n)+"</span><span class='tag "+i.s+"'>"+esc(lbl(i))+"</span></span><span class='act'>"+a+"</span></div>"});
+ v.innerHTML=h}
+render();setTimeout(function(){state="ready";render()},800);
+</script></body></html>

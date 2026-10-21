@@ -9,3 +9,13 @@ node_modules/
 dist/
 # test reports from the locked runner configuration (evidence goes into verify's bundle)
 .factory/work/reports/
+
+# projects/<name>: generated eval output and tool environments. The equipment
+# eval plan (8.1) names these as git-ignored output owned by no story, so a
+# builder is never judged on them and the freeze never binds them.
+__pycache__/
+*.pyc
+.eval-venv/
+projects/*/api/reports/
+projects/*/web/reports/
+projects/*/e2e/reports/

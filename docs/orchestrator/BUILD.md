@@ -18,13 +18,29 @@ reason the plan predicts, they have been shown satisfiable, a session that did n
 reviewed them, the project's test paths and commands are in the lists the lock reads, and the user
 has run the ceremonies — classification, gate 2, the lock, the build plan and story files, gate 3.
 
-It assumes none of that on anyone's word. Every item is a condition `pod-factory story start`
-checks, and the orchestrator's first act is to let it check them.
+It assumes none of that on anyone's word — but `story start` does not check all of it, and an
+orchestrator that believes it does will read a successful dispatch as proof the tests are sound.
+What the tool actually checks is four things: that a valid, unrevoked gate-3 approval exists and
+every file it bound still hashes the same on the trunk; that the story is in that bound set, carries
+non-empty `Tests:`, `Scope:` and `Inputs:` lists, and is at stage `ready`; that every `Tests:` path
+hashes on the trunk to the effective lock's hash for it; and that every `Inputs:` path exists on the
+trunk. Gate 2 and the lock are implied rather than checked, since a lock record exists only after
+`lock` checked a gate-2 approval.
+
+What it cannot check stays the orchestrator's to confirm from gate 7's own record: that the tests
+fail for the reason the plan predicts, that they were shown satisfiable, that a session which did not
+write them has reviewed them, and the classification. No tool can establish those. A clean
+`story start` says nothing whatever about them.
 
 ## 2. The loop, once per story
 
-Each step names who performs it. The ones marked **user** cannot be performed by an agent: the
-tool refuses an agent session by its marker, and that refusal is the design.
+Each step names who performs it. The steps marked **user** are refused to an agent session:
+`approve`, `lock` and `revoke` classify the actor from the environment — any non-empty `CLAUDECODE`
+or `AI_AGENT` marker makes it an agent, and only a marker-free session holding a TTY on both stdin
+and stdout counts as human — and refuse anything that is not human. That is a refusal on a signal,
+not a proof of humanity: a session that unset those markers and allocated a pty would be classified
+human. It reliably stops an agent performing a ceremony out of convenience, which is what it is for.
+It would not stop one built to evade it, and it is written here so nobody mistakes it for more.
 
 1. **Orchestrator:** `pod-factory story start story-<n> --holder <builder> [--lease <minutes>]`.
    This is not a ceremony and the orchestrator runs it. It refuses, and writes nothing, unless all
@@ -41,7 +57,8 @@ tool refuses an agent session by its marker, and that refusal is the design.
    reported to the orchestrator rather than repaired.
 
 3. **Builder:** implements inside its scope, runs the locked commands, and writes its handoff
-   note on the branch.
+   note at `.factory/work/story-<n>/handoff.md` — that exact path, which `story finish` requires by
+   name — then commits and pushes it with the rest of its work.
 
 4. **Orchestrator:** `pod-factory story finish story-<n> --pr <pr>` moves the story from
    in-progress to verifying. It refuses if the builder's session ended without a handoff note; see
@@ -50,34 +67,73 @@ tool refuses an agent session by its marker, and that refusal is the design.
 5. **CI:** re-runs the locked commands on the pull request's own tree and writes a verify result
    bound to that tree. This, not the builder's report, is the evidence.
 
-6. **Orchestrator:** reads `gate-check` and reports to the user what it found — including a
-   failure, in full, with the condition that failed.
+6. **Orchestrator:** runs `pod-factory ci gate-check --pr <pr>` and reports to the user what it
+   found — including a failure, in full, with the condition that failed. `gate-check` is a `ci`
+   job, not a top-level command; it only reads records, and it requires no particular actor, so the
+   orchestrator may run it.
 
 7. **User:** `pod-factory approve story-<n> --pr <pr>`, typed in a terminal outside any agent
    session.
 
 8. **Orchestrator:** verifies the record that was written — that it exists, is unrevoked, names
-   this story and this pull request, and binds the exact head tree — then re-runs `gate-check`.
-   A ceremony is never recorded as done because the user said it was done.
+   this story and this pull request, and binds the exact head tree — then re-runs
+   `pod-factory ci gate-check --pr <pr>`. A ceremony is never recorded as done because the user said
+   it was done.
 
 9. **User or orchestrator, per the project's rule:** merge, once `gate-check` succeeds.
 
 10. **Orchestrator:** `pod-factory story finish story-<n> --pr <pr>` again, which moves verifying
-    to done. It refuses while there is no valid story approval, if the pull request changed after
-    the approval, or until the merge is actually in the trunk's history.
+    to done. Of its three waiting conditions only one is a refusal: a pull request that changed
+    after its approval exits non-zero, while *no valid story approval yet* and *approved but not yet
+    merged* each print what they are waiting on and **exit 0, writing nothing**. A story is done
+    when the command says it is done, never because the command exited 0.
+
+**Where the pull request number comes from: the orchestrator's own state, written at step 4 and
+never re-derived.** Not from `pod-factory status`. A transition record cannot name a pull request —
+the record format's transition block is exactly `story`, `from`, `to`, `lease` and `handoffNote`,
+with no field for one — so nothing in the records ties a verifying story to the pull request being
+verified. `status` fills that hole by inference: for a verifying story it takes the *latest* story
+approval and prints that approval's pull request as the one to merge. Where a story has collected
+more than one approval, the latest is not necessarily the one under test; in the L7 lab this named
+the pull request carrying an unauthorized change as the one to merge, because that change had since
+been approved against its own tree. `story finish` is stricter than `status` — it looks for an
+approval naming this story *and* this pull request — so a number taken from `status` does not produce
+a loud failure. It produces a quiet exit 0 saying there is no valid approval, for a story that is
+approved on a different pull request. Read `status` for a story's stage. Never read it to decide what
+to merge.
+
+**When the verification comes back red.** The story stays in `verifying`. There is no transition back
+to `in-progress` and none is needed: the builder pushes its fix to the same pull request, CI
+re-verifies the new head, the user approves that head, and step 10 then finds an approval whose tree
+matches and moves the story to done. Two consequences are worth stating plainly. The earlier verify
+result and any earlier approval are void the moment the head moves, so every fix costs a fresh CI run
+and a fresh ceremony from the user — which is the argument for the builder running the locked
+commands itself before step 4, not after. And the orchestrator does not re-dispatch to retry, because
+`story start` refuses any story that is not at stage `ready`. A builder that has gone silent is a
+different problem; see section 8.
 
 ## 3. What the orchestrator writes during a build
 
 Almost nothing, and the exceptions are worth naming exactly, because a rule stated more broadly
 than it is true gets ignored the first time it is contradicted.
 
-It writes **the story's status transitions**. The tool requires this: status transitions are
-written by the orchestrator or a human, never by CI.
+It writes **the story's status transitions**. The tool's rule here is narrower than the
+convention: it refuses only the CI check-runner, so any agent session — a builder, or one of its
+subagents — could write a transition. That the orchestrator is the one who writes them is this
+document's rule, not the tool's.
 
 It writes **a missing handoff note on the branch**, and only when `story finish` has refused
 because the builder's session ended without one. The note records that the builder's session ended
 without it; it does not invent what the builder would have said, and it never reports work the
 orchestrator did not see evidence of.
+
+It writes that note **before the verification and the approval, never after** — which is why the
+order in section 2 is load-bearing rather than tidy. The verifying transition hashes the note's
+content, and the verify result and the story approval each bind the branch's head tree. A note added
+once either of those exists changes that tree and voids both: in the L7 lab, supplying a missing note
+after the approval invalidated the approval and the verify result together, costing a fresh CI run
+and a second ceremony from the user. `story finish` enforces half of this by refusing to move a story
+to verifying without a note; nothing enforces the other half, so it is written down here.
 
 It writes **its own state and findings**.
 
@@ -85,13 +141,29 @@ It writes **nothing else**. Not the application, not a test, not the harness, no
 the PRD, the blueprint or the eval plan. In particular it does not fix a failing test to unblock a
 builder, and it does not adjust a requirement to match what was built.
 
-**How much of that is enforced, honestly.** The hook denies every agent session — the
-orchestrator's included — any edit to a locked path, so the frozen tests and harness are
-genuinely out of reach once the lock covers them. The plan documents are a different matter: if a
-project's PRD, blueprint and eval plan are not themselves in the locked set, nothing stops an
-orchestrator editing the requirements the tests were frozen against, and the tests would still
-pass while measuring against a specification that moved. Until a project locks its plan paths, this
-section is discipline rather than enforcement, and should be read as such.
+**How much of that is enforced, honestly: less than it looks.** The hook answers exactly four
+tools — `Write`, `Edit`, `MultiEdit` and `NotebookEdit` — and allows every other tool without a
+check. A shell command never reaches it, so a `sed -i`, a redirect or a `git checkout` over a locked
+test is not seen at all, and this role needs `Bash` to run `pod-factory` and `git` in the first
+place. The hook's own source calls it "the advisory layer; CI's lock-guard is the authority", and
+that is the honest summary: the frozen tests are out of reach of a careless edit, not of a
+determined one. What actually stops a locked-path change from landing is CI — lock-guard and
+`gate-check` on the pull request — which is the deeper reason nothing in this document treats a
+clean local run as evidence.
+
+The hook also allows everything when there is no `.factory` directory and when no lock is in force,
+and it reads the lock from the local copy of the records ref without fetching, so it can be deciding
+from a stale lock.
+
+The plan documents are a separate and worse gap. The locked set is a compile-time constant in the
+CLI, not a project's choice: it covers `docs/eval-plan.md` but not `docs/PRD.md`, not the blueprint,
+and not `.factory/work/plan/**` or the story files. A project therefore cannot lock its own plan
+paths, and an orchestrator that edited the requirements the tests were frozen against would not be
+stopped by anything — the tests would still pass, while measuring against a specification that had
+moved. The build plan and the story files do have one real protection, and it is not the lock:
+`story start` and `gate-check` both re-hash them against what gate 3 bound, so a change to either is
+caught at the next dispatch or at the gate. For the PRD and the blueprint this section is discipline,
+and making it anything more needs a change to the CLI's own constants.
 
 ## 4. Evidence, and what is not evidence
 
@@ -109,6 +181,12 @@ The story's `Scope:` is a whitelist: `gate-check` fails on any changed path that
 including a path nobody predicted, so a builder cannot add a file that interferes with its own exam
 and still merge. That is the strongest guarantee on this side, and most imagined attacks die there.
 
+Three edges are worth knowing exactly. The story's **own** work folder, `.factory/work/story-<n>/`,
+is exempt in full — not merely its handoff note — so a builder may add arbitrary files there
+unchecked. Every other path under `.factory/` is outside scope whatever the globs say, which is
+stricter than a whitelist. And the scope check runs only when the approval being counted is a story
+approval: before a lock exists bootstrap approvals count, and no scope check runs at all.
+
 Two things it does not reach, both learned the hard way:
 
 - **The builder's own dependency list is inside its scope**, legitimately. If the command that
@@ -121,10 +199,77 @@ Two things it does not reach, both learned the hard way:
 When something like this is found, it is a defect in the frozen harness and the commands, which are
 the user's to change through the lock's own route — not the orchestrator's to patch.
 
+### 5.1 One story at a time, and how a builder may fan out
+
+One story in flight, one builder per story, and that builder may use subagents inside its own scope.
+This is a recommendation with evidence under it, not a preference.
+
+The factory judges a story **at the pull-request boundary**. `gate-check` is where both the lock
+rule and the scope check run, against the tree that would merge; `verify` does neither — it only
+runs the locked commands on that head and records the result. A story's `Scope:` has no edit-time
+enforcement at all: nothing stops an agent writing outside its scope, `gate-check` simply refuses the
+result. So a story written by one agent and the same story written by one agent with five subagents
+present the factory with the same thing: one diff, one approval, one verify result.
+
+Fanning out does not weaken the edit-time guard either, for the blunt reason section 3 gives: that
+guard is advisory and already bypassable from a shell, so it is not what this side's safety rests on.
+What a subagent *cannot* do is the part that is enforced where it counts. Claude Code sets
+`CLAUDECODE` in every shell it starts and an agent marker beats every other signal in the actor
+check, so a subagent is an agent for every purpose the records care about: it cannot write a verify
+result, which requires the CI check-runner, and it cannot perform a ceremony.
+
+Fanning out inside a story therefore costs the enforcement side nothing and needs no change to the
+tool. Step 2's "one builder" is a dispatch of one *accountable* session, not a claim about how many
+processes it runs.
+
+Running stories in parallel is a different question, and worse than it looks:
+
+- **Nothing checks that two stories' scopes are disjoint.** Gate 3 reads every story file in the plan
+  together and binds them all, and in the L7 lab it approved three stories claiming the identical
+  `Scope:` glob without an objection; two builders then started concurrently. Two agents writing one
+  file is the only failure on this side that destroys work rather than merely annoying, and the
+  factory will not catch it.
+- **Parallelism costs more of the user's ceremony, not less.** An approval binds a tree. When one
+  story merges the trunk moves, every other in-flight branch rebases, and their approvals and verify
+  results are void. Three stories in parallel cost roughly six approval ceremonies and six CI runs;
+  the same three in sequence cost three of each. Merges serialize either way — parallel work only
+  pays for the collisions.
+- **`--holder` is an unverified label.** Any session can claim any holder string. One builder per
+  story keeps it honest by construction.
+
+Inside a story the cap that matters is not a number of subagents but **one concurrent writer per
+scope**. Two subagents editing one file is the disjointness failure again, moved inside, and a parent
+reviewing five overlapping diffs catches it no better than the factory did. So a builder fans out by
+role rather than by parallel writing: one subagent implements against the frozen tests, one or two
+review the result against those tests without the implementer's reasoning, and the parent arbitrates
+and owns the single commit.
+
+### 5.2 Three seats, and which rule each is under
+
+"The orchestrator writes nothing during a build" — section 3 — governs the orchestrating seats. It
+does not govern the builder, which must write to do its job, and which, when it fans out, is itself a
+small orchestrator of its own subagents. Stated plainly:
+
+- **The preparation orchestrator** produced the tests and is finished. It does not return for this
+  project.
+- **The build orchestrator** dispatches, reads records, reports, and writes only the three things in
+  section 3.
+- **The builder** writes inside its `Scope:` and nowhere else, and is answerable for everything its
+  subagents write.
+
+How much of the middle seat is enforced, honestly: almost none of it. Its agent definition grants
+`Read`, `Bash`, `Glob`, `Grep`, `Agent` and `AskUserQuestion` — no `Write`, no `Edit` — which removes
+the convenient path to editing a file. It does not remove `Bash`, which the role needs for
+`pod-factory` and `git`, and which the hook does not answer at all, so a shell write by this seat is
+checked by nothing until CI. That seat is kept by its definition plus section 3 and the fact that its
+own output is the evidence a user reads — not by a sandbox.
+
 ## 6. When a requirement changes while building
 
-The orchestrator does not edit the plan. It cannot: a locked eval plan is denied to every agent
-session. The route is the user's:
+The orchestrator does not edit the plan. For the eval plan, the hook will refuse a `Write` or
+`Edit` once the lock covers it, and CI's lock-guard will fail the pull request regardless of how the
+change was made; for the PRD and the blueprint, which the locked set does not cover, this is a rule
+rather than a refusal — see section 3. The route is the user's either way:
 
 1. The orchestrator names the drift — the requirement, the rows that bear on it, the stories
    affected — and stops.
@@ -152,12 +297,19 @@ It says which rule applies, what it did not do, and what the user can do next:
   blocked step. It reports the blocker and stops.
 - Perform a ceremony, or record one as done on the user's word rather than the written record.
 - Treat a builder's handoff, or any agent's claim, as evidence.
-- Report a story as done without the merge in the trunk's history.
+- Report a story as done without the merge in the trunk's history. Note which test applies:
+  `story finish` accepts either proof — the approved head being an ancestor of the trunk (a merge
+  commit), or the trunk holding exactly the approved tree (a squash). An ancestor test alone reads a
+  squashed merge as never merged, so the orchestrator takes `finish`'s own verdict rather than
+  computing its own.
 - Change a test, the harness, a command or a plan document — to unblock a builder or for any other
   reason.
 - Widen a story's scope, or ask the user to widen it so a candidate passes.
-- Dispatch a second builder for a story that is already held, or dispatch at all while any
-  dispatch precondition fails.
+- Dispatch a second builder for a story that is already held — the tool refuses this, and the
+  orchestrator does not route around the refusal — or dispatch at all while any dispatch
+  precondition fails.
+- Start a second story alongside one in flight whose `Scope:` globs overlap it. Nothing in the tool
+  checks this, so the orchestrator checks it before dispatching and reports the overlap instead.
 - Let a builder repair the harness that judges it, or write the test that judges it.
 - Also act as the preparation orchestrator for the same project, or review work it helped produce.
 - Merge, or ask for a merge, while `gate-check` fails.
@@ -170,8 +322,19 @@ It says which rule applies, what it did not do, and what the user can do next:
 - Nothing here reviews code quality, performance or security. A story whose tests pass and whose
   scope held is *accepted*, not *good*. If those matter, they belong in the eval plan as rows
   before the freeze, or in a human review step the project adds deliberately.
-- The lease on `story start` records who holds a story. It does not prevent a second agent editing
-  the same branch; it makes the holder visible.
+- **The lease is a label, not a timer.** `expiresAt` is written into the transition and appears in
+  three messages — two from `story start`, one from `status`, which compares it with the clock only to
+  choose between "lease until" and "lease expired at". No decision anywhere reads it. A second
+  `story start` on an in-progress story is turned away whether or not the lease has expired, and it is
+  turned away by printing "Nothing was written" and **exiting 0**, so an orchestrator that checks only
+  exit codes reads a refused dispatch as a successful one and must read the output instead. The lease
+  makes the holder visible and blocks a takeover; it releases nothing, and it does not stop a second
+  agent editing the same branch.
+- **A builder that dies mid-story is only half stuck.** `story finish` from in-progress ignores the
+  lease entirely and needs only the handoff note on the pull request's head, so if the builder left a
+  pull request behind, the story can still be moved on — by the orchestrator writing the note, per
+  section 3. Only a story with no pull request at all is wedged until the user revokes its transition
+  record.
 - Everything here assumes the records are trustworthy, which rests on the records branch being
   protected and the enforcing binary being the one installed from the trunk. Both are properties of
   the installation, not of this document.

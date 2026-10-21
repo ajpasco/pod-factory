@@ -341,4 +341,5 @@ It says which rule applies, what it did not do, and what the user can do next:
 - Freezing stops a builder from weakening a test. It does not make the test correct, which is why
   gate 5's coverage rules and gate 6's review exist.
 - Nothing here enforces code quality or security of the implementation. That belongs to the build
-  side, after the freeze.
+  side, after the freeze, which is [BUILD.md](BUILD.md) — a separate role, run by a separate
+  session, covering the loop from the first dispatch to a merged story.

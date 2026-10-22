@@ -3,10 +3,21 @@
  * Eval plan section 5 is the authority for the patterns and section 4 for the commands; a locked
  * test checks that every path and command named there appears here. Shipped code never parses
  * the eval plan.
+ *
+ * Section 5 is titled for pod-factory itself and has no row for the harness of a project
+ * pod-factory builds, so the equipment-checkout patterns below exceed what it lists. That is
+ * the fail-safe direction -- more is locked than the plan records, never less -- and the
+ * locked test reads the plan one way, checking that every path it names appears here rather
+ * than the reverse. Section 5 gains a project-harness row when gate 2 next reopens.
  */
 export const LOCKED_PATTERNS: readonly string[] = [
   'packages/*/test/**',
   'templates/test/**',
+  // The acceptance tests and frozen tool list of the equipment-checkout project (ADR-021).
+  // Named for this one project, like the meeting-reminder rows below: a project cannot
+  // choose its own locked set, so each one is added here deliberately.
+  'projects/equipment-checkout/api/tests/**',
+  'projects/equipment-checkout/harness/**',
   'docs/projects/meeting-reminder/web/test/**',
   'docs/projects/meeting-reminder/web/public/**',
   'docs/projects/meeting-reminder/web/package.json',

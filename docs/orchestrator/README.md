@@ -98,6 +98,14 @@ It's plain markdown with no dependencies, so it runs three ways — Orca, Claude
 own, or Codex CLI. See [RUNTIMES.md](RUNTIMES.md). To use it on another project, copy
 `docs/orchestrator/` and the `.claude/agents/prep-*.md` files into that repo.
 
+## After it finishes
+
+This is the part before anyone writes the application. What happens afterwards — dispatching a
+builder for each story, checking candidates against the records rather than the builder's own
+report, running the approvals and closing a story out — is [BUILD.md](BUILD.md). It is a
+separate role and should be a separate session: the orchestrator that helped produce the tests
+is not the one that decides whether work judged by them is done.
+
 ## Honest limits
 
 - The checks catch missing structure, broken traceability and uncovered requirements. They cannot

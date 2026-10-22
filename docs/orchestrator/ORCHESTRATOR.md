@@ -221,7 +221,10 @@ new finding has not read its own plan.
 - **The dispatch preconditions hold** for the story about to start: a valid, unrevoked gate-3
   approval naming it; the plan on the trunk still matching what that approval bound; the story
   present in that plan; every path in its `Tests:` locked at its content on the trunk; every path
-  in its `Inputs:` present. The orchestrator checks each one and writes nothing.
+  in its `Inputs:` present. The orchestrator checks each one and writes nothing: it reads the
+  records and the hashes directly, because `pod-factory story start` is not a dry run and writes
+  the transition when it passes. The build orchestrator will put these same conditions to the
+  tool at dispatch; see [BUILD.md](BUILD.md) section 1.
 
 All of them hold, or the orchestrator names the one that failed and stops.
 
@@ -341,4 +344,5 @@ It says which rule applies, what it did not do, and what the user can do next:
 - Freezing stops a builder from weakening a test. It does not make the test correct, which is why
   gate 5's coverage rules and gate 6's review exist.
 - Nothing here enforces code quality or security of the implementation. That belongs to the build
-  side, after the freeze.
+  side, after the freeze, which is [BUILD.md](BUILD.md) — a separate role, run by a separate
+  session, covering the loop from the first dispatch to a merged story.

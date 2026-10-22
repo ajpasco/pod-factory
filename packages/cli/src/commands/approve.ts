@@ -21,8 +21,10 @@ import {
   bootstrapGuidance,
   gate2Guidance,
   gate3Guidance,
+  renderCheck,
   renderGuidance,
   storyGuidance,
+  type Guidance,
 } from '../approval-guidance.js';
 import { resolveActor } from '../records/actor.js';
 import {
@@ -52,6 +54,14 @@ import {
 
 const isApproval = (r: FactoryRecord): r is ApprovalRecord => r.recordType === 'approval';
 
+/**
+ * The two parts of a plan that come from its guidance: the statement, which the key is taken over
+ * and the record stores, and the checklist, which is advice and so stays out of both.
+ */
+function described(g: Guidance): Pick<Plan, 'statement' | 'check'> {
+  return { statement: renderGuidance(g), check: g.check };
+}
+
 export const APPROVE_USAGE = `Usage:
   pod-factory approve 2 --classification <bootstrap record file>
                                      gate 2: the design, eval plan and classification on main
@@ -59,7 +69,10 @@ export const APPROVE_USAGE = `Usage:
   pod-factory approve story-1 --pr 7 gate 4: story story-1, as pull request number 7 stands now
   pod-factory approve bootstrap 7    merge authority for bootstrap pull request number 7
   pod-factory approve amendment --pr 7 <locked path>...
-                                     a change to locked paths, as pull request number 7 stands now`;
+                                     a change to locked paths, as pull request number 7 stands now
+
+Add --details to any of these to list every covered file and the checklist. The decision, the key
+and the record are the same either way; --details only shows more of what the key already covers.`;
 
 /** What one approval binds, where it was read from, and how to describe it. */
 interface Plan {
@@ -67,6 +80,10 @@ interface Plan {
   token: string;
   subject: string;
   statement: string;
+  /** The checklist, printed only with --details. Advice, so outside the statement and the key. */
+  check: string[];
+  /** Whether to print every covered file and the checklist, from --details. */
+  details: boolean;
   block: Omit<ApprovalBlock, 'shownHash' | 'typedPrefix' | 'statement'>;
   binds: Binds;
   refs: string[];
@@ -75,6 +92,9 @@ interface Plan {
   commit: string;
   sourceName: string;
 }
+
+/** A plan before the display preference is attached: everything that decides what is approved. */
+type Described = Omit<Plan, 'details'>;
 
 function pullRequestNumber(value: string | undefined, target: string): number {
   if (value === undefined) {
@@ -88,7 +108,7 @@ function pullRequestNumber(value: string | undefined, target: string): number {
   return Number(value);
 }
 
-function gate2(io: CommandIO, classification: string | undefined): Plan {
+function gate2(io: CommandIO, classification: string | undefined): Described {
   if (classification === undefined || !BOOTSTRAP_FILE_PATTERN.test(classification)) {
     throw new Refusal(
       `approve 2 needs --classification with the file name of the classification record under ${BOOTSTRAP_DIR}/, for example --classification 0005-classification-gate-2.json.`,
@@ -137,9 +157,7 @@ function gate2(io: CommandIO, classification: string | undefined): Plan {
   return {
     token: '2',
     subject: 'gate-2',
-    statement: renderGuidance(
-      gate2Guidance({ commit, sourceName: TRUNK, specCount: specs.length }),
-    ),
+    ...described(gate2Guidance({ commit, sourceName: TRUNK, specCount: specs.length })),
     block: { kind: 'gate', gate: 2, story: null, pullRequest: null },
     binds: { tree: treeOf(io.cwd, commit), files: hashes },
     refs: [classification],
@@ -149,7 +167,7 @@ function gate2(io: CommandIO, classification: string | undefined): Plan {
   };
 }
 
-function gate3(io: CommandIO): Plan {
+function gate3(io: CommandIO): Described {
   const commit = fetchTrunk(io.cwd, io.remote);
   const files = filesAt(io.cwd, commit);
   if (!files.has(BUILD_PLAN)) {
@@ -173,7 +191,7 @@ function gate3(io: CommandIO): Plan {
   return {
     token: '3',
     subject: 'gate-3',
-    statement: renderGuidance(gate3Guidance({ commit, sourceName: TRUNK, stories })),
+    ...described(gate3Guidance({ commit, sourceName: TRUNK, stories })),
     block: { kind: 'gate', gate: 3, story: null, pullRequest: null },
     binds: {
       tree: treeOf(io.cwd, commit),
@@ -191,7 +209,7 @@ function pullRequestPlan(
   pr: number,
   kind: 'story' | 'bootstrap',
   story: string | null,
-): Plan {
+): Described {
   const commit = fetchPullRequest(io.cwd, pr, io.remote);
   const facts = {
     commit,
@@ -202,7 +220,7 @@ function pullRequestPlan(
   return {
     token: kind === 'story' ? (story as string) : 'bootstrap',
     subject: kind === 'story' ? (story as string) : `bootstrap-pr-${pr}`,
-    statement: renderGuidance(kind === 'story' ? storyGuidance(facts) : bootstrapGuidance(facts)),
+    ...described(kind === 'story' ? storyGuidance(facts) : bootstrapGuidance(facts)),
     block: { kind, gate: null, story, pullRequest: pr },
     binds: { tree: treeOf(io.cwd, commit), files: {} },
     refs: [],
@@ -212,7 +230,7 @@ function pullRequestPlan(
   };
 }
 
-function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Plan {
+function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Described {
   if (paths.length === 0)
     throw new Refusal(`approve amendment needs at least one locked path.\n${APPROVE_USAGE}`);
   const set = loadRecords(io.cwd, io.remote);
@@ -244,7 +262,7 @@ function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Plan {
   return {
     token: 'amendment',
     subject: `amendment-pr-${pr}`,
-    statement: renderGuidance(
+    ...described(
       amendmentGuidance({
         commit,
         sourceName: `pull request ${pr}`,
@@ -268,47 +286,62 @@ function plan(io: CommandIO, argv: string[]): Plan {
     parsed = parseArgs({
       args: argv,
       allowPositionals: true,
-      options: { pr: { type: 'string' }, classification: { type: 'string' } },
+      options: {
+        pr: { type: 'string' },
+        classification: { type: 'string' },
+        details: { type: 'boolean' },
+      },
     });
   } catch (error) {
     throw new Refusal(`${(error as Error).message}\n${APPROVE_USAGE}`);
   }
   const [target, ...rest] = parsed.positionals;
-  const { pr, classification } = parsed.values;
+  const { pr, classification, details } = parsed.values;
   const noExtra = (allowed: boolean) => {
     if (!allowed && rest.length > 0)
       throw new Refusal(`Unexpected "${rest.join(' ')}".\n${APPROVE_USAGE}`);
   };
-  if (target === '2') {
-    noExtra(false);
-    return gate2(io, classification);
-  }
-  if (target === '3') {
-    noExtra(false);
-    return gate3(io);
-  }
-  if (target !== undefined && /^story-[0-9]+$/.test(target)) {
-    noExtra(false);
-    return pullRequestPlan(io, pullRequestNumber(pr, target), 'story', target);
-  }
-  if (target === 'bootstrap') {
-    if (rest.length !== 1)
-      throw new Refusal(`approve bootstrap takes one pull request number.\n${APPROVE_USAGE}`);
-    return pullRequestPlan(io, pullRequestNumber(rest[0], 'bootstrap'), 'bootstrap', null);
-  }
-  if (target === 'amendment') return amendmentPlan(io, pullRequestNumber(pr, 'amendment'), rest);
-  if (target !== undefined && /^[0-9]+$/.test(target)) {
-    throw new Refusal(
-      `Gate ${target} is not approved with this command in milestone zero: approve 2, approve 3, or approve story-<n> for gate 4.`,
-    );
-  }
-  throw new Refusal(APPROVE_USAGE);
+  // What is being approved, before the one display preference is attached to it: --details decides
+  // how much of the covered content is printed, and nothing about the decision or the key.
+  const chosen = (): Described => {
+    if (target === '2') {
+      noExtra(false);
+      return gate2(io, classification);
+    }
+    if (target === '3') {
+      noExtra(false);
+      return gate3(io);
+    }
+    if (target !== undefined && /^story-[0-9]+$/.test(target)) {
+      noExtra(false);
+      return pullRequestPlan(io, pullRequestNumber(pr, target), 'story', target);
+    }
+    if (target === 'bootstrap') {
+      if (rest.length !== 1)
+        throw new Refusal(`approve bootstrap takes one pull request number.\n${APPROVE_USAGE}`);
+      return pullRequestPlan(io, pullRequestNumber(rest[0], 'bootstrap'), 'bootstrap', null);
+    }
+    if (target === 'amendment') return amendmentPlan(io, pullRequestNumber(pr, 'amendment'), rest);
+    if (target !== undefined && /^[0-9]+$/.test(target)) {
+      throw new Refusal(
+        `Gate ${target} is not approved with this command in milestone zero: approve 2, approve 3, or approve story-<n> for gate 4.`,
+      );
+    }
+    throw new Refusal(APPROVE_USAGE);
+  };
+  return { ...chosen(), details: details === true };
 }
 
 function show(io: CommandIO, p: Plan, shown: string): void {
   io.out(p.statement);
   io.out(`  tree ${p.binds.tree}`);
-  for (const [path, binding] of Object.entries(p.binds.files)) {
+  const files = Object.entries(p.binds.files);
+  if (!p.details && files.length > 0) {
+    // The key is taken over every one of these either way; --details only prints them.
+    io.out(`  ${files.length} covered ${files.length === 1 ? 'file' : 'files'}, by content`);
+    io.out('  (run the same command with --details to list them and what to check)');
+  }
+  for (const [path, binding] of p.details ? files : []) {
     io.out(
       typeof binding === 'string'
         ? `  ${binding}  ${path}`
@@ -317,6 +350,10 @@ function show(io: CommandIO, p: Plan, shown: string): void {
   }
   for (const ref of p.refs) io.out(`  refers to ${ref}`);
   io.out(`Hash of everything above: ${shown}`);
+  if (p.details && p.check.length > 0) {
+    io.out('');
+    io.out(renderCheck(p.check));
+  }
   io.out('');
   io.out(
     'Nothing is written unless what you type matches. Anything else cancels and changes nothing.',

@@ -1,21 +1,25 @@
 /**
- * The plain-language half of an approval: what the decision covers, what writing it lets happen,
- * and what is worth looking at first. Held as structure rather than printed lines because the
- * terminal is one view of it: a later interface can render the same fields as a screen without
- * reproducing the wording here.
+ * The plain-language half of an approval: why a person has to make this decision, what it covers,
+ * and what writing it does. Held as structure rather than printed lines because the terminal is
+ * one view of it: a later interface can render the same fields as a screen without reproducing the
+ * wording here.
  *
- * The rendered form goes into the approval's statement, so it is covered by the shown hash and
- * stored in the record. A reader of the record a year later sees the same explanation the human
- * saw, not just the hashes they agreed to.
+ * `why`, `covers` and `does` are rendered into the approval's statement, so they are covered by
+ * the shown key and stored in the record: a reader of the record a year later sees the same
+ * explanation the human saw, not only the hashes they agreed to. `check` is advice rather than
+ * content, so it is deliberately outside the statement and outside the key, and is shown only when
+ * asked for.
  */
 export interface Guidance {
   /** One line naming the decision and the content it was read from. */
   headline: string;
-  /** What the approval covers, in the reader's terms rather than by path alone. */
-  covers: string[];
-  /** What becomes possible once the record is written. */
-  allows: string[];
-  /** What is worth checking before agreeing, most important first. */
+  /** Why the factory cannot make this decision for itself. One or two sentences. */
+  why: string[];
+  /** What the approval covers: a short label and where it lives. */
+  covers: [label: string, where: string][];
+  /** What writing the approval does, and what it does not do. */
+  does: string[];
+  /** The longer checklist, shown on request rather than by default. */
   check: string[];
 }
 
@@ -42,16 +46,23 @@ const plural = (n: number, one: string, many = `${one}s`): string => `${n} ${n =
 
 export function gate2Guidance(f: GuidanceFacts): Guidance {
   return {
-    headline: `Gate 2: the specification set as it stands on ${f.sourceName} at ${f.commit}.`,
-    covers: [
-      'What the product must do: docs/PRD.md.',
-      `How it is to be built: docs/TECH-SPEC.md and ${plural(f.specCount ?? 0, 'specification')} under docs/spec/.`,
-      'How delivery is to be proved: docs/eval-plan.md.',
-      'Which requirements the classification run found testable: .factory/work/classification/gate-2.json.',
+    headline: `Gate 2: what "done" means for this project, as it stands on ${f.sourceName} at ${f.commit}.`,
+    why: [
+      'Approving this lets the tests be frozen, and from then on nothing inside the factory can change what counts as done — no builder, and no agent.',
+      'That protection is only worth something if a person chose the standard, so this decision is yours and cannot be delegated.',
     ],
-    allows: [
-      'pod-factory lock, which freezes the eval plan and the test files listed below so that no builder can change the tests it has to pass.',
-      'gate 3, where the build plan and its stories are approved.',
+    covers: [
+      ['what the product must do', 'docs/PRD.md'],
+      [
+        'how it is to be built',
+        `docs/TECH-SPEC.md and ${plural(f.specCount ?? 0, 'specification')} under docs/spec/`,
+      ],
+      ['how delivery is to be proved', 'docs/eval-plan.md'],
+      ['which requirements are testable', '.factory/work/classification/gate-2.json'],
+    ],
+    does: [
+      'Allows the lock, which freezes the eval plan and the project’s test files.',
+      'Allows gate 3. Merges nothing and starts no work by itself.',
     ],
     check: [
       'Every requirement you care about appears in the eval plan with a test that would fail if the requirement were not delivered.',
@@ -64,14 +75,21 @@ export function gate2Guidance(f: GuidanceFacts): Guidance {
 export function gate3Guidance(f: GuidanceFacts): Guidance {
   const stories = f.stories ?? [];
   return {
-    headline: `Gate 3: the build plan and its ${plural(stories.length, 'story', 'stories')} as they stand on ${f.sourceName} at ${f.commit}.`,
-    covers: [
-      'The order the work is done in: .factory/work/plan/build-plan.md.',
-      `Each story’s scope, its tests and its inputs: ${stories.join(', ')}.`,
+    headline: `Gate 3: the plan of work, as it stands on ${f.sourceName} at ${f.commit}.`,
+    why: [
+      'This is the last point at which the work is cheap to change. After it, a builder starts writing code against these stories.',
+      'Nothing checks that the plan is a good one, so a person has to.',
     ],
-    allows: [
-      'a builder to be dispatched for a story, and that story alone.',
-      'nothing to merge. Each story is approved separately at gate 4, against the pull request it produced.',
+    covers: [
+      ['the order the work is done in', '.factory/work/plan/build-plan.md'],
+      [
+        `each of ${plural(stories.length, 'story', 'stories')}: scope, tests, inputs`,
+        stories.join(', '),
+      ],
+    ],
+    does: [
+      'Allows a builder to be dispatched for one story at a time.',
+      'Merges nothing. Each story is approved again at gate 4, against the pull request it produced.',
     ],
     check: [
       'Each story names the tests that prove it, so a builder cannot decide for itself when it is done.',
@@ -83,14 +101,21 @@ export function gate3Guidance(f: GuidanceFacts): Guidance {
 
 export function storyGuidance(f: GuidanceFacts): Guidance {
   return {
-    headline: `Gate 4: ${f.story} as pull request ${f.pullRequest} stands at ${f.commit}.`,
-    covers: [
-      `Every file in pull request ${f.pullRequest} at this commit, not only the ones ${f.story} named.`,
-      'The tree hash below is the whole of that content; nothing in the pull request is outside it.',
+    headline: `Gate 4: ${f.story}, as pull request ${f.pullRequest} stands at ${f.commit}.`,
+    why: [
+      'An agent wrote this code. The checks prove its tests pass; no check can tell you the result is what you wanted.',
+      'That judgement is the one thing the factory cannot make for you, so it stops here until you make it.',
     ],
-    allows: [
-      `pull request ${f.pullRequest} to merge once its checks are green. The checks run against this exact content.`,
-      'nothing else. A new commit on the pull request voids this approval, and the builder has to ask again.',
+    covers: [
+      [`every file in pull request ${f.pullRequest}`, `not only the ones ${f.story} named`],
+      [
+        'the whole of that content',
+        'the tree key below; nothing in the pull request is outside it',
+      ],
+    ],
+    does: [
+      `Allows pull request ${f.pullRequest} to merge once its checks are green.`,
+      'Allows this exact version only. A new commit voids the approval and the builder has to ask again.',
     ],
     check: [
       'The changed files are inside the story’s scope. A builder that wandered outside it fails the scope check, but it is cheaper to see it here.',
@@ -103,13 +128,17 @@ export function storyGuidance(f: GuidanceFacts): Guidance {
 export function bootstrapGuidance(f: GuidanceFacts): Guidance {
   return {
     headline: `Bootstrap merge: pull request ${f.pullRequest} as it stands at ${f.commit}.`,
-    covers: [
-      `The whole of pull request ${f.pullRequest} at this commit, whatever it contains.`,
-      'No gate. This is the route for preparation the gate sequence cannot yet describe.',
+    why: [
+      'This is the one route that merges without a gate behind it, so none of the usual checking applies.',
+      'It exists for preparation the gate sequence cannot yet describe, and a person has to agree that this is such a case.',
     ],
-    allows: [
-      `pull request ${f.pullRequest} to merge without a gate approval behind it.`,
-      'no standing authority. It names this pull request at this commit and nothing further.',
+    covers: [
+      [`every file in pull request ${f.pullRequest}`, 'whatever it contains'],
+      ['no gate', 'nothing here was classified, planned or scoped'],
+    ],
+    does: [
+      `Allows pull request ${f.pullRequest} to merge with no gate approval behind it.`,
+      'Grants no standing authority. It names this pull request at this commit and nothing further.',
     ],
     check: [
       'The gates genuinely cannot cover this change. A bootstrap approval is the one place the sequence is not doing the work for you.',
@@ -120,38 +149,55 @@ export function bootstrapGuidance(f: GuidanceFacts): Guidance {
 
 export function amendmentGuidance(f: GuidanceFacts): Guidance {
   const paths = f.amended ?? [];
+  const one = paths.length === 1;
   return {
-    headline: `Amendment: ${plural(paths.length, 'change')} to locked ${paths.join(', ')} as pull request ${f.pullRequest} stands at ${f.commit}, against lock ${f.lockId}.`,
-    covers: [
-      `${paths.length === 1 ? 'A file' : 'Files'} the lock froze, changed by hand: ${paths.join(', ')}.`,
-      'The before and after hash of each one, listed below.',
+    headline: `Amendment: ${plural(paths.length, 'change')} to frozen ${paths.join(', ')}, as pull request ${f.pullRequest} stands at ${f.commit}, against lock ${f.lockId}.`,
+    why: [
+      `${one ? 'This file was' : 'These files were'} frozen so that nobody could change the standard the work has to meet. Unfreezing ${one ? 'it' : 'them'} is the one route that can quietly lower that bar.`,
+      'Only a person who knows what the test was protecting can tell a correction from a weakening.',
     ],
-    allows: [
-      `pull request ${f.pullRequest} to land ${paths.length === 1 ? 'that change' : 'those changes'} even though the lock covers ${paths.length === 1 ? 'it' : 'them'}.`,
-      'the lock to continue over everything else, with these paths at their new hashes.',
+    covers: [
+      [one ? 'the frozen file being changed' : 'the frozen files being changed', paths.join(', ')],
+      ['what it held before and after', 'both keys are listed below'],
+    ],
+    does: [
+      `Allows pull request ${f.pullRequest} to land ${one ? 'that change' : 'those changes'} despite the lock.`,
+      'Leaves the lock in force over everything else, with these paths at their new content.',
     ],
     check: [
-      'The change corrects the test rather than weakening what it was protecting. This is the one route that can quietly lower the bar a builder has to clear.',
+      'The change corrects the test rather than weakening what it was protecting.',
       'A builder did not ask for this. An amendment exists for a mistake in the tests, not for an implementation that will not pass them.',
     ],
   };
 }
 
+/** Pads each label so that the second column lines up, for a two-column list. */
+function columns(rows: [string, string][]): string[] {
+  const width = Math.max(...rows.map(([label]) => label.length));
+  return rows.map(([label, where]) => `  ${label.padEnd(width)}   ${where}`);
+}
+
 /**
- * The statement a human reads and the record stores: the headline, then the three sections, then
- * the heading for the bindings `approve` prints next. Items are indented by two spaces to match
- * the indent of those bindings. The closing heading lives here rather than in the command so that
- * every line above the shown hash is inside the statement the hash covers.
+ * The statement a human reads and the record stores: why the decision is theirs, what it covers,
+ * what it does, and then the heading for the bindings `approve` prints next. The closing heading
+ * lives here rather than in the command so that every line above the shown key is inside the
+ * statement the key is taken over. `check` is left out on purpose: it is advice, not content, and
+ * hashing advice would tie the key to wording rather than to what is being approved.
  */
 export function renderGuidance(g: Guidance): string {
   const section = (title: string, items: string[]): string[] =>
     items.length === 0 ? [] : ['', title, ...items.map((item) => `  ${item}`)];
   return [
     g.headline,
-    ...section('What this approval covers', g.covers),
-    ...section('What it allows once written', g.allows),
-    ...section('Worth checking before you agree', g.check),
+    ...section('Why this one needs you', g.why),
+    ...(g.covers.length === 0 ? [] : ['', 'What it covers', ...columns(g.covers)]),
+    ...section('What approving does', g.does),
     '',
-    'The exact content this binds, which the hash below is taken over',
+    'The exact content this covers. The key below is taken over all of it.',
   ].join('\n');
+}
+
+/** The checklist, for a reader who asked for it. Never part of the statement or the key. */
+export function renderCheck(check: readonly string[]): string {
+  return ['Worth checking before you agree', ...check.map((item) => `  ${item}`)].join('\n');
 }

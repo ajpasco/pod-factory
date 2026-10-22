@@ -16,6 +16,14 @@ import {
   treeOf,
   TRUNK,
 } from '../git-tree.js';
+import {
+  amendmentGuidance,
+  bootstrapGuidance,
+  gate2Guidance,
+  gate3Guidance,
+  renderGuidance,
+  storyGuidance,
+} from '../approval-guidance.js';
 import { resolveActor } from '../records/actor.js';
 import {
   BOOTSTRAP_DIR,
@@ -129,7 +137,9 @@ function gate2(io: CommandIO, classification: string | undefined): Plan {
   return {
     token: '2',
     subject: 'gate-2',
-    statement: `Gate 2: the PRD, the design, the eval plan and the classification as they are on ${TRUNK} at commit ${commit}.`,
+    statement: renderGuidance(
+      gate2Guidance({ commit, sourceName: TRUNK, specCount: specs.length }),
+    ),
     block: { kind: 'gate', gate: 2, story: null, pullRequest: null },
     binds: { tree: treeOf(io.cwd, commit), files: hashes },
     refs: [classification],
@@ -163,7 +173,7 @@ function gate3(io: CommandIO): Plan {
   return {
     token: '3',
     subject: 'gate-3',
-    statement: `Gate 3: the build plan and its ${stories.length === 1 ? 'story' : `${stories.length} stories`} as they are on ${TRUNK} at commit ${commit}.`,
+    statement: renderGuidance(gate3Guidance({ commit, sourceName: TRUNK, stories })),
     block: { kind: 'gate', gate: 3, story: null, pullRequest: null },
     binds: {
       tree: treeOf(io.cwd, commit),
@@ -183,14 +193,16 @@ function pullRequestPlan(
   story: string | null,
 ): Plan {
   const commit = fetchPullRequest(io.cwd, pr, io.remote);
-  const what =
-    kind === 'story'
-      ? `Gate 4: ${story} as pull request ${pr} stands`
-      : `Bootstrap merge: pull request ${pr} as it stands`;
+  const facts = {
+    commit,
+    sourceName: `pull request ${pr}`,
+    pullRequest: pr,
+    ...(story === null ? {} : { story }),
+  };
   return {
     token: kind === 'story' ? (story as string) : 'bootstrap',
     subject: kind === 'story' ? (story as string) : `bootstrap-pr-${pr}`,
-    statement: `${what} at commit ${commit}.`,
+    statement: renderGuidance(kind === 'story' ? storyGuidance(facts) : bootstrapGuidance(facts)),
     block: { kind, gate: null, story, pullRequest: pr },
     binds: { tree: treeOf(io.cwd, commit), files: {} },
     refs: [],
@@ -232,7 +244,15 @@ function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Plan {
   return {
     token: 'amendment',
     subject: `amendment-pr-${pr}`,
-    statement: `Amendment: ${paths.length === 1 ? 'a change' : `changes`} to locked ${paths.join(', ')} as pull request ${pr} stands at commit ${commit}, against lock ${lock.record.recordId}.`,
+    statement: renderGuidance(
+      amendmentGuidance({
+        commit,
+        sourceName: `pull request ${pr}`,
+        pullRequest: pr,
+        amended: paths,
+        lockId: lock.record.recordId,
+      }),
+    ),
     block: { kind: 'amendment', gate: null, story: null, pullRequest: pr },
     binds: { tree: treeOf(io.cwd, commit), files: bound },
     refs: [lock.record.recordId],
@@ -297,6 +317,10 @@ function show(io: CommandIO, p: Plan, shown: string): void {
   }
   for (const ref of p.refs) io.out(`  refers to ${ref}`);
   io.out(`Hash of everything above: ${shown}`);
+  io.out('');
+  io.out(
+    'Nothing is written unless what you type matches. Anything else cancels and changes nothing.',
+  );
 }
 
 /** `pod-factory approve`. Returns the exit code. */
@@ -319,7 +343,7 @@ export async function approve(argv: string[], io: CommandIO): Promise<number> {
   const expected = `${p.token} ${shown.slice(0, 8)}`;
   const typed = (
     await io.ask(
-      `Type ${p.token === '2' || p.token === '3' ? 'the gate' : `"${p.token}"`} and the first eight characters of the hash (for example: ${p.token} ${'0'.repeat(8)}): `,
+      `Type ${p.token === '2' || p.token === '3' ? 'the gate number' : `"${p.token}"`} and the first eight characters of the hash shown above, separated by a space (the shape is "${p.token} ${'0'.repeat(8)}", with the hash's own characters in place of the zeros): `,
     )
   )
     .trim()

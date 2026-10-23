@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recordType": "revocation",
+  "recordId": "fd0ed82a8047",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T01:35:24Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": null,
+    "files": {}
+  },
+  "outcome": "revoked",
+  "refs": [
+    "0b0bc6b73309"
+  ],
+  "revocation": {
+    "revokes": "0b0bc6b73309",
+    "reason": "Land the preparation, build docs and approval prompt, then re-lock including the equipment harness"
+  }
+}

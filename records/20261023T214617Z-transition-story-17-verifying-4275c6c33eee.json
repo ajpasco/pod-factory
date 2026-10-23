@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "recordType": "transition",
+  "recordId": "4275c6c33eee",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T21:46:17Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "agent"
+  },
+  "binds": {
+    "tree": "91703539c22f17496293a57a06bcfa12629dd6ab",
+    "files": {
+      ".factory/work/story-17/handoff.md": "9c32f4aebaa48e172bbe5cc7e807283e50c2d6953e313490c940c7f1aa91146e"
+    }
+  },
+  "outcome": "verifying",
+  "refs": [
+    "d21c57363e34"
+  ],
+  "transition": {
+    "story": "story-17",
+    "from": "in-progress",
+    "to": "verifying",
+    "lease": null,
+    "handoffNote": {
+      "path": ".factory/work/story-17/handoff.md",
+      "sha256": "9c32f4aebaa48e172bbe5cc7e807283e50c2d6953e313490c940c7f1aa91146e"
+    }
+  }
+}

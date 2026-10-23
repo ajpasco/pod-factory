@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "38b90b679e28",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T21:10:56Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "2ab88906775aad4109281f4a038e041d81eeaa4c",
+    "files": {
+      ".factory/work/plan/build-plan.md": "29e373a0c1f2ce2e91107ce5e2ba605c8e54c4eaa4d5696f4c29fdb6cabaf1b4",
+      ".factory/work/story-1/story.md": "d6e8b81be453d6295ebbcb54d5d4c44444f17cffef95b9deb1b60ccae8faa813",
+      ".factory/work/story-17/story.md": "866d791efd228e0a8dfcbcb7d1f77ab8c39b30649cb0bd12007e9df5e275c969",
+      ".factory/work/story-2/story.md": "ea5639f094877dd63c5ca055f71f0e587847beeb6a90096764d6d9f0c206ad2c",
+      ".factory/work/story-3/story.md": "84262c989833c4579036f428fcd4c29e66fd002751b3a0da913c724a153b4ff3"
+    }
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "gate",
+    "gate": 3,
+    "story": null,
+    "pullRequest": null,
+    "shownHash": "de57e00c07ea79f49fe5bc4345abc484c0390114bc4067a97a5ee499aa17ca6e",
+    "typedPrefix": "de57e00c",
+    "statement": "Gate 3: the plan of work, as it stands on main at 9906c7ac255decece854848639349677673c92be.\n\nWhy this one needs you\n  This is the last point at which the work is cheap to change. After it, a builder starts writing code against these stories.\n  Nothing checks that the plan is a good one, so a person has to.\n\nWhat it covers\n  the order the work is done in             .factory/work/plan/build-plan.md\n  each of 4 stories: scope, tests, inputs   .factory/work/story-1/story.md, .factory/work/story-17/story.md, .factory/work/story-2/story.md, .factory/work/story-3/story.md\n\nWhat approving does\n  Allows a builder to be dispatched for one story at a time.\n  Merges nothing. Each story is approved again at gate 4, against the pull request it produced.\n\nThe exact content this covers. The key below is taken over all of it."
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "recordType": "transition",
+  "recordId": "d21c57363e34",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T21:26:07Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "agent"
+  },
+  "binds": {
+    "tree": "2ab88906775aad4109281f4a038e041d81eeaa4c",
+    "files": {
+      ".factory/work/story-17/story.md": "866d791efd228e0a8dfcbcb7d1f77ab8c39b30649cb0bd12007e9df5e275c969",
+      "docs/projects/equipment-checkout/prep/PRD.md": "df48931e09ca1762cccb0c437cd1b5a12a99bdd6bd6e01889bf6ceac727c63c6",
+      "docs/projects/equipment-checkout/prep/TECH-SPEC.md": "79d440ee8ad777965dd9af0ab03dd68a4eb190fe6559286f7357a34eef5ee6cd",
+      "docs/projects/equipment-checkout/prep/eval-plan.md": "2c9779300113b28fe7d795095e0f8037686fb75a274ce45ac1c808b362753273",
+      "projects/equipment-checkout/harness/api/pytest.ini": "c391b74ab5d7cf8eee93adb37061c13adaac56ff94d54ad3abbfd29f282b0fbb",
+      "projects/equipment-checkout/harness/api/requirements-eval.txt": "aafc311ebc06fb3ab8ce00e2f12019948e33081e8a4f19dffa9af6ef14b8088c",
+      "projects/equipment-checkout/harness/api/run-eval.mjs": "ca9efce8428a6eb6f610311dfe3a3b0a66c18cb3699dd5a3a45f2acc93a0cd26"
+    }
+  },
+  "outcome": "in-progress",
+  "refs": [
+    "38b90b679e28"
+  ],
+  "transition": {
+    "story": "story-17",
+    "from": "ready",
+    "to": "in-progress",
+    "lease": {
+      "holder": "claude-opus-5-5",
+      "expiresAt": "2026-10-24T01:26:07Z"
+    },
+    "handoffNote": null
+  }
+}

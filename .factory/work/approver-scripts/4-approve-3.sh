@@ -4,7 +4,7 @@
 # will bind, and then runs the ceremony, which asks you to type a hash prefix itself.
 set -euo pipefail
 
-REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 RECORDS_BRANCH=pod-factory/records
 PLAN=.factory/work/plan/build-plan.md
 STORY=.factory/work/story-1/story.md

@@ -4,7 +4,7 @@
 # so nothing you have locally can change the evidence. Nothing is pushed until you type the hash.
 set -euo pipefail
 
-REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 BRANCH=bootstrap-15-gate2-classification
 TARGET=.factory/work/classification/gate-2.json
 REPORT=.factory/work/reports/cli.json

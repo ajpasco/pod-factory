@@ -114,3 +114,43 @@ Every step is the user's or needs the user's approval, and none can be substitut
 
 Until step 6 exists, freezing these tests would produce a local record of hashes and not the
 factory's protection. **The two must not be called the same thing.**
+
+---
+
+## Corrections, 23 October 2026
+
+Appended rather than edited: the run above is a record of what was found on 20 October and stays as
+written. Two of its claims did not survive later testing.
+
+**1. "Closed by `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` on every pytest command" is wrong.** That flag
+closes pytest's entry-point plugin discovery and nothing else. It was tested on 23 October in a
+disposable lab — a virtual environment built as the runner builds one, a package-style `.pth` file
+in `site-packages`, pytest run with autoload disabled exactly as the runner sets it — and builder
+code executed at interpreter startup, before pytest existed. At least four routes remain open
+through a file inside the builder's own scope: a `.pth` file, `sitecustomize`, install-time code in
+`setup.py`, and import-time code in a dependency. `run-eval.mjs:184` installs the builder's
+`requirements.txt` with a plain `pip install -r`, with no `--require-hashes`, into the same
+environment that then runs pytest; line 186 hash-pins only the eval tools.
+
+The condition-4 finding itself stands, and so does the reason for setting the flag. What does not
+stand is the word "closed". The remaining exposure is recorded here rather than resolved; closing
+it needs a decision about hash-pinning the builder's own dependency list, which is not an agent's
+to take.
+
+**2. OP-1 has a consequence that was not visible on 20 October: the exam has never run in CI.**
+With no `api/app` in the tree, `run-eval.mjs` reports `skipped` and exits 0, which is what every
+pull request to date has exercised, pull request 29 included. Its C1 precondition check has
+therefore never executed in GitHub Actions. C1 requires Python 3.12 exactly and refuses any other
+minor version; `.github/workflows/pr-checks.yml` installs no Python and its verify job runs on
+`ubuntu-latest`.
+
+GitHub began moving the `ubuntu-latest` label from Ubuntu 24.04 to 26.04 on 19 October 2026, to
+finish by 19 November, and the rollout is gradual, so two runs on the same day can land on
+different images. The system `python3` is 3.12 on 24.04 and 3.14 on 26.04. So the first candidate
+that adds `api/app` — the first time this exam really runs — would pass or fail C1 according to
+which image its run happened to get, with an error that names nothing the builder did.
+
+Settling this means either pinning the verify job to `ubuntu-24.04` or giving it an explicit
+`actions/setup-python` step at 3.12, and the robust one is the setup-python step, since the pin
+expires with the image. Both are changes to `.github/workflows/**`, which is a locked path, so
+neither is an agent's to make. Recorded here as a blocker on step 8 and on the first dispatch.

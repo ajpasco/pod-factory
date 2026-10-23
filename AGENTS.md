@@ -77,10 +77,11 @@ After the tests are frozen and the build plan approved, the build loop is in
 its implementation and its own dependency list, and is refused everything else by name.
 
 If you are a builder: the tests judging your work are frozen on purpose, and the correct response to
-a test you cannot pass is to report it, not to reach for the test. Note that your dependency list is
-inside your scope, and a package carrying a `pytest11` entry point can silently rewrite failing
-results into passes. That hole is closed by running pytest with `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`,
-and reaching for it deliberately would be a straightforward attempt to defeat the exam.
+a test you cannot pass is to report it in your handoff note, not to reach for the test. Your
+dependency list is inside your scope, and anything you put there runs inside the same interpreter
+that grades you; its honest use is to declare what your implementation needs, and nothing else.
+Report what you cannot pass and why. A candidate that reports a failure it could not fix is worth
+more than one that reports green, and the verify run's own evidence is what counts either way.
 
 ## Verification
 
@@ -98,14 +99,14 @@ should not touch.
 
 ## Where things are
 
-| | |
-|---|---|
-| The process | `docs/orchestrator/` |
-| Agent definitions and skills | `.claude/agents/`, `.claude/skills/` |
-| Requirements, design, eval plan | `docs/PRD.md`, `docs/TECH-SPEC.md`, `docs/eval-plan.md` |
-| Architecture decisions | `docs/adr/` |
-| Projects being built | `projects/<name>/`, with their preparation in `docs/projects/<name>/prep/` |
-| Approvals, locks, check results | branch `pod-factory/records` |
+|                                 |                                                                            |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| The process                     | `docs/orchestrator/`                                                       |
+| Agent definitions and skills    | `.claude/agents/`, `.claude/skills/`                                       |
+| Requirements, design, eval plan | `docs/PRD.md`, `docs/TECH-SPEC.md`, `docs/eval-plan.md`                    |
+| Architecture decisions          | `docs/adr/`                                                                |
+| Projects being built            | `projects/<name>/`, with their preparation in `docs/projects/<name>/prep/` |
+| Approvals, locks, check results | branch `pod-factory/records`                                               |
 
 ## Do not resume the parked migration
 

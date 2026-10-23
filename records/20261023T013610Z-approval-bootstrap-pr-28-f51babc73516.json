@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "f51babc73516",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T01:36:10Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "6741c7ebadf0f2cd6597214d8d58741e7af37e91",
+    "files": {}
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "bootstrap",
+    "gate": null,
+    "story": null,
+    "pullRequest": 28,
+    "shownHash": "84ab698d932b50b5f7236f57320651c273e19b55da874de5c6d5895667129c72",
+    "typedPrefix": "84ab698d",
+    "statement": "Bootstrap merge: pull request 28 as it stands at commit 5b7c4ac939c20e7398b014d76b72ff46b4dc51c1."
+  }
+}

@@ -1,0 +1,90 @@
+{
+ "source": "technical-rev41.md structured planning evidence",
+ "requirements": [
+  {
+   "id": "REQ-001",
+   "description": "The user switcher lists exactly three seeded users (Ada Admin, Mia Member, Sam Member), each with its role. No password or sign-in screen exists. Choosing a user changes the acting identity for all later requests.",
+   "authority": "PRD Acceptance 'Switcher lists exactly three seeded users with role; no password'; Scope [Answer] identity; PRD Journey step 1"
+  },
+  {
+   "id": "REQ-002",
+   "description": "Every equipment row shows name and status (Available, On loan \u2013 <member name>, Out of service). There is no Details button or detail screen.",
+   "authority": "PRD Acceptance 'Every row shows name and status; no Details button or screen'; Feedback 2; Non-goals 'detail screens'"
+  },
+  {
+   "id": "REQ-003",
+   "description": "A member's Borrow on an Available item sends the request immediately for themselves, with no borrower selection. A row loader shows until a 200, then the row reads On loan \u2013 that member.",
+   "authority": "PRD Acceptance 'Member Borrow sends the request immediately'; Journey step 8; Feedback 3, 12"
+  },
+  {
+   "id": "REQ-004",
+   "description": "An admin's Borrow opens a borrower modal before any request. It lists members only and never the admin. Close cancels with no request and no change. Choosing a member starts the borrow, with a row loader until 200, then On loan \u2013 that member.",
+   "authority": "PRD Acceptance 'Admin Borrow opens a borrower modal\u2026', 'Choosing a member starts the borrow'; Journey steps 2\u20133; Feedback 11"
+  },
+  {
+   "id": "REQ-005",
+   "description": "Admins cannot borrow for themselves. The UI never offers the admin as a borrower, and the API rejects an admin as borrower.",
+   "authority": "PRD Acceptance 'Admins cannot borrow for themselves'; Feedback 11, 12"
+  },
+  {
+   "id": "REQ-006",
+   "description": "Return is shown on a loaned item to its borrower and to any admin. Other members see no action. Return shows a row loader until 200, then the row is Available.",
+   "authority": "PRD Acceptance 'On loan: Return icon for the borrower and for any admin'; Journey step 4; Feedback 9"
+  },
+  {
+   "id": "REQ-007",
+   "description": "A member who forces a return of another member's loan, or a delete, add, out-of-service or restore, gets the Access denied modal ('You do not have permission') with a single OK icon. Nothing changes. The server enforces this with 403.",
+   "authority": "PRD Acceptance 'A forced member attempt\u2026shows the Access denied modal', 'Access denied is a modal with a single OK icon'; Screen states"
+  },
+  {
+   "id": "REQ-008",
+   "description": "An item never has more than one active loan. Borrowing a non-available item is rejected and nothing changes, even for concurrent requests.",
+   "authority": "PRD Acceptance 'An item never has more than one active loan'; Scope [Idea] exactly one active loan per item"
+  },
+  {
+   "id": "REQ-009",
+   "description": "An admin can add equipment from the Add field above the list. Enter submits like the Add icon, and the new item appears as Available. An empty or whitespace name shows an inline validation message and creates nothing. Members see no Add field.",
+   "authority": "PRD Acceptance 'Enter in the Add field\u2026', 'Admins see Add equipment (above the list)'; Journey step 5; Feedback 8"
+  },
+  {
+   "id": "REQ-010",
+   "description": "An admin can mark an Available item out of service (shown on Available items only) and restore an out-of-service item (shown on out-of-service items only). Members see neither action.",
+   "authority": "PRD Acceptance 'Admins see\u2026Mark out of service (Available only), Restore (out of service only)'; Journey step 6; Scope [Idea] admins mark out of service, restore"
+  },
+  {
+   "id": "REQ-011",
+   "description": "An admin's Delete x opens a confirm modal naming the item, before any request. Confirm sends the delete, shows a row loader until 200, then the item is gone. Cancel closes the modal with no request and no change. Delete is not offered on loaned items, and the server rejects a delete of a loaned item with 409.",
+   "authority": "PRD Acceptance 'Admin Delete x opens a confirm modal\u2026', 'Delete x (not on loaned items)'; Journey step 7; Feedback 6, 13"
+  },
+  {
+   "id": "REQ-012",
+   "description": "For Borrow, Return and Delete, the list changes only after a 200, with no success banner. On a non-200 response (other than the 403 case), nothing changes and a modal with Close and Retry icons appears. Retry repeats the same request.",
+   "authority": "PRD Acceptance 'Borrow/Return/Delete show a row loader; the list changes only after a 200; no success banner', 'On a non-200 response nothing changes'; Journey step 8; Feedback 3, 5, 7"
+  },
+  {
+   "id": "REQ-013",
+   "description": "The Loading state shows a list indicator while equipment is fetched. The Empty state shows 'No equipment yet', with the Add field above it for admins. The state demos appear at the top of the page.",
+   "authority": "PRD Screen states; Acceptance 'State demos appear at the top'; Feedback 3"
+  },
+  {
+   "id": "REQ-014",
+   "description": "Every button is an icon with a tooltip and an accessible label. Modals use role alertdialog and are keyboard-operable.",
+   "authority": "PRD Acceptance 'Every button is an icon with tooltip and accessible label'; Feedback 6; mockup button title/aria-label attributes"
+  },
+  {
+   "id": "REQ-015",
+   "description": "All rows have identical, reduced height regardless of status, icons or loader. The look follows the Apple style: system font, translucent top bar, rounded cards, subtle shadows, pill badges, round icon buttons.",
+   "authority": "PRD Acceptance 'All rows have identical, reduced height', 'Apple-style look'; Feedback 1, 4, 5; mockup .row height:48px"
+  },
+  {
+   "id": "REQ-016",
+   "description": "Committed changes (equipment, status and borrower) persist across restart of the API and database. First start seeds one admin and two members, and the seed is idempotent.",
+   "authority": "PRD Acceptance 'Committed changes remain after restart'; Scope [Idea] seed one admin and two members, persistence"
+  },
+  {
+   "id": "REQ-017",
+   "description": "Restraint: nothing is built for the listed non-goals (passwords, accounts, history, due dates, notifications, detail screens, editing, restoring deleted items, reservations, search, themes and so on). Duplicate names are allowed and a member may hold multiple items, as assumed in the PRD.",
+   "authority": "PRD Non-goals; PRD Unresolved product questions (assumptions)"
+  }
+ ]
+}

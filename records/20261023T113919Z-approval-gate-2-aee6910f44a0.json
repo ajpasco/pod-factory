@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "aee6910f44a0",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T11:39:19Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "785d59e0ced7839c6bef7a028513c9cd07c3f219",
+    "files": {
+      ".factory/work/classification/gate-2.json": "16e4deb47c4b24c496c6ba15f920b06f22a72a04058a61e55634f35b65dc6d61",
+      "docs/PRD.md": "15455bab60855e710892ca52ab8835a77dfc75a41452c9b3437dde13f27494fd",
+      "docs/TECH-SPEC.md": "ce5e26945f7f7ac93377953d3bea787ff55f3b36965cec12f7b90b478d518397",
+      "docs/eval-plan.md": "af44fcc6dcff374f35205c8ec95156eebd57e53ba9eaf63fd6ef3962388ede72",
+      "docs/spec/criterion-to-control-mapping.md": "af8fbcca9e0593e2ead3b35650d01265cf723efc0926c756d95977c8e3778be0",
+      "docs/spec/interfaces-and-non-goals.md": "320eebbe84107d2c1f90a05bc6f96fbdc09239781e61afdae7a1c9db2b5813ff",
+      "docs/spec/meeting-reminder-contract.md": "bdaf61906de2f0e724fd9f481c9152ec4a3b3524b9c890b163f7993230754a87",
+      "docs/spec/plain-language-summary.md": "8bc635b6f8b38c8fcfdd58bacfad001d76d0b6a5a13860cd6eff223b86d712ed",
+      "docs/spec/threat-review-and-production-readiness.md": "f8095b0ba83bbe0e0f0920de0624c8044d0ed26d83666dd0e828c18f0910d4d1"
+    }
+  },
+  "outcome": "approved",
+  "refs": [
+    "0007-comparison-classification-gate-2.json"
+  ],
+  "approval": {
+    "kind": "gate",
+    "gate": 2,
+    "story": null,
+    "pullRequest": null,
+    "shownHash": "09b087d738a396762370146bc12d1bc28a9d30fc0aa73876fc33ab6ada3ef333",
+    "typedPrefix": "09b087d7",
+    "statement": "Gate 2: what \"done\" means for this project, as it stands on main at 621bfeba8a410b52fc579ca6a9a2879841bb7a98.\n\nWhy this one needs you\n  Approving this lets the tests be frozen, and from then on nothing inside the factory can change what counts as done — no builder, and no agent.\n  That protection is only worth something if a person chose the standard, so this decision is yours and cannot be delegated.\n\nWhat it covers\n  what the product must do          docs/PRD.md\n  how it is to be built             docs/TECH-SPEC.md and 5 specifications under docs/spec/\n  how delivery is to be proved      docs/eval-plan.md\n  which requirements are testable   .factory/work/classification/gate-2.json\n\nWhat approving does\n  Allows the lock, which freezes the eval plan and the project’s test files.\n  Allows gate 3. Merges nothing and starts no work by itself.\n\nThe exact content this covers. The key below is taken over all of it."
+  }
+}

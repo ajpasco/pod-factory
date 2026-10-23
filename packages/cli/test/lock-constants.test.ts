@@ -42,7 +42,7 @@ describe('lock constants', () => {
 
   it('[M0] hold every test command of eval plan section 4, the install line first', () => {
     const commands = backticked(sectionTableRows(/^## 4\. Test commands the lock pins/));
-    expect(commands).toHaveLength(8);
+    expect(commands).toHaveLength(9);
     const held = LOCKED_COMMANDS.map((c) => c.command);
     for (const command of commands) expect(held, command).toContain(command);
     expect(held[0]).toBe('npm ci');
@@ -91,6 +91,49 @@ describe('lock constants', () => {
     expect(testCommandsFor(root)).toEqual(existingCommands);
     root.add('docs/projects/meeting-reminder/web/package.json');
     expect(testCommandsFor(root)).toEqual([...existingCommands, command]);
+  });
+
+  it('[M0] pins the equipment API runner on the frozen configuration, not the application', () => {
+    const command = 'node projects/equipment-checkout/harness/api/run-eval.mjs';
+    const root = new Set(['package-lock.json', 'packages/cli/package.json']);
+    expect(testCommandsFor(root)).not.toContain(command);
+    // The runner being present is not enough: a tree without the frozen pytest configuration
+    // has no exam to run.
+    root.add('projects/equipment-checkout/harness/api/run-eval.mjs');
+    expect(testCommandsFor(root)).not.toContain(command);
+    // The configuration is what pins it, so the command is in the lock from the freeze onwards
+    // rather than from the first candidate that happens to add application source.
+    root.add('projects/equipment-checkout/harness/api/pytest.ini');
+    expect(testCommandsFor(root)).toContain(command);
+  });
+
+  it('[M0] protects the whole equipment harness and nothing the builder owns', () => {
+    const patterns = LOCKED_PATTERNS.map(globToRegExp);
+    const locked = (path: string): boolean => patterns.some((pattern) => pattern.test(path));
+    for (const path of [
+      'projects/equipment-checkout/api/tests/conftest.py',
+      'projects/equipment-checkout/api/tests/unit/test_added_later.py',
+      'projects/equipment-checkout/api/tests/db/test_added_later.py',
+      'projects/equipment-checkout/harness/api/pytest.ini',
+      'projects/equipment-checkout/harness/api/requirements-eval.txt',
+      'projects/equipment-checkout/harness/api/run-eval.mjs',
+      'projects/equipment-checkout/harness/web/vitest.config.js',
+      'projects/equipment-checkout/harness/e2e/eval.env',
+    ]) {
+      expect(locked(path), path).toBe(true);
+    }
+    // What a builder must be able to write. A story cannot be delivered if its own source or
+    // dependency list is frozen, and the freeze reaching them would be indistinguishable from
+    // the lock being broken.
+    for (const path of [
+      'projects/equipment-checkout/api/app/rules.py',
+      'projects/equipment-checkout/api/requirements.txt',
+      'projects/equipment-checkout/web/src/App.jsx',
+      'projects/equipment-checkout/docker-compose.yml',
+      'projects/other-project/api/tests/unit/test_case.py',
+    ]) {
+      expect(locked(path), path).toBe(false);
+    }
   });
 
   it('[M0] keeps the trial story scope limited to its exact application source file', () => {

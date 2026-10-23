@@ -4,11 +4,12 @@
  * test checks that every path and command named there appears here. Shipped code never parses
  * the eval plan.
  *
- * Section 5 is titled for pod-factory itself and has no row for the harness of a project
- * pod-factory builds, so the equipment-checkout patterns below exceed what it lists. That is
- * the fail-safe direction -- more is locked than the plan records, never less -- and the
- * locked test reads the plan one way, checking that every path it names appears here rather
- * than the reverse. Section 5 gains a project-harness row when gate 2 next reopens.
+ * Section 5 now carries a row for the harness of a project pod-factory builds, so its paths
+ * and this list are the same set. They need not stay that way: the locked test reads the plan
+ * one way, checking that every path section 5 names appears here and not the reverse, so this
+ * list may be a superset. That is the fail-safe direction -- more locked than the plan records,
+ * never less -- and it is what a pattern added between two gate-2 approvals looks like until
+ * the plan catches up.
  */
 export const LOCKED_PATTERNS: readonly string[] = [
   'packages/*/test/**',
@@ -78,6 +79,21 @@ export const LOCKED_COMMANDS: readonly LockedCommand[] = [
   {
     command: 'node docs/projects/meeting-reminder/web/scripts/run-browser-trial.mjs',
     requires: 'docs/projects/meeting-reminder/web/package.json',
+  },
+  // The equipment-checkout API rows: U and D of that project's eval plan, section 7.2. One
+  // runner rather than that section's steps, because the lock holds independent command strings
+  // and verify runs each in its own shell: the virtual environment C2 builds, the PYTHONPATH C3
+  // needs and the database URL C4 computes cannot survive between them, and teardown has to run
+  // after a failing step that verify would stop at. Same shape as the browser trial above, which
+  // section 4 calls an application adapter.
+  //
+  // Pinned by the frozen pytest configuration, not by the runner or the application: a tree
+  // holding the harness always runs it. With no application in the tree the runner reports
+  // "skipped" and exits 0, so the frozen cases stand as a standard for a candidate that offers
+  // an implementation without failing pod-factory's own pull requests.
+  {
+    command: 'node projects/equipment-checkout/harness/api/run-eval.mjs',
+    requires: 'projects/equipment-checkout/harness/api/pytest.ini',
   },
 ];
 

@@ -1,0 +1,42 @@
+# The whole API stack of the Shared Equipment Checkout trial, as a lockfile.
+#
+# S2 does not own this file (eval plan 8.1), so it lists what S2 and S4 need as
+# well as what S1 needs: FastAPI 0.115, Uvicorn 0.32, SQLAlchemy 2.0 and
+# psycopg 3.2, which are the lines blueprint 12.10 fixes. A builder may take a
+# newer patch inside a line and may not change the line, and the story that
+# installs a line commits the exact patch -- so every distribution below,
+# transitive ones included, is pinned to one version.
+#
+# It is installed by eval-plan command C2 with a plain `pip install -r` into the
+# same interpreter that then runs the exam: Python 3.12 on macOS arm64 locally
+# and on Linux x86_64 in CI. Every pin below was checked to have a wheel for
+# both -- cp312 macosx_11_0_arm64 and cp312 manylinux_2_17_x86_64 -- so nothing
+# here needs a compiler or a local pg_config on either. That is why psycopg is
+# taken with its `binary` extra, as blueprint 12.10 names it.
+#
+# Four of the lines below (anyio, h11, idna, typing-extensions) are also pinned
+# in harness/api/requirements-eval.txt, because the frozen test tools share them
+# with FastAPI and Uvicorn. They appear here at exactly the versions that file
+# pins, so the two lists cannot disagree, and C2 installs the frozen list
+# afterwards with --require-hashes --force-reinstall, which re-fetches and
+# hash-verifies all four whatever this file said. Nothing here supplies the
+# runner of this story's own exam.
+
+# --- The lines blueprint 12.10 fixes ---
+fastapi==0.115.14
+uvicorn==0.32.1
+SQLAlchemy==2.0.55
+psycopg[binary]==3.2.13
+
+# --- Pinned transitive dependencies of the four above ---
+annotated-types==0.8.0
+anyio==4.15.1
+click==8.5.0
+h11==0.16.0
+idna==3.20
+psycopg-binary==3.2.13
+pydantic==2.14.1
+pydantic-core==2.50.1
+starlette==0.46.2
+typing-extensions==4.16.0
+typing-inspection==0.4.4

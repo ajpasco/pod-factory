@@ -5,11 +5,11 @@
 # Run this in a terminal, not through a pipe: approve and lock ask you to type a hash.
 set -euo pipefail
 
-REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 RECORDS_BRANCH=pod-factory/records
 NAME=0005-classification-gate-2.json
 TARGET=.factory/work/classification/gate-2.json
-VALIDATOR=/Users/jay/.local/lib/node_modules/pod-factory/dist/index.js
+VALIDATOR="${VALIDATOR:-$(npm root -g 2>/dev/null)/pod-factory/dist/index.js}"
 DIR=$(cd "$(dirname "$0")" && pwd)
 CHECK="$DIR/classification-check.py"
 

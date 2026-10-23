@@ -11,8 +11,10 @@ Run them in a terminal, one at a time, from anywhere:
 bash .factory/work/approver-scripts/1-relay-workflow.sh
 ```
 
-Each takes an optional first argument, the path to the repository, and defaults to
-`/Users/jay/orca/projects/orca-software-factory`.
+Each takes an optional first argument, the path to the repository. With no argument a script
+derives the repository root from its own location, three levels above
+`.factory/work/approver-scripts/`, so running one from anywhere inside a checkout works and no
+machine-specific path is written down here.
 
 | Script | What it does | What it leaves for the approver |
 |---|---|---|

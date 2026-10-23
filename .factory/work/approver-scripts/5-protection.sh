@@ -9,7 +9,7 @@
 # want on main must already be there.
 set -euo pipefail
 
-REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 RECORDS_BRANCH=pod-factory/records
 APP_ID=15368
 
@@ -39,23 +39,37 @@ SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner) || die "gh cannot re
 git fetch --quiet --force origin 'refs/heads/main:refs/remotes/origin/main' "refs/heads/${RECORDS_BRANCH}:refs/remotes/origin/${RECORDS_BRANCH}" || die "cannot read main and $RECORDS_BRANCH from origin: git fetch failed, or the records branch does not exist yet. It must exist before it can be protected, and git's own message above says which it is."
 MAIN=$(git rev-parse refs/remotes/origin/main)
 
-# The app id is checked live, so protection can never be bound to a guessed id.
-gh api "repos/${SLUG}/commits/${MAIN}/check-runs" > "$TMP/runs.json" 2>/dev/null || die "cannot read the check runs on main."
-FOUND=$(python3 - "$TMP/runs.json" "$APP_ID" <<'PY'
-import json, sys
-d = json.load(open(sys.argv[1]))
-want = int(sys.argv[2])
-rows = {(r.get('app') or {}).get('id'): ((r.get('app') or {}).get('slug'), r.get('name')) for r in d.get('check_runs', [])}
-print('YES' if want in rows else 'NO')
-for app_id, (slug, name) in rows.items():
-    print(f'  app {app_id} ({slug}) posted "{name}"')
-PY
-)
-printf '%s\n' "$FOUND" | tail -n +2
-case "$FOUND" in
-  YES*) ;;
-  *) die "no check run on main was posted by app $APP_ID, so this script will not bind the required checks to it. Check the app id with \"gh api repos/${SLUG}/commits/${MAIN}/check-runs\" first.";;
-esac
+# The app id is checked live, so protection can never be bound to a guessed id. Two sources must
+# agree: GitHub's own record of the app, and a commit that actually carries its check runs. main's
+# own head carries none -- pr-checks.yml runs on pull_request_target, so its checks attach to the
+# pull request's head commit, never to the merge commit on main. An earlier version of this script
+# looked only at main's head and refused every time for that reason.
+FROM_API=$(gh api /apps/github-actions --jq .id 2>/dev/null || true)
+if [ -z "$FROM_API" ]; then
+  die "cannot read GitHub's record of the Actions app (gh api /apps/github-actions). The app id is not bound to a guess."
+fi
+if [ "$FROM_API" != "$APP_ID" ]; then
+  die "GitHub says the github-actions app is id $FROM_API, and this script expects $APP_ID. Settle which is right before binding any check to an app."
+fi
+echo "app id         $APP_ID, confirmed by GitHub's own record of the github-actions app"
+
+# Cross-check against the checks as they were actually posted, on the heads that carry them.
+HEADS=$(gh pr list --state all --limit 6 --json headRefOid --jq '.[].headRefOid' 2>/dev/null || true)
+CROSS=""
+for SHA in $HEADS; do
+  FOUND=$(gh api "repos/${SLUG}/commits/${SHA}/check-runs" \
+    --jq '[.check_runs[] | select(.name == "lock-guard" or .name == "verify" or .name == "gate-check") | "\(.name):\(.app.id)"] | unique | join(" ")' 2>/dev/null || true)
+  if [ -n "$FOUND" ]; then CROSS="$FOUND"; echo "posted checks   on ${SHA} : $FOUND"; break; fi
+done
+if [ -z "$CROSS" ]; then
+  die "no recent pull request head carries a lock-guard, verify or gate-check run, so the app id cannot be cross-checked against a check that was really posted. Look at \"gh api repos/${SLUG}/commits/<a pull request head>/check-runs\" and settle it before binding anything."
+fi
+for PAIR in $CROSS; do
+  case "$PAIR" in
+    *":$APP_ID") ;;
+    *) die "the check ${PAIR%%:*} was posted by app ${PAIR##*:}, not by $APP_ID. Binding the required checks to $APP_ID would reject the app that actually posts them.";;
+  esac
+done
 
 gh api "repos/${SLUG}/branches/main/protection" > "$TMP/main-now.json" || die "cannot read main's protection."
 STRICT=$(python3 -c "import json,sys;print(str((json.load(open(sys.argv[1])).get('required_status_checks') or {}).get('strict', False)).lower())" "$TMP/main-now.json")

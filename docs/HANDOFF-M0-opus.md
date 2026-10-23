@@ -56,7 +56,7 @@ Who answers what (confirmed by the approver on 2026-10-13):
 
 ## Session setup, done by the design session on 2026-10-13
 
-- Trunk: `main` at the design tip, which is also Orca's base ref. One worktree per slice, named `bootstrap-<nn>-<slice>`, created through Orca from main. Worktrees are created through Orca so they show in its sidebar; Orca names the branch after the worktree. The first is `refs/heads/bootstrap-01-record-store` at `/Users/jay/orca/workspaces/orca-software-factory/bootstrap-01-record-store`.
+- Trunk: `main` at the design tip, which is also Orca's base ref. One worktree per slice, named `bootstrap-<nn>-<slice>`, created through Orca from main. Worktrees are created through Orca so they show in its sidebar; Orca names the branch after the worktree. The first is `refs/heads/bootstrap-01-record-store`, in the worktree of the same name under the approver's own workspace directory (the absolute path is local to that machine and is not recorded here).
 - The builder worktree is a sparse checkout without the review history, the detailed section files, the reference PRD and ADR-010 to ADR-014, and it carries deny rules in `.claude/settings.local.json` for the same paths. Both are re-applied for every new bootstrap worktree:
 
 ```
@@ -64,7 +64,7 @@ orca worktree create --repo id:53f86b48-6ee5-47d9-bcd5-63c0803469dc --name boots
 cd <the path Orca printed>
 git sparse-checkout init --no-cone
 git sparse-checkout set '/*' '!/docs/reviews/' '!/docs/spec/' '!/docs/spec-drafts/' '!/docs/PRD-reference.md' '!/docs/HANDOFF-2026-10-12.md' '!/docs/adr/ADR-010-design-defaults.md' '!/docs/adr/ADR-011-mapping-resolutions.md' '!/docs/adr/ADR-012-verification-resolutions.md' '!/docs/adr/ADR-013-lock-guard-and-class-rules.md' '!/docs/adr/ADR-014-final-corrections.md'
-cp /Users/jay/orca/workspaces/orca-software-factory/bootstrap-01-record-store/.claude/settings.local.json .claude/settings.local.json
+cp <the bootstrap-01-record-store worktree>/.claude/settings.local.json .claude/settings.local.json
 ```
 
 - To check afterwards that a session never touched the excluded files:

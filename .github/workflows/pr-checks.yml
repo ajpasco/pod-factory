@@ -60,6 +60,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # Python 3.12 explicitly, not whatever the image happens to carry. A locked application
+      # runner refuses any other minor version, because the hash-pinned test tools it installs
+      # were resolved on python:3.12-slim. The image's own python3 is 3.12 on Ubuntu 24.04 and
+      # 3.14 on 26.04, and the ubuntu-latest label moved between them from 2026-10-19 gradually,
+      # so without this step two runs on one day can judge the same candidate differently. Pinning
+      # runs-on to ubuntu-24.04 would also work and expires with the image; this does not.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: build the enforcing copy
         working-directory: enforcer
         run: npm ci && npm run build --workspace packages/cli

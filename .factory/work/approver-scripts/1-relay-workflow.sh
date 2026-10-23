@@ -4,7 +4,7 @@
 # working tree and whatever branch you have checked out are never touched.
 set -euo pipefail
 
-REPO="${1:-/Users/jay/orca/projects/orca-software-factory}"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 BRANCH=bootstrap-14-revoke-relay
 STAGED=.factory/work/bootstrap-05-revoke-relay/workflows/records-validate.yml
 TARGET=.github/workflows/records-validate.yml

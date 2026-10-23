@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recordType": "revocation",
+  "recordId": "71ee91fc6c0e",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T01:44:36Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": null,
+    "files": {}
+  },
+  "outcome": "revoked",
+  "refs": [
+    "83d2a617e824"
+  ],
+  "revocation": {
+    "revokes": "83d2a617e824",
+    "reason": "Merge pull request 28 and re-lock with the equipment harness included"
+  }
+}

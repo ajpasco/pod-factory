@@ -1,0 +1,225 @@
+
+> test
+> npm test --workspaces
+
+
+> pod-factory@0.0.0-m0 test
+> vitest run
+
+
+ RUN  v5.0.4 /private/tmp/maintenance-transition-a82a857/packages/cli
+
+ ✓ test/hook.test.ts (13 tests) 22404ms
+   ✓ hook pre-tool-use (10)
+     ✓ T-06-P1 [M0] hook 1 allows an agent edit to a file that is not locked 2478ms
+     ✓ T-06-N1 [M0] hook 1 denies an agent edit to a locked test, naming the lock and how to amend 1983ms
+     ✓ resolves a subagent's edit against its own worktree, from the event's cwd 2185ms
+     ✓ denies the enforcement layer and the records always, even before any lock exists 1885ms
+     ✓ denies a write through a symlink that reaches a locked file 2080ms
+     ✓ allows edits outside the checkout, tools that do not edit, and projects without .factory 3155ms
+     ✓ answers NotebookEdit by its notebook path, and refuses an edit that names no file 2153ms
+     ✓ refuses an event it cannot read, since the matcher sends only edits 1887ms
+     ✓ refuses the edit when something unexpected stops it from deciding 1797ms
+     ✓ fails closed on locked paths when it cannot read the lock, and allows the rest 2638ms
+ ✓ test/doctor.test.ts (4 tests) 23310ms
+   ✓ doctor (4)
+     ✓ T-19-P3 [M0] passes with every enforcement layer present 2244ms
+     ✓ T-03-P2 [M0] runs as a read-only command from an agent session 1785ms
+     ✓ T-19-N3 [M0] fails naming each missing layer 17350ms
+     ✓ names a still-required bootstrap-check as the placeholder 1931ms
+ ✓ test/lock.test.ts (7 tests) 26692ms
+   ✓ lock (5)
+     ✓ T-06-P3 [M0] the lock lists every locked path with its hash, the patterns and the exact commands 4022ms
+     ✓ refuses without a gate-2 approval 1813ms
+     ✓ refuses when the gate-2 approval was revoked 2972ms
+     ✓ refuses when main moved after the approval 3242ms
+     ✓ does not lock twice for the same approval 3486ms
+   ✓ approve amendment (2)
+     ✓ binds before hashes from the lock and after hashes from the pull request, null where absent 4636ms
+     ✓ refuses an unlocked path, an unchanged path, and an amendment with no lock 6520ms
+ ✓ test/records-validate.test.ts (8 tests) 9419ms
+   ✓ ci records-validate (8)
+     ✓ T-20-P1 [M0] every record carries its schema and factory version, and validation passes 1435ms
+     ✓ T-20-N1 [M0] a record missing its schema or factory version is flagged by name 1822ms
+     ✓ T-19-N6 [M0] a modified existing record is flagged and ignored 1355ms
+     ✓ flags a human record pushed by the Actions bot and a check result pushed by anyone else 1318ms
+     ✓ passes with nothing to validate when the records branch does not exist 424ms
+     ✓ reads the whole history from a shallow clone of the records branch 1468ms
+     ✓ says plainly that it cannot read records when the history is cut short 1063ms
+     ✓ refuses a job it does not have, naming the jobs it has 534ms
+ ✓ test/status.test.ts (3 tests) 7789ms
+   ✓ status (3)
+     ✓ T-19-P1 [M0] prints every story with its stage, owner, what it waits on and the record that holds it 2722ms
+     ✓ T-19-N1 [M0] flags a story file that claims a stage its records do not justify 2625ms
+     ✓ T-19-N2 [M0] shows an approval record that fails validation as invalid, never as approved 2441ms
+ ✓ test/lock-state.test.ts (1 test) 1943ms
+   ✓ effective lock (1)
+     ✓ applies amendments in the order they were added, even when their file names sort otherwise 1939ms
+ ✓ test/record-validation.test.ts (15 tests) 1458ms
+   ✓ record validation (15)
+     ✓ T-20-N5 [M0] an unknown or free-text hash algorithm, or a newer schema, is invalid and readers fail closed 1450ms
+ ✓ test/actor.test.ts (6 tests) 1144ms
+   ✓ actor kind from the invocation context (6)
+     ✓ detects agent, check-runner and human in real processes 513ms
+     ✓ takes the human or agent identity from git and the check-runner identity from CI 627ms
+ ✓ src/status/report.test.ts (11 tests) 8ms
+ ✓ test/bootstrap-records.test.ts (3 tests) 11ms
+ ✓ test/lock-constants.test.ts (5 tests) 7ms
+ ✓ test/hash.test.ts (3 tests) 5ms
+ ✓ test/approve.test.ts (15 tests) 37127ms
+   ✓ approve (15)
+     ✓ T-03-N4 [M0] every approval-path command refuses from an agent session, naming the marker 2294ms
+     ✓ refuses with no terminal and no marker, since who is running cannot be told 1320ms
+     ✓ T-06-P3 [M0] gate 2 binds the main tree, PRD, design, eval plan, mapping and classification output 2506ms
+     ✓ writes nothing when the typed confirmation does not match 3637ms
+     ✓ accepts the hash prefix typed in uppercase 2584ms
+     ✓ shows a different hash when the approval refers to a different classification record 2496ms
+     ✓ writes nothing when main moves while the human is confirming 2205ms
+     ✓ gate 2 refuses a missing, wrong-type or mismatched classification record 5100ms
+     ✓ gate 2 refuses when main lacks a bound file, naming it 1784ms
+     ✓ gate 3 binds the build plan, every story file it names, and the tree 2934ms
+     ✓ gate 3 refuses a plan that names no story or a story that is missing 2402ms
+     ✓ a story approval binds the pull request head tree and both numbers, kept distinct 2725ms
+     ✓ a bootstrap approval binds the pull request head tree 2401ms
+     ✓ refuses gates other than 2 and 3, and unknown targets 1390ms
+     ✓ keeps the records branch untouched by a refusal 1348ms
+ ✓ test/record-store.test.ts (18 tests) 18036ms
+   ✓ record store: writing (6)
+     ✓ writes a record in the fixed format, journaled and then marked landed 988ms
+     ✓ journals the record before the first push and finishes it later with the same ID 1008ms
+     ✓ validates a pending journal entry again before pushing it 771ms
+     ✓ never writes an invalid record, and journals nothing for it 503ms
+     ✓ refuses to write when the remote has no records branch, keeping the record pending 394ms
+     ✓ rebases onto a concurrent writer's record and retries, keeping the branch linear 1748ms
+   ✓ record store: kill and resume at each write point (5)
+     ✓ killed at during-journal-write: no record lost, none duplicated 814ms
+     ✓ killed at after-journal: no record lost, none duplicated 1457ms
+     ✓ killed at before-push: no record lost, none duplicated 1480ms
+     ✓ killed at after-push: no record lost, none duplicated 1274ms
+     ✓ killed at after-record-write: no record lost, none duplicated 1112ms
+   ✓ record store: reading (7)
+     ✓ flags a half-written record by name and still reads the valid record written after it 1242ms
+     ✓ flags and ignores a record changed after it was added 1398ms
+     ✓ flags a deleted record and keeps counting it as first added 1074ms
+     ✓ flags files outside the record paths, other folders and repeated IDs 976ms
+     ✓ reads bootstrap records under records/bootstrap with their own schema 693ms
+     ✓ flags a merge on the records branch 900ms
+ ✓ test/revoke.test.ts (14 tests) 65460ms
+   ✓ revoke (7)
+     ✓ T-22-P1 [M0] writes a revocation record with the human as its actor 3949ms
+     ✓ T-03-P4 [M0] revoking the gate-2 approval opens gate 2, and the lock stays in force 2867ms
+     ✓ T-03-N6 [M0] a revoked approval no longer satisfies gate-check 4097ms
+     ✓ T-22-N6 [M0] reports pending until CI confirms the open pull request is blocked, never earlier 5444ms
+     ✓ names every path a lock revocation unlocks before the hash is typed 2877ms
+     ✓ refuses from an agent session, for an unknown record, and without a reason 2876ms
+     ✓ revokes a bootstrap record by file name, and approve 2 then refuses it 3077ms
+   ✓ the revocation relay (3)
+     ✓ blocks each affected open pull request once, and records it as the check runner 4851ms
+     ✓ leaves closed pull requests and ones that moved past the revoked record alone 3835ms
+     ✓ asks GitHub nothing when no revocation names a pull request, and fails when it cannot list them 4144ms
+   ✓ revoking an amendment (3)
+     ✓ T-22-N8 [M0] a revoked amendment no longer satisfies gate-check, which names the amendment and the revocation 4825ms
+     ✓ T-22-N9 [M0] revoking the first of two chained amendments to one locked path fails the second closed, naming why, until it is amended again 10303ms
+     ✓ T-22-P4 [M0] after a merged amendment is revoked, a pull request restoring the path passes without an amendment, and an amendment can instead approve what main holds 8521ms
+   ✓ an interrupted revoke (1)
+     ✓ T-22-N10 [M0] a revoke stopped after its record landed starts the relay when run again, and writes no second revocation 3794ms
+ ✓ test/kill-resume.test.ts (6 tests) 68049ms
+   ✓ kill and resume (6)
+     ✓ T-08-P1 [M0] killed at during-journal-write in every step and restarted, story one ends merged with no record lost or duplicated 14677ms
+     ✓ T-08-P1 [M0] killed at after-journal in every step and restarted, story one ends merged with no record lost or duplicated 13749ms
+     ✓ T-08-P1 [M0] killed at before-push in every step and restarted, story one ends merged with no record lost or duplicated 12844ms
+     ✓ T-08-P1 [M0] killed at after-push in every step and restarted, story one ends merged with no record lost or duplicated 12977ms
+     ✓ T-08-P1 [M0] killed at after-record-write in every step and restarted, story one ends merged with no record lost or duplicated 9885ms
+     ✓ T-08-N1 [M0] a half-written record is refused by name, never read, and the step writes its record whole 3916ms
+ ✓ test/story.test.ts (20 tests) 70073ms
+   ✓ story start (8)
+     ✓ T-07-P3 [M0] starts a builder with a valid gate-3 approval for the current plan 3114ms
+     ✓ T-07-N5 [M0] refuses with no gate-3 approval, an invalid one, a revoked one, or one for an older plan 8901ms
+     ✓ T-07-N7 [M0] refuses the start when a story file gate 3 bound has changed its scope, and gate 3 shows as open 2360ms
+     ✓ T-08-P4 [M0] records exactly the story file and the inputs it lists, with their hashes, when a builder starts 3071ms
+     ✓ T-07-P4 [M0] moves a story whose tests are locked to in progress 2462ms
+     ✓ T-07-N6 [M0] refuses a story whose tests are not locked, naming the test 7422ms
+     ✓ refuses a story file missing a list, naming it 2388ms
+     ✓ resumes a story already in progress without writing a second record 2764ms
+   ✓ story finish (7)
+     ✓ T-08-P3 [M0] keeps the handoff note with the story when the builder session ends with one 3435ms
+     ✓ T-08-N3 [M0] refuses a session that ended without a handoff note, naming it 2424ms
+     ✓ T-08-P2 [M0] moves to verifying with the note, and to done only after the story approval and the merge 3489ms
+     ✓ accepts a squash merge as done when main holds exactly the approved tree, and says which proof held 3044ms
+     ✓ T-08-N2 [M0] refuses done without a story approval, or before the merge 2795ms
+     ✓ refuses done, as an error, when the pull request changed after its approval 7707ms
+     ✓ refuses to finish a story that has not started, naming its stage 1687ms
+   ✓ gate-check file scope (5)
+     ✓ T-08-P5 [M0] passes a story diff inside its approved scope and its own work folder 2642ms
+     ✓ T-08-N5 [M0] fails a diff outside the scope or in the factory's own folder, naming the file 2547ms
+     ✓ takes the scope from the story file gate 3 approved, so a pull request cannot widen its own 2510ms
+     ✓ reads the approved story file from a shallow clone of main by deepening it 2778ms
+     ✓ refuses the factory's own folder even when a scope glob would cover it 2532ms
+ ✓ test/maintenance.test.ts (23 tests) 70157ms
+   ✓ exact-content maintenance amendments (23)
+     ✓ explicit ceremony binds the full mixed diff without locking unlocked paths or approving execution 7164ms
+     ✓ supports unlocked-only maintenance without contaminating lock state 3024ms
+     ✓ old complete amendments grant no merge authority, and their original hash stays valid 3493ms
+     ✓ refuses partial maintenance coverage 3078ms
+     ✓ refuses empty maintenance coverage 2931ms
+     ✓ refuses extra maintenance coverage 3639ms
+     ✓ refuses before maintenance coverage 3373ms
+     ✓ refuses after maintenance coverage 3356ms
+     ✓ refuses wrong-pr maintenance coverage 2747ms
+     ✓ refuses wrong-tree maintenance coverage 2791ms
+     ✓ refuses wrong-lock maintenance coverage 2491ms
+     ✓ refuses stale-locked maintenance coverage 2074ms
+     ✓ refuses without a current passing verify, including revoked or moved content 4756ms
+     ✓ revocation during the records reread removes maintenance authority 2244ms
+     ✓ CLI refuses partial, extra, duplicate and empty path sets before prompting 1758ms
+     ✓ CLI refuses a moved PR during confirmation 7156ms
+     ✓ binds the PR number and marker in the confirmed hash and rejects invalid marker use 1097ms
+     ✓ an empty PR diff, revoked lock, or replacement lock cannot reuse maintenance authority 4405ms
+     ✓ unlocked edits and deletions bind their actual merge-base content 2486ms
+     ✓ maintenance still refuses an agent session before reading or prompting 1047ms
+     ✓ unmarked historical amendments retain whole-record hash and held semantics outside patterns 1315ms
+     ✓ maintenance flag refuses non-amendment targets before any prompt 953ms
+     ✓ repeated mixed approval safely refuses without prompting or writing, and revocation permits a fresh review 2776ms
+ ✓ test/ci-jobs.test.ts (29 tests) 80814ms
+   ✓ ci lock-guard (6)
+     ✓ T-06-P10 [M0] a pull request that changes no locked path passes 2636ms
+     ✓ T-06-N2 [M0] a commit that changes a locked test without an amendment fails, naming the test 2231ms
+     ✓ T-06-N3 [M0] the lockfile, runner configuration and workflows are protected too 2200ms
+     ✓ T-06-N9 [M0] adding a file under a locked folder is a change and fails without an amendment 2039ms
+     ✓ fails every pull request, naming the path, when main holds locked content nobody approved 2591ms
+     ✓ passes while nothing is locked, saying so 1626ms
+   ✓ ci lock-guard with amendments approved through the CLI (3)
+     ✓ T-06-P7 [M0] an amendment approval bound to the head lets a locked change pass 4728ms
+     ✓ T-06-N6 [M0] the same locked change without an amendment fails 4092ms
+     ✓ accepts two amendments to the same path in sequence 6786ms
+   ✓ the locked-path rule, changed and untouched paths (2)
+     ✓ T-06-P12 [M0] an approved amendment whose pull request has not merged does not block a pull request that leaves the path alone 6073ms
+     ✓ T-06-N11 [M0] changing a locked path back to a version the lock once approved, but not what is locked now, still needs an amendment 4213ms
+   ✓ ci verify and verify-record (9)
+     ✓ T-06-P2 [M0] a clean commit passes verify, with evidence tied to that exact content 2126ms
+     ✓ T-06-P4 [M0] the locked command runs exactly as locked 1437ms
+     ✓ T-06-N4 [M0] a branch's own test script is ignored 1412ms
+     ✓ T-09-P9 [M0] the record-writing job pushes the check result, committed as the check runner 2162ms
+     ✓ T-09-N12 [M0] test code in the verify job sees no token, so it cannot push a check result 1527ms
+     ✓ writes a failing record when the verify job failed, even if the bundle's manifest says pass 5283ms
+     ✓ writes a failing record when a bundle file does not match its manifest hash 4042ms
+     ✓ writes nothing when the verify job left no bundle 1383ms
+     ✓ before the first lock, runs the enforcing copy section-4 commands, never the branch scripts 1372ms
+   ✓ ci gate-check (8)
+     ✓ T-10-P1 [M0] passes with an approval and a passing verify bound to the head tree 2038ms
+     ✓ T-10-N1 [M0] fails after one more commit, until a new review and approval cover it 2266ms
+     ✓ T-10-P2 [M0] a verify result citing its bundle for this tree is accepted 2115ms
+     ✓ T-10-N2 [M0] "tests passed" with no verify bundle for this tree is rejected, and the claim is named 1837ms
+     ✓ T-10-N3 [M0] no approval, an invalid approval or a foreign approval blocks merge 5298ms
+     ✓ T-10-P3 [M0] when main moves, the approval still holds and verify re-runs without re-review 2283ms
+     ✓ T-22-N7 [M0] a run that started before a revocation landed cannot report a pass after it 1991ms
+     ✓ counts a bootstrap approval before the first lock and not after 1887ms
+   ✓ ci jobs without a records branch (1)
+     ✓ verify, verify-record and gate-check fail closed in plain language; lock-guard passes 1139ms
+
+ Test Files  19 passed (19)
+      Tests  204 passed (204)
+   Start at  00:27:30
+   Duration  82.09s (tests 100%)
+
+JSON report written to /private/tmp/maintenance-transition-a82a857/.factory/work/reports/cli.json

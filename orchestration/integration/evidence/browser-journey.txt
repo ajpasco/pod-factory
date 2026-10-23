@@ -1,0 +1,4 @@
+# npm run test:browser
+PASS browser journey: idea → answer → draft pair → clickable mockup → coordinated change → reload. Proposals remain unaccepted; gate reviews remain unperformed. Fixture-provider evidence only.
+PASS prebuild browser journey: technical preferences → blueprint → explicit local selection → evals/stories → independent fixture review → draft handoff → reload → upstream-change invalidation. No factory approval or executed eval claimed.
+PASS browser recovery: interrupted task stays unresolved; user explicitly starts a separate preparation without a hidden model retry.

@@ -1,0 +1,243 @@
+{
+  "hashAlgorithm": "sha256-lf",
+  "recordedAt": "2026-10-19T02:52:44.091280Z",
+  "patch": "integration/factory-connection.patch",
+  "applyFrom": "orchestration/",
+  "applyCommand": "git apply integration/factory-connection.patch",
+  "patchChecked": "git apply --check passed against the workspace at the recordedAt above",
+  "startingSnapshot": "integration/evidence/baseline-inputs.json",
+  "changed": [
+    {
+      "path": "src/server.ts",
+      "before": "ada5c4a43cf2e5fb79c7355c31eb70eb3e9356b06355658b846b76503869fe94",
+      "after": "3143fb692c27589cd2987b46051fd2eb18a847ed2728bf5884aae76584c8e345"
+    },
+    {
+      "path": "src/cli.ts",
+      "before": "7b66b9cecd2ec8439059ec9d2101d8e39b22c2beef82a4dd17ba4925a53abdaf",
+      "after": "f1e3326b42e6faa2a9d5574de197d2d01d31d37a44778aadc01365b4674700da"
+    }
+  ],
+  "added": [
+    {
+      "path": "src/factory.ts",
+      "before": null,
+      "after": "3e2c0c471c7d1ae08e039c53382967e968141f72f467e98e8510b1997e9af16f"
+    },
+    {
+      "path": "test/factory.test.ts",
+      "before": null,
+      "after": "65dfc9f5705420502c1e0b60097a8a68b9ee5ed63075c50de5fe2f3e96aec58f"
+    },
+    {
+      "path": "test/factory-fake.ts",
+      "before": null,
+      "after": "ecd97e10d34f535a3a38f498521bc6c8050d4843e4a1c79727c58e8ff0e98d66"
+    },
+    {
+      "path": "test/factory-http.test.ts",
+      "before": null,
+      "after": "eab96de63a61d02c888992f1f65518b4f0f9f988d4545d6ecb16383feddb248b"
+    },
+    {
+      "path": "test/factory-real-route.mjs",
+      "before": null,
+      "after": "c1850233e70a27d548e4979ca9ccf4ed5e511f411173f16be60079e05ae855ca"
+    }
+  ],
+  "notTouchedByThisPatch": [
+    {
+      "path": "public/index.html",
+      "workspaceHash": "3733da87fd246d9e00c0515c2dc904d754f8ca63209b1691bd55e6ea41853623",
+      "identicalInExport": true
+    },
+    {
+      "path": "public/app.js",
+      "workspaceHash": "80f2e24bf23e94f745e19068b38a6e772dd1b36cc062477ceb83a0967733decc",
+      "identicalInExport": true
+    },
+    {
+      "path": "public/style.css",
+      "workspaceHash": "2583e6c3811c69834f1e0d2dd7ba5e5aba2e319e9bbab3e8fa5bebe3ffdcd8f7",
+      "identicalInExport": true
+    },
+    {
+      "path": "public/fonts/IBMPlexSans-latin.woff2",
+      "workspaceHash": "c92730272d0f6ede4c1681ea32d802181a245ecf1816b4feecc1f55863a57308",
+      "identicalInExport": true
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-400-latin.woff2",
+      "workspaceHash": "56d62be17d2761f3b5915d68f37405bb81a370d387b2cd1d626d0d07133f674e",
+      "identicalInExport": true
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-500-latin.woff2",
+      "workspaceHash": "a76f53ca6612e7b3828eec2311098675b7f9849ae4169a8bcef6302aec02a6c0",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/workflow.ts",
+      "workspaceHash": "6c021c21f387b8111dd5c526142b83e69839751c664cb7b76c024a05beadb5ab",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/store.ts",
+      "workspaceHash": "772c7801ff2726db963bc1edda813e5c452f09978e79a6c8121499b8f4f7ea46",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/types.ts",
+      "workspaceHash": "3aa890d1cef03690054a333cdc811166af0d00619126fb3ed208552e0184643d",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/planning.ts",
+      "workspaceHash": "5cf46b1ab8374e33db35974744794a1816ca38a02a0bef752173d017c74c167f",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/draft.ts",
+      "workspaceHash": "b32fb052b14216cd85a83ab036d9980e059be94665ec7d858df2a8d2c7c972af",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/orca-bridge.ts",
+      "workspaceHash": "f62b771864dd5f23624595f88ceef23de9f2f9c4eb25fbde38c88fd9c1d9ced1",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/orca-native.ts",
+      "workspaceHash": "406e5a42d3f30aaa37703128768d771801d5e3f7f71f26314aa0dab86a40b936",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/claude-provider.ts",
+      "workspaceHash": "3f9ce1c59fe89ee665c484b1737196fede66ff4d7dfdf1036006bfd5753849ea",
+      "identicalInExport": true
+    },
+    {
+      "path": "src/claude-planning-provider.ts",
+      "workspaceHash": "c53fc11c257309e7af5d61dfad896ee3228420d582d1b38a149d1e132dfd4449",
+      "identicalInExport": true
+    },
+    {
+      "path": "package.json",
+      "workspaceHash": "7ca6a178f755ad4edf65aa0ecc277391f895137d043917e997fd508ebae4f412",
+      "identicalInExport": true
+    },
+    {
+      "path": "package-lock.json",
+      "workspaceHash": "d1ec70da909e63088a1cf7db3d18a2dfccdf86cd15e4571f8a114603984c7bb9",
+      "identicalInExport": true
+    },
+    {
+      "path": "tsconfig.json",
+      "workspaceHash": "a5dc0ac721ea4c43846222be8ec3d3cfdeaee862150bcd3d78ad1ef821f29dbf",
+      "identicalInExport": true
+    },
+    {
+      "path": "design/THEME-BASELINE.json",
+      "workspaceHash": "7b41211e99c7c8f732f495ebd237bc80bbd3582dbbd973b13191701748f1ce1b",
+      "identicalInExport": true
+    },
+    {
+      "path": "design/THEME-TECH-SPEC.md",
+      "workspaceHash": "bc51c37f8387cd62181b791048ae1ee516d2a183db02f8edff2b5f6bd3121830",
+      "identicalInExport": true
+    },
+    {
+      "path": "design/THEME-EVALS.md",
+      "workspaceHash": "9306ab9efa51f691c29eb1e8857d32d1381fe05ee60d7f1b4f9aa5fd9bb4dbf9",
+      "identicalInExport": true
+    },
+    {
+      "path": "design/THEME-BUILD-PLAN.md",
+      "workspaceHash": "aaa63633604fa69373434fe3dfb95883138eca51e2b94296344b1549a9d5021b",
+      "identicalInExport": true
+    },
+    {
+      "path": "design/THEME-SPEC.md",
+      "workspaceHash": "ea56be304b12dccfaf0d67a7471c4e3c68ff6e55ff64c587304df7126142923d",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/browser-flow.mjs",
+      "workspaceHash": "db618cea30a85d7a65fa1c9dfadccd3e43caf3cf16fe8243147f124d09430fab",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/theme-review.mjs",
+      "workspaceHash": "4e852e5db3dda1f8f531702437921915cb73a2b40725f0afdba2ebf7d5750ed3",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/theme-layout.mjs",
+      "workspaceHash": "76e5d622ba7ef8ef7a016f9628630a5e72bc51a1b22fb9dc1724d14a382430df",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/equipment-connections.mjs",
+      "workspaceHash": "036b0f03ce0c41ae8d180383c6414e428fb9fefbc7ee04c31e8a55f4f734963f",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/workflow.test.ts",
+      "workspaceHash": "285edba7ca6b38b5c1f678818f7ed7e8b642072009401b19183febf014890938",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/server.test.ts",
+      "workspaceHash": "3fd6e106f3f1bc126db605d0071a2ab399caa90235236987ef2551e53079c7ac",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/cli.test.ts",
+      "workspaceHash": "160c57e00461ee1952a8555383a5a1b5d2727ab325e6482f0dc9b64bc9339a25",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/planning.test.ts",
+      "workspaceHash": "ce2351813606cf74a45525d594d736b439722af6196b2468599410a7e9d0d2d5",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/provider.test.ts",
+      "workspaceHash": "154436ff7f2aae1a0e73d1fff801d7ddd040538ad91fc94438e2c9772497d9e2",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/orca-bridge.test.ts",
+      "workspaceHash": "69043715389a822203050d387660c300e16649a35c0be45a3c1a3988ffdb74cc",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/orca-http.test.ts",
+      "workspaceHash": "de452ca2350fe2dbf547f688e8b4093fc0c9ff1f6feb64cfcd42ba0c8b6a5f3c",
+      "identicalInExport": true
+    },
+    {
+      "path": "test/orca-native.test.ts",
+      "workspaceHash": "e3e0a87a5d10f1aa7ac1c014195a27a09d87892141a503d1344baa9b69448900",
+      "identicalInExport": true
+    }
+  ],
+  "allNotTouchedIdentical": true,
+  "concurrentWorkObserved": {
+    "files": [
+      "public/index.html",
+      "public/app.js",
+      "public/style.css",
+      "test/theme-layout.mjs"
+    ],
+    "note": "The presentation slice landed in the shared workspace while this work was in progress, and Jay then moved the three public files and presentation-only app.js edits to Claude. The export mirrors the workspace copies; every suite was re-run against them."
+  },
+  "separatePresentationChange": {
+    "note": "The presentation refinement changed public/index.html, public/style.css, public/app.js, added public/fonts/*.woff2, and added one font-serving route to src/server.ts. That server change is in BOTH the workspace and the export, so this patch carries only the factory delta and no font lines.",
+    "serverFontRoute": "GET /fonts/<name>.woff2 -> same-origin woff2, 404 on anything else. No CSP change; default-src self already covers it."
+  },
+  "disclosure": [
+    "test/equipment-connections.mjs records inputHashes for src/server.ts and src/cli.ts. Both changed, so that trial re-records new hashes on its next run. Its assertions and its BLOCKED verdict are unchanged.",
+    "Nothing outside orchestration/integration/, orchestration/public/, orchestration/evidence/theme-ui-refinement/, the one src/server.ts font route, and docs/projects/equipment-checkout/qa/ was written in the shared workspace."
+  ]
+}

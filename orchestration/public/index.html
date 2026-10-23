@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="graphite">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="preparation-token" content="">
+  <title>Product preparation</title>
+  <script src="/app.js"></script>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <div class="header-context"><span class="logo" aria-hidden="true">P</span><div><p id="project-name" class="project">From your idea to a build plan.</p><p class="revision" id="revision">No preparation yet</p></div></div>
+      <div class="header-actions"><span class="badge"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.6 1.8 13h12.4L8 1.6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.2v3.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".85" fill="currentColor"/></svg>Drafting only — nothing here approves a gate</span><button id="session-toggle" type="button" aria-controls="orca-connection" aria-expanded="false">Session</button></div>
+    </header>
+    <p id="error" class="error" role="alert" hidden></p>
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+    <section class="session-drawer" id="orca-connection" aria-labelledby="session-title" hidden>
+      <div class="drawer-inner">
+      <div class="drawer-lead">
+        <h2 id="session-title">Orca session connection</h2>
+        <p class="boundary">Trusted approval and builder dispatch are unfinished. Reviewing or changing a draft here does not approve a factory gate.</p>
+        <p class="walkthrough-link"><a href="/walkthrough" target="_blank" rel="noopener">See the Orca workflow walkthrough ↗</a></p>
+      </div>
+      <div class="drawer-main">
+      <p id="orca-status" role="status">Not connected to an owning session.</p>
+      <p id="orca-capability" class="muted"></p>
+      <form id="orca-preferences-form">
+        <label for="orca-provider">Preferred agent for a new Orca chat</label><select id="orca-provider"><option value="claude">Claude</option><option value="codex">Codex</option></select>
+        <label for="orca-model">Model</label><input id="orca-model" required maxlength="100" value="claude-opus-5-5">
+        <label for="orca-effort">Reasoning effort</label><select id="orca-effort"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+        <button type="submit">Save agent preferences</button>
+      </form>
+      <p id="orca-preferences-saved" role="status"></p>
+      <p class="muted">These preferences apply to a new Orca chat. They do not change an existing session or the preparation service’s drafting model.</p>
+      <label for="orca-workspace-name">Project workspace name</label><input id="orca-workspace-name" maxlength="60" pattern="[A-Za-z0-9][A-Za-z0-9 _-]{0,59}" placeholder="Equipment Checkout">
+      <p id="orca-workspace-status" class="muted">A named worktree will appear in Orca’s project sidebar. Setup scripts and builders will not run.</p>
+      <button id="orca-start" type="button">Start and connect a new Orca chat</button>
+      <p id="orca-launch" role="status"></p>
+      <button id="orca-discover" type="button">Find sessions in this workspace</button>
+      <form id="orca-attach-form" hidden><label for="orca-target">Choose an existing chat or CLI session</label><select id="orca-target" required></select><button id="orca-open-selected" type="button">Open selected session</button><button type="submit">Pair this session for notifications</button><p class="muted">Opening a session does not change the notification owner. A CLI conversation open in native chat may be read-only until that chat releases it.</p></form>
+      <p class="muted">Pairing selects a recipient; it grants no approval or build authority. Notifications contain a saved-state pointer, not your product content. No raw terminal fallback is used.</p>
+      <button id="orca-reveal" type="button" hidden>Open connected chat</button>
+      <button id="orca-detach" type="button" hidden>Disconnect session</button>
+      <p id="orca-receipt" class="preserve"></p><button id="orca-resume" type="button" hidden>Recheck unsent notification</button>
+      <div class="theme-control"><label for="theme">Theme</label><select id="theme"><option value="graphite">Graphite &amp; Signal</option><option value="orca">Orca default</option><option value="clay">Ink &amp; Clay</option><option value="indigo">Deep Indigo</option></select></div>
+      </div>
+      </div>
+    </section>
+    <p id="recovery-info" class="boundary" hidden>The previous draft's outcome is unresolved. You can explicitly start a separate preparation below. Its earlier inputs and files remain saved; this does not retry or claim completion of the interrupted task.</p>
+    <div class="workspace-layout">
+      <aside class="rail-column">
+      <nav class="progress-rail" aria-label="Preparation steps"><p class="eyebrow">Your progress</p><ol>
+        <li><button class="step" type="button" data-step-target="1" aria-current="step"><span class="step-mark" aria-hidden="true">1</span><span class="step-copy"><span class="step-title">Your idea</span><span class="step-note">Describe the product</span></span></button></li>
+        <li><button class="step" type="button" data-step-target="2" disabled><span class="step-mark" aria-hidden="true">2</span><span class="step-copy"><span class="step-title">Clarify the scope</span><span class="step-note">One decision at a time</span></span></button></li>
+        <li><button class="step" type="button" data-step-target="3" disabled><span class="step-mark" aria-hidden="true">3</span><span class="step-copy"><span class="step-title">PRD and mockup</span><span class="step-note">Draft and inspect the experience</span></span></button></li>
+        <li><button class="step" type="button" data-step-target="4" disabled><span class="step-mark" aria-hidden="true">4</span><span class="step-copy"><span class="step-title">Technical blueprint</span><span class="step-note">Choose the approach</span></span></button></li>
+        <li><button class="step" type="button" data-step-target="5" disabled><span class="step-mark" aria-hidden="true">5</span><span class="step-copy"><span class="step-title">Evals and stories</span><span class="step-note">Plan checks and builder scope</span></span></button></li>
+        <li><button class="step" type="button" data-step-target="6" disabled><span class="step-mark" aria-hidden="true">6</span><span class="step-copy"><span class="step-title">Planning review</span><span class="step-note">Inspect gaps and draft handoff</span></span></button></li>
+      </ol><p class="muted rail-hint">Progress reflects saved drafts and local planning choices. It does not record factory approvals.</p></nav>
+    <section id="workspace" class="status-card" aria-label="Preparation status" hidden>
+      <div><p class="eyebrow">Preparation status</p><h2 id="stage"></h2><p id="next-action"></p></div>
+      <p id="task-status" role="status" aria-live="polite"></p>
+      <div id="blockers-section" hidden><h3>Needs attention</h3><ul id="blockers"></ul></div>
+    </section>
+      </aside>
+      <div class="panel-area">
+        <section class="card step-panel" data-step="1" aria-labelledby="intake-title">
+          <p class="eyebrow">Step 1 of 6</p><h1 class="step-heading" id="intake-title" tabindex="-1">What do you want to build?</h1>
+          <p class="lead">Describe the audience, problem and outcome. Your saved idea gives the preparation its context.</p>
+          <div id="intake"><form id="idea-form"><label for="idea">Describe the audience, problem, and outcome you have in mind.</label><textarea id="idea" rows="5" required maxlength="20000" placeholder="A small tool that helps…"></textarea><div class="actions"><button type="submit">Start preparation</button><span class="next-hint">Next: clarify the scope.</span></div></form></div>
+          <div id="saved-idea" hidden><h2>Product idea</h2><p id="idea-summary" class="preserve"></p></div>
+        </section>
+        <section class="card step-panel" data-step="2" aria-labelledby="scope-title" hidden>
+          <p class="eyebrow">Step 2 of 6</p><h1 class="step-heading" id="scope-title" tabindex="-1">Clarify the scope</h1>
+          <p class="lead">Your answer becomes confirmed scope. Other suggestions stay proposals until you explicitly include them.</p>
+          <section id="interview-section" hidden><p id="interview-reason" class="preserve"></p><div class="actions"><button id="interview-button" type="button">Review remaining requirements</button></div><ul id="interview-history"></ul><p id="interview-summary" class="preserve"></p><button id="interview-continue" type="button" hidden>Review scope and continue to drafts</button></section>
+          <section id="question-section" hidden><h2>One decision at a time</h2><p id="question-prompt" class="callout"></p><form id="answer-form"><label for="answer">Your answer</label><textarea id="answer" rows="4" required maxlength="20000"></textarea><div class="actions"><button type="submit">Save answer</button><span class="next-hint"></span></div></form><p id="saved-answer" class="preserve" hidden></p></section>
+          <section class="divider-block"><h2>Scope and suggestions</h2><h3>Confirmed scope</h3><ul id="scope"></ul><h3>Proposals to consider</h3><p class="muted">Suggestions remain proposals until you explicitly include them in scope.</p><ul id="proposals"></ul></section>
+        </section>
+        <section class="card step-panel" data-step="3" aria-labelledby="drafts-title" hidden>
+          <p class="eyebrow">Step 3 of 6</p><h1 class="step-heading" id="drafts-title" tabindex="-1">Your PRD and mockup</h1>
+          <p class="lead">Read them, then either request a change or carry on. Both are revised together so they stay aligned for review.</p>
+          <section id="findings-section" class="divider-block" hidden><h2>Review findings</h2><ul id="findings"></ul></section>
+          <section id="artifacts-section" hidden>
+            <div class="artifact-tabs" role="tablist" aria-label="Draft artifacts">
+              <button class="artifact-tab" type="button" role="tab" id="tab-experience" aria-controls="panel-experience" aria-selected="true" tabindex="0">Experience</button>
+              <button class="artifact-tab" type="button" role="tab" id="tab-prd" aria-controls="panel-prd" aria-selected="false" tabindex="-1">PRD</button>
+              <button class="artifact-tab" type="button" role="tab" id="tab-packet" aria-controls="panel-packet" aria-selected="false" tabindex="-1">Review packet</button>
+            </div>
+            <div class="artifact-panel" id="panel-experience" role="tabpanel" aria-labelledby="tab-experience"><p class="muted">A separate mockup using sample data. This preview is not the implemented product.</p><div class="preview-frame"><div class="preview-bar"><span class="dot" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span><span class="dot" aria-hidden="true"></span><span class="preview-name">mockup.html · sample data</span></div><iframe id="mockup" title="Product experience mockup" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></div></div>
+            <div class="artifact-panel" id="panel-prd" role="tabpanel" aria-labelledby="tab-prd" hidden><p id="artifact-revision" class="muted"></p><a href="/api/artifacts/prd" target="_blank" rel="noopener">Read PRD ↗</a><pre id="prd"></pre></div>
+            <div class="artifact-panel" id="panel-packet" role="tabpanel" aria-labelledby="tab-packet" hidden><a href="/api/artifacts/packet" target="_blank" rel="noopener">View draft packet ↗</a><p id="packet-status" class="muted"></p><pre id="packet-content"></pre></div>
+            <form id="changes-form" class="divider-block"><h3>Want something changed?</h3><label for="feedback">Describe the changes to make.</label><textarea id="feedback" rows="3" required maxlength="20000"></textarea><div class="actions"><button type="submit" class="secondary">Revise the drafts</button><button id="continue-blueprint" type="button">These look right — continue</button></div></form>
+          </section>
+          <p id="provider" class="muted"></p><div class="actions"><button id="draft-button" type="button">Create the drafts</button><span class="next-hint"></span></div>
+        </section>
+        <section class="card step-panel" data-step="4" aria-labelledby="technical-title" hidden>
+          <p class="eyebrow">Step 4 of 6</p><h1 class="step-heading" id="technical-title" tabindex="-1">Decide how it should be built</h1>
+          <p class="lead">The blueprint carries the PRD and mockup requirements forward and proposes a stack, architecture, testing, security, configuration and production approach.</p>
+          <section id="technical-section" hidden><form id="technical-form"><label for="technical-preferences">Stack preferences and technical constraints</label><textarea id="technical-preferences" rows="3" required maxlength="20000" placeholder="Recommend the simplest suitable stack, or name your preferred language and frameworks."></textarea><div class="actions"><button id="technical-button" type="submit">Prepare the blueprint</button><span class="next-hint"></span></div></form>
+            <div id="technical-result" class="divider-block" hidden><p id="technical-summary" class="preserve"></p><ul id="technical-decisions"></ul><ul id="technical-findings"></ul><a href="/api/artifacts/technical" target="_blank" rel="noopener">Read complete technical blueprint ↗</a><details><summary>Read the blueprint here</summary><pre id="technical-content"></pre></details><p id="technical-selection" class="muted"></p><div class="actions"><button id="select-technical" type="button">Use this blueprint</button><span class="next-hint"></span></div><p class="muted">This saves a local planning choice bound to this version. It is not a trusted factory approval and cannot authorize builders.</p></div>
+          </section>
+        </section>
+        <section class="card step-panel" data-step="5" aria-labelledby="plan-title" hidden>
+          <p class="eyebrow">Step 5 of 6</p><h1 class="step-heading" id="plan-title" tabindex="-1">Make every requirement accountable</h1>
+          <p class="lead">Correctness, restraint and production checks trace back to the blueprint. Stories name their scope, checks, dependencies and any safe parallel work. These are planned checks, not executed results.</p>
+          <section id="plan-section" hidden><div class="actions"><button id="plan-button" type="button">Prepare evals and stories</button><span class="next-hint"></span></div>
+            <div id="plan-result" class="divider-block" hidden><a href="/api/artifacts/build-plan" target="_blank" rel="noopener">Read complete evals &amp; build plan ↗</a>
+              <div class="stats" id="plan-stats"><div class="stat"><b id="stat-coverage">0</b><span class="muted">Requirements covered</span></div><div class="stat"><b id="stat-evals">0</b><span class="muted">Checks to run</span></div><div class="stat"><b id="stat-stories">0</b><span class="muted">Builder stories</span></div></div>
+              <h2>Requirement coverage</h2><ul id="plan-coverage"></ul><h2>Checks to run</h2><ul id="plan-evals"></ul><h2>Builder order and scope</h2><ol id="plan-stories"></ol><details><summary>Read the full plan here</summary><pre id="plan-content"></pre></details><div class="actions"><button id="review-plan" type="button">Review the package for gaps</button><span class="next-hint"></span></div></div>
+          </section>
+        </section>
+        <section class="card step-panel" data-step="6" aria-labelledby="handoff-title" hidden>
+          <p class="eyebrow">Step 6 of 6</p><h1 class="step-heading" id="handoff-title" tabindex="-1">Planning review</h1>
+          <p class="lead">Inspect review findings and the saved draft handoff before any separate factory work.</p>
+          <section id="handoff-section" hidden><p id="planning-phase"></p><p id="planning-correction" role="status"></p><ul id="planning-findings"></ul><div id="handoff-result" hidden><a href="/api/artifacts/handoff" target="_blank" rel="noopener">Read exact-content handoff ↗</a><details><summary>Inspect the saved handoff data</summary><pre id="handoff-content"></pre></details></div><p class="boundary warning">Independent model review is evidence of review, not proof of correctness. Acceptance tests still need to be authored and run. Required gate reviews, trusted approvals, test protection and dispatch must be completed before builders can start. No code is built here.</p></section>
+        </section>
+      </div>
+    </div>
+    <footer>Local preparation state · Factory records remain the authority for approvals and execution.</footer>
+  </main>
+</body>
+</html>

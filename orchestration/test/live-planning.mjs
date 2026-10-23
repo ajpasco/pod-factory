@@ -1,0 +1,42 @@
+// Explicit paid-provider demonstration; excluded from npm test. Uses synthetic product data only.
+// Run: RUN_LIVE_PLANNING=1 node test/live-planning.mjs
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { WorkflowService } from '../dist/src/workflow.js';
+import { ClaudePlanningProvider } from '../dist/src/claude-planning-provider.js';
+if (process.env.RUN_LIVE_PLANNING !== '1') throw new Error('Opt in with RUN_LIVE_PLANNING=1; this launches up to three paid Claude calls.');
+const dataDir = await mkdtemp(join(tmpdir(), 'prebuild-live-'));
+const prdMarkdown = `# Reading list sample\nAuthority: synthetic demonstration scope, not a user project approval.\nR1: A reader sees two fixed sample book titles and authors, selects one, reads matching title/author/description, and returns to the list.\nR2: Keyboard users can activate controls and return focus to the selected book; semantic controls have accessible names.\nR3: Render all book text as text, never executable HTML. No accounts, writes, persistence, network requests, editing, notifications or integrations.\nR4: Static browser page delivered as built assets. Build and typecheck must exit zero; all acceptance cases must pass, with no skipped cases. Verify in the installed Chromium test browser. No backend availability or latency target is needed for this sample-data interaction.\nDesign: one list view and one detail view; both are static sample data, with no loading or remote-error state because no asynchronous source exists.\nThis scenario verifies planning only; it does not claim tests exist or ran.`;
+const mockupHtml = '<!doctype html><html lang="en"><body><h1>Reading list</h1><button onclick="document.querySelector(\'section\').hidden=false">View Sample book</button><section hidden><h2>Sample book</h2><p>Sample author — Sample description</p><button onclick="document.querySelector(\'section\').hidden=true">Back to list</button></section><button>View Another sample</button></body></html>';
+const provider = { async draft() { return { prdMarkdown, mockupHtml, proposals: [], findings: [] }; } };
+const planningProvider = new ClaudePlanningProvider({ workingRoot: join(dataDir, 'provider-work') });
+const service = new WorkflowService({ dataDir, provider, planningProvider, executionLimitMs: 180_000 });
+let state = await service.create({ idea: 'A static sample reading list with matching book details, keyboard access and no extra features.', operationId: 'live-create' });
+const mutation = name => ({ expectedRevision: state.revision, operationId: name });
+state = await service.answer(state.id, { ...mutation('live-answer'), answer: 'One reader selects a sample book and reads its details.' });
+state = await service.draft(state.id, mutation('fixture-source-artifacts'));
+const evidenceDir = 'evidence/prebuild-live'; await mkdir(evidenceDir, { recursive: true });
+await writeFile(join(evidenceDir, 'source-prd.md'), prdMarkdown); await writeFile(join(evidenceDir, 'source-mockup.html'), mockupHtml);
+console.log(JSON.stringify({ phase: 'technical-start', dataDir }));
+state = await service.technical(state.id, { ...mutation('live-technical'), preferences: 'Use TypeScript, native browser DOM and one UI layer. A small Vite build and Playwright acceptance tests are acceptable dev tooling. No React, backend, database, Docker or environment configuration is needed. Follow the exact sample scope; proposed tooling is a technical choice only.' });
+await writeFile(join(evidenceDir, 'technical-state.json'), JSON.stringify(state, null, 2));
+if (state.stage !== 'review' || !state.planning?.technical || state.blockers.length) throw new Error(`Technical stopped: ${state.blockers.join('; ')}`);
+await writeFile(join(evidenceDir, 'technical.md'), await service.readArtifact(state.id, 'technical'));
+// Test-only local selection of synthetic content, never a factory approval.
+state = await service.acceptTechnical(state.id, { ...mutation('fixture-local-selection'), digest: state.planning.technical.artifact.digest });
+console.log(JSON.stringify({ phase: 'plan-start', revision: state.revision }));
+state = await service.plan(state.id, mutation('live-plan'));
+await writeFile(join(evidenceDir, 'plan-state.json'), JSON.stringify(state, null, 2));
+if (state.stage !== 'review' || !state.planning?.plan) throw new Error(`Plan stopped: ${state.blockers.join('; ')}`);
+await writeFile(join(evidenceDir, 'build-plan.md'), await service.readArtifact(state.id, 'build-plan'));
+console.log(JSON.stringify({ phase: 'review-start', revision: state.revision }));
+state = await service.reviewPlan(state.id, mutation('live-review'));
+await writeFile(join(evidenceDir, 'review-state.json'), JSON.stringify(state, null, 2));
+if (state.planning?.handoff) await writeFile(join(evidenceDir, 'handoff.json'), await service.readArtifact(state.id, 'handoff'));
+const restarted = new WorkflowService({ dataDir, provider, planningProvider });
+const resumed = await restarted.get(state.id);
+const result = { phase: state.planning?.phase, taskStatus: state.task?.status, findings: state.planning?.review?.findings, blockers: state.blockers, restartPreserved: JSON.stringify(resumed) === JSON.stringify(state), dispatchReady: false, source: 'synthetic fixture PRD/mockup; three real model planning calls; scripted local selection only', dataDir };
+await writeFile(join(evidenceDir, 'result.json'), JSON.stringify(result, null, 2));
+console.log(JSON.stringify(result));
+if (state.task?.status !== 'completed' || !result.restartPreserved) process.exitCode = 1;

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme tokens and contrast</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px; background: #F2F3F2; color: #16191A;
+       font-family: "IBM Plex Sans", system-ui, sans-serif; line-height: 1.55; }
+h1 { font-size: 24px; letter-spacing: -.02em; margin: 0 0 6px; }
+h2 { font-size: 17px; margin: 0 0 4px; }
+p { margin: 0 0 18px; }
+.muted { color: #5E6568; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 20px; }
+.theme { background: #FFFFFF; border: 1px solid #E0E3E2; border-radius: 14px; padding: 22px 24px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 500; color: #5E6568; padding: 6px 8px 6px 0; font-size: 12px; }
+td { padding: 5px 8px 5px 0; border-top: 1px solid #EDEFEE; vertical-align: middle; }
+.swatch { display: inline-block; width: 22px; height: 22px; border-radius: 5px; border: 1px solid #E0E3E2; vertical-align: middle; margin-right: 8px; }
+.pass { color: #1D6B3C; font-weight: 500; }
+.fail { color: #A3261B; font-weight: 600; }
+caption { text-align: left; font-size: 12px; color: #5E6568; padding-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Theme tokens and contrast</h1>
+<p class="muted" style="max-width: 80ch">Every token in each theme, with the WCAG contrast ratio of the text pairs that matter. Body text needs 4.5:1; the accent fill under white text and the 1px borders are judged at 3:1. Computed in the page, so editing a value here re-checks it.</p>
+
+<div class="grid" id="themes"></div>
+
+<script>
+'use strict';
+var THEMES = {
+  'Graphite & Signal (default)': {
+    ground: '#F2F3F2', surface: '#FFFFFF', ink: '#16191A', 'ink-body': '#3C4346', muted: '#5E6568',
+    line: '#E0E3E2', soft: '#E6E9E8', 'soft-line': '#DCE0DF',
+    accent: '#23282A', 'accent-ink': '#23282A', 'on-accent': '#FFFFFF',
+    'notice-bg': '#FCE9DC', 'notice-ink': '#8A3609'
+  },
+  'Orca default': {
+    ground: '#FAFAFA', surface: '#FFFFFF', ink: '#0A0A0A', 'ink-body': '#333333', muted: '#737373',
+    line: '#E5E5E5', soft: '#F5F5F5', 'soft-line': '#E5E5E5',
+    accent: '#171717', 'accent-ink': '#171717', 'on-accent': '#FAFAFA',
+    'notice-bg': '#FEF3C7', 'notice-ink': '#7A5200'
+  },
+  'Ink & Clay': {
+    ground: '#FAF8F4', surface: '#FFFFFF', ink: '#1C1B19', 'ink-body': '#3E3A34', muted: '#6A635A',
+    line: '#E6E1D8', soft: '#F6E8DF', 'soft-line': '#EADBD0',
+    accent: '#B4531F', 'accent-ink': '#9A4417', 'on-accent': '#FFFFFF',
+    'notice-bg': '#F6E8DF', 'notice-ink': '#8A4015'
+  },
+  'Deep Indigo': {
+    ground: '#F3F4F8', surface: '#FFFFFF', ink: '#15182B', 'ink-body': '#3A3F55', muted: '#5C617A',
+    line: '#E0E2EC', soft: '#E7E9FB', 'soft-line': '#DDE0F0',
+    accent: '#3A46C9', 'accent-ink': '#2F39A8', 'on-accent': '#FFFFFF',
+    'notice-bg': '#FBEEDC', 'notice-ink': '#7A4E00'
+  }
+};
+
+function channel(value) {
+  var c = value / 255;
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+function luminance(hex) {
+  var n = parseInt(hex.slice(1), 16);
+  return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+}
+function ratio(a, b) {
+  var x = luminance(a), y = luminance(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+var PAIRS = [
+  ['ink', 'surface', 4.5, 'Heading on a card'],
+  ['ink-body', 'surface', 4.5, 'Body copy on a card'],
+  ['muted', 'surface', 4.5, 'Hint text on a card'],
+  ['muted', 'ground', 4.5, 'Rail note on the page'],
+  ['accent-ink', 'surface', 4.5, 'Active tab, eyebrow, link'],
+  ['accent-ink', 'soft', 4.5, 'Current step mark'],
+  ['on-accent', 'accent', 4.5, 'Primary button label'],
+  ['notice-ink', 'notice-bg', 4.5, 'Drafting-only pill'],
+  ['line', 'surface', 1.2, 'Border on a card (informational)']
+];
+
+var host = document.getElementById('themes');
+Object.keys(THEMES).forEach(function (name) {
+  var t = THEMES[name];
+  var card = document.createElement('section');
+  card.className = 'theme';
+
+  var heading = document.createElement('h2');
+  heading.textContent = name;
+  card.append(heading);
+
+  var tokens = document.createElement('table');
+  var tokenRows = Object.keys(t).map(function (key) {
+    return '<tr><td><span class="swatch" style="background:' + t[key] + '"></span>--' + key +
+           '</td><td class="mono">' + t[key] + '</td></tr>';
+  }).join('');
+  tokens.innerHTML = '<caption>Tokens</caption><tr><th>Name</th><th>Value</th></tr>' + tokenRows;
+  card.append(tokens);
+
+  var checks = document.createElement('table');
+  checks.style.marginTop = '18px';
+  var checkRows = PAIRS.map(function (pair) {
+    var value = ratio(t[pair[0]], t[pair[1]]);
+    var ok = value >= pair[2];
+    return '<tr><td>' + pair[3] + '</td><td class="mono">' + value.toFixed(2) + ':1</td><td class="' +
+           (ok ? 'pass' : 'fail') + '">' + (ok ? 'pass' : 'CHECK') + '</td></tr>';
+  }).join('');
+  checks.innerHTML = '<caption>Contrast</caption><tr><th>Pair</th><th>Ratio</th><th>At its threshold</th></tr>' + checkRows;
+  card.append(checks);
+
+  host.append(card);
+});
+</script>
+</body>
+</html>

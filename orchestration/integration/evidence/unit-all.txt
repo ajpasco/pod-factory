@@ -1,0 +1,6 @@
+# npm test
+# tests 59
+# pass 59
+# fail 0
+# skipped 0
+# todo 0

@@ -1,0 +1,57 @@
+{
+  "observedAt": "2026-10-19T04:21Z",
+  "installedVersion": "1.4.224",
+  "readOnly": true,
+  "liveSends": 0,
+  "cliFlags": [
+    "--terminal",
+    "--text",
+    "--enter",
+    "--wait-submit",
+    "--retry-request",
+    "--json"
+  ],
+  "runtimeSource": {
+    "archive": "/Applications/Orca.app/Contents/Resources/app.asar",
+    "member": "out/main/index.js",
+    "sha256": "f901d3b1b23e6ddda52cb5c8f0c394d9e8bb755a659e00b909ecd49eb39c51ae",
+    "guardedCombinedPromptRefusalPresent": true,
+    "guardedWritePreconditionPresent": true
+  },
+  "files": [
+    {
+      "path": "/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/package.json",
+      "sha256": "3cd5957124e9bd4222d7388feb2d74ac0f4e3e2967162dfe4e705ad548822b54"
+    },
+    {
+      "path": "/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/cli/specs/terminal-send.js",
+      "sha256": "6c4aa55b9eb6c9127c5424eb6a635e3f90199c33cc6d440adaf36f9a47135f62"
+    },
+    {
+      "path": "/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/cli/handlers/terminal-send.js",
+      "sha256": "758ba157a134883cfc366b09b0c39f25eea7a04fadb26659933adb463272c502"
+    },
+    {
+      "path": "/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/cli/runtime/terminal-prompt-mutation-recovery.js",
+      "sha256": "a12c17ba320d7d71ab70e216719be39f15a9f090e5d9f1572a00fbdf9010de49"
+    },
+    {
+      "path": "/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/shared/terminal-send-acknowledgment.js",
+      "sha256": "510aa67c3e193d14cba5ba5849b8fda22a86af024b9f0bb57c492e61a42f7519"
+    }
+  ],
+  "liveObservations": {
+    "terminalList": "ok; complete local inventory; full runtime/handle/PTY/incarnation/workspace/provider fields",
+    "terminalShow": "ok; connected true, writable true, orphaned false, agentWait null",
+    "terminalWait": "ok; condition tui-idle, satisfied true, status running; 1000ms bound",
+    "wrapperRuntimeClientInventory": "ok; exact two local terminal targets, no previews/focus/title used",
+    "wrapperRuntimeClientStatus": "ok; meta runtime ID matches result runtime ID; appVersion 1.4.224"
+  },
+  "limitations": [
+    "No terminal.send RPC/CLI invoked",
+    "No live recipient selected by user",
+    "Read-only CLI inventory initially EPERM; approved read-only escalation succeeded",
+    "Current clone source corroborates installed bundle, but clone is not runtime evidence"
+  ],
+  "chosenTransport": "installed guarded two-phase terminal.send RPC, not unguarded CLI prompt or native lifecycle"
+}

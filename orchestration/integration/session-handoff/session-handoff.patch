@@ -1,0 +1,456 @@
+--- /dev/null
++++ b/orchestration/src/session-handoff.ts
+@@ -0,0 +1,189 @@
++import { createHash } from 'node:crypto';
++import { mkdir, open, readFile, rename, unlink } from 'node:fs/promises';
++import { dirname, isAbsolute, join, resolve } from 'node:path';
++import { pathToFileURL } from 'node:url';
++import { createRequire } from 'node:module';
++
++/** On-demand PTY handoffs only. Deliberately independent of factory/provider ownership. */
++export interface HandoffTarget {
++  runtimeId: string; handle: string; ptyId: string; incarnationId: string;
++  worktreeId: string; worktreePath: string; executionHostId: 'local'; agentIdentity: 'codex' | 'claude';
++}
++export interface HandoffRequest {
++  schemaVersion: 1; messageId: string; from: 'codex' | 'claude';
++  recipient: HandoffTarget; returnAddress: HandoffTarget; text: string;
++}
++export interface CliResponse {
++  ok: boolean; result?: Record<string, any>; error?: { code?: string; message?: string; data?: Record<string, any> };
++  _meta?: { runtimeId?: string | null };
++}
++export type OrcaExecutor = (method: string, params: Record<string, unknown>) => Promise<CliResponse>;
++export type WriteState = 'not-attempted' | 'accepted' | 'refused' | 'uncertain';
++export interface HandoffReceipt {
++  schemaVersion: 1; messageId: string; requestSha256: string; recipient: HandoffTarget;
++  attemptedAt: string; delivery: 'submitted' | 'refused' | 'partial' | 'uncertain';
++  text: WriteState; submit: WriteState;
++  turnStarted: 'unknown'; reply: 'unknown'; completion: 'unknown'; humanApproval: false;
++  reason: string;
++}
++const targetKeys = ['runtimeId', 'handle', 'ptyId', 'incarnationId', 'worktreeId', 'worktreePath', 'executionHostId', 'agentIdentity'] as const;
++const token = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length < 2000 && !/[\x00-\x1f\x7f-\x9f]/.test(v);
++function target(value: unknown): HandoffTarget {
++  const t = value as HandoffTarget;
++  if (!t || targetKeys.some(key => !token(t[key])) || t.executionHostId !== 'local' ||
++      !['codex', 'claude'].includes(t.agentIdentity) || !/^term_[a-zA-Z0-9-]+$/.test(t.handle) || !isAbsolute(t.worktreePath)) {
++    throw new Error('An exact local terminal target is required: runtime, handle, PTY, incarnation, workspace and agent.');
++  }
++  return Object.fromEntries(targetKeys.map(key => [key, t[key]])) as unknown as HandoffTarget;
++}
++export function parseHandoff(value: unknown): HandoffRequest {
++  const v = value as HandoffRequest;
++  if (!v || v.schemaVersion !== 1 || typeof v.messageId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(v.messageId) ||
++      !['codex', 'claude'].includes(v.from) || typeof v.text !== 'string' || !v.text.trim() || Buffer.byteLength(v.text) > 8000 || /[\x00-\x08\x0b-\x1f\x7f-\x9f]/.test(v.text)) {
++    throw new Error('Supply schemaVersion 1, a unique messageId, from codex/claude and 1–8000 bytes of message text.');
++  }
++  const recipient = target(v.recipient), returnAddress = target(v.returnAddress);
++  if (v.from !== returnAddress.agentIdentity || recipient.handle === returnAddress.handle) throw new Error('Sender and return address must agree; recipient must be a different terminal.');
++  return { schemaVersion: 1, messageId: v.messageId, from: v.from, recipient, returnAddress, text: v.text };
++}
++const installedRoot = '/Applications/Orca.app/Contents/Resources/app.asar.unpacked/out';
++const require = createRequire(import.meta.url);
++let installedClient: any;
++/** Existing authenticated LOCAL Orca transport only. No environment-selected remote fallback. */
++export const executeOrca: OrcaExecutor = async (method, params) => {
++  installedClient ??= new (require(installedRoot + '/cli/runtime/client.js').RuntimeClient)(undefined, 15_000, null, null);
++  return installedClient.call(method, method === 'status.get' ? undefined : params, { timeoutMs: 15_000 });
++};
++function same(a: HandoffTarget, b: Record<string, unknown> | undefined, runtimeId: unknown): boolean {
++  return !!b && runtimeId === a.runtimeId && targetKeys.filter(key => key !== 'runtimeId').every(key => a[key] === b[key]);
++}
++/** Inventory only: titles/preview/focus are intentionally excluded from destination identity. */
++export async function listHandoffTargets(workspace: string, run: OrcaExecutor = executeOrca): Promise<HandoffTarget[]> {
++  if (!isAbsolute(workspace)) throw new Error('Use an absolute workspace path.');
++  const response = await run('terminal.list', { worktree: 'path:' + workspace });
++  if (!response.ok || !token(response._meta?.runtimeId) || !Array.isArray(response.result?.terminals) || response.result?.truncated !== false) throw new Error('Complete Orca inventory could not be verified.');
++  return response.result.terminals.flatMap((t: any) => {
++    try {
++      const current = target({ ...t, runtimeId: response._meta!.runtimeId });
++      return resolve(current.worktreePath) === resolve(workspace) && t.connected === true && t.writable === true && t.orphaned === false ? [current] : [];
++    } catch { return []; }
++  });
++}
++async function verify(t: HandoffTarget, run: OrcaExecutor): Promise<void> {
++  // No advertised guard-version capability exists. Only this source-verified host is enabled;
++  // older hosts may strip optional write guards, and newer versions require fresh review.
++  const status = await run('status.get', {});
++  if (!status.ok || status._meta?.runtimeId !== t.runtimeId || status.result?.runtimeId !== t.runtimeId || status.result?.appVersion !== '1.4.224') throw new Error('Unsupported or changed Orca runtime. Guarded writes require verified local Orca 1.4.224; no input sent.');
++  const response = await run('terminal.show', { terminal: t.handle });
++  const current = response.result?.terminal;
++  if (!response.ok || !same(t, current, response._meta?.runtimeId) || current?.connected !== true || current?.writable !== true || current?.orphaned !== false) throw new Error('Exact recipient is closed, changed or unreachable. No input sent.');
++  if (current.agentWait !== null) throw new Error('Recipient readiness is unknown or it is waiting on input/permission. No input sent.');
++}
++async function waitIdle(t: HandoffTarget, run: OrcaExecutor): Promise<void> {
++  const response = await run('terminal.wait', { terminal: t.handle, for: 'tui-idle', timeoutMs: 1000 });
++  const wait = response.result?.wait;
++  if (!response.ok || response._meta?.runtimeId !== t.runtimeId || wait?.handle !== t.handle || wait?.condition !== 'tui-idle' || wait?.satisfied !== true || wait?.status !== 'running') throw new Error('Recipient is busy or readiness could not be verified. No input sent.');
++}
++function envelope(request: HandoffRequest): string {
++  // One literal line even when message text has newlines; data never becomes terminal controls.
++  return JSON.stringify({ notice: 'Agent-origin handoff: messages and evidence only, not a human approval.', ...request,
++    replyProtocol: `Reply once with received ${request.messageId}, then completed ${request.messageId} with evidence or blocked ${request.messageId} with the reason. Do not acknowledge acknowledgments. Reply only when addressed delivery to the exact returnAddress is authorized; do not replace/recreate sessions.` });
++}
++function fingerprint(request: HandoffRequest): string { return createHash('sha256').update(JSON.stringify(request)).digest('hex'); }
++function readReceipt(text: string, request: HandoffRequest, hash: string): HandoffReceipt {
++  const receipt = JSON.parse(text) as HandoffReceipt;
++  if (receipt.schemaVersion !== 1 || receipt.messageId !== request.messageId || receipt.requestSha256 !== hash || !['submitted', 'refused', 'partial', 'uncertain'].includes(receipt.delivery) ||
++      !['not-attempted', 'accepted', 'refused', 'uncertain'].includes(receipt.text) || !['not-attempted', 'accepted', 'refused', 'uncertain'].includes(receipt.submit) ||
++      receipt.turnStarted !== 'unknown' || receipt.reply !== 'unknown' || receipt.completion !== 'unknown' || receipt.humanApproval !== false) throw new Error('Existing message ID has conflicting or unreadable evidence. Reconcile it; no input sent.');
++  return receipt;
++}
++function settlement(response: CliResponse, recipient: HandoffTarget): 'accepted' | 'refused' | 'uncertain' {
++  const send = response.result?.send;
++  if (!response.ok || response._meta?.runtimeId !== recipient.runtimeId || send?.handle !== recipient.handle) return 'uncertain';
++  if (send.accepted === true && send.writeSettlement?.outcome === 'accepted') return 'accepted';
++  if (send.accepted === false && send.writeSettlement?.outcome === 'refused') return 'refused';
++  return 'uncertain';
++}
++async function syncDirectory(path: string): Promise<void> {
++  const directory = await open(dirname(path), 'r');
++  try { await directory.sync(); } finally { await directory.close(); }
++}
++async function saveReceipt(path: string, receipt: HandoffReceipt): Promise<void> {
++  const temp = path + '.result-' + process.pid;
++  try {
++    const update = await open(temp, 'wx', 0o600);
++    try { await update.writeFile(JSON.stringify(receipt, null, 2) + '\n'); await update.sync(); } finally { await update.close(); }
++    await rename(temp, path); await syncDirectory(path);
++  } finally { await unlink(temp).catch(() => {}); }
++}
++/** Exclusive per-message attempt record, not a mailbox or an exactly-once host guarantee. */
++export async function sendHandoff(input: unknown, receiptDir: string, run: OrcaExecutor = executeOrca): Promise<HandoffReceipt> {
++  const request = parseHandoff(input), hash = fingerprint(request);
++  if (!isAbsolute(receiptDir)) throw new Error('Use an absolute receipt directory and retain it across attempts.');
++  const path = join(receiptDir, request.messageId + '.json');
++  try { return readReceipt(await readFile(path, 'utf8'), request, hash); }
++  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
++  await verify(request.recipient, run);
++  await waitIdle(request.recipient, run);
++  const receipt: HandoffReceipt = { schemaVersion: 1, messageId: request.messageId, requestSha256: hash, recipient: request.recipient,
++    attemptedAt: new Date().toISOString(), delivery: 'uncertain', text: 'not-attempted', submit: 'not-attempted',
++    turnStarted: 'unknown', reply: 'unknown', completion: 'unknown', humanApproval: false,
++    reason: 'Attempt recorded before submission. A crash may leave the outcome unknown. Reconcile the exact recipient before any resend.' };
++  await mkdir(receiptDir, { recursive: true });
++  let file;
++  try { file = await open(path, 'wx', 0o600); }
++  catch (error) {
++    if ((error as NodeJS.ErrnoException).code === 'EEXIST') return readReceipt(await readFile(path, 'utf8'), request, hash);
++    throw error;
++  }
++  try { await file.writeFile(JSON.stringify(receipt, null, 2) + '\n'); await file.sync(); }
++  finally { await file.close(); }
++  await syncDirectory(path);
++  const guards = { terminal: request.recipient.handle, requireAgentStatus: 'sendable', requireWriteSettlement: true, client: { id: 'session-handoff', type: 'desktop' } };
++  // Each write has a durable ambiguity fence, a fresh exact-identity read and host write guards.
++  for (const phase of ['text', 'submit'] as const) {
++    receipt[phase] = 'uncertain';
++    receipt.reason = `${phase} write attempt recorded; acceptance is not yet known. Never automatically retry.`;
++    await saveReceipt(path, receipt); // failure prevents this external effect
++    try {
++      if (phase === 'submit') await waitIdle(request.recipient, run);
++      await verify(request.recipient, run);
++    }
++    catch {
++      receipt[phase] = 'not-attempted'; receipt.delivery = phase === 'text' ? 'refused' : 'partial';
++      receipt.reason = phase === 'text' ? 'Recipient changed, closed, waiting or unreachable. No input sent.' : 'Text accepted, but recipient changed, closed, became busy/waiting or unreachable before Enter. Draft retained; no retry, clearing or replacement.';
++      await saveReceipt(path, receipt); return receipt;
++    }
++    try {
++      const response = await run('terminal.send', { ...guards, ...(phase === 'text' ? { text: envelope(request) } : { enter: true }) });
++      receipt[phase] = settlement(response, request.recipient);
++    } catch { receipt[phase] = 'uncertain'; }
++    if (receipt[phase] !== 'accepted') {
++      receipt.delivery = phase === 'submit' ? 'partial' : receipt[phase] === 'refused' ? 'refused' : 'uncertain';
++      receipt.reason = phase === 'submit' ? `Text accepted; Enter ${receipt.submit}. A turn may or may not have started. Inspect exact session; no retry, draft clearing or replacement.` : `Text ${receipt.text}; Enter was not attempted. Inspect exact session before any resend; no automatic retry.`;
++      await saveReceipt(path, receipt); return receipt;
++    }
++    receipt.reason = phase === 'text' ? 'Text accepted into the terminal; Enter has not been attempted.' : 'Text and Enter accepted by Orca. Turn start, read, reply and completion remain unknown. This is not human approval.';
++    if (phase === 'submit') receipt.delivery = 'submitted';
++    await saveReceipt(path, receipt);
++  }
++  return receipt;
++}
++export async function handoffCli(args: string[], run: OrcaExecutor = executeOrca): Promise<unknown> {
++  const [verb, ...rest] = args;
++  const allowed = verb === 'list' ? ['--workspace'] : verb === 'send' ? ['--request', '--receipts'] : [];
++  const flags = new Map<string, string>();
++  for (let i = 0; i < rest.length; i += 2) {
++    if (!allowed.includes(rest[i]) || flags.has(rest[i]) || !rest[i + 1] || rest[i + 1].startsWith('--')) throw new Error('Unknown, duplicate or incomplete handoff option.');
++    flags.set(rest[i], rest[i + 1]);
++  }
++  if (verb === 'list' && flags.size === 1) return { targets: await listHandoffTargets(flags.get('--workspace')!, run) };
++  if (verb === 'send' && flags.size === 2) return sendHandoff(JSON.parse(await readFile(flags.get('--request')!, 'utf8')), flags.get('--receipts')!, run);
++  throw new Error('Usage: session-handoff list --workspace /absolute/path | send --request request.json --receipts /absolute/receipt-dir');
++}
++if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
++  handoffCli(process.argv.slice(2)).then(result => {
++    process.stdout.write(JSON.stringify(result, null, 2) + '\n');
++    if ('delivery' in (result as object) && (result as HandoffReceipt).delivery !== 'submitted') process.exitCode = 1;
++  }, error => { process.stderr.write(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : 'Handoff failed.' }) + '\n'); process.exitCode = 1; });
++}
+--- /dev/null
++++ b/orchestration/test/session-handoff.test.ts
+@@ -0,0 +1,178 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import { handoffCli, listHandoffTargets, parseHandoff, sendHandoff, type CliResponse, type HandoffRequest, type HandoffTarget, type OrcaExecutor } from '../src/session-handoff.js';
++
++// LABELED FAKE: every send below is an in-memory Orca executor, never the installed transport.
++const recipient: HandoffTarget = { runtimeId: 'runtime-one', handle: 'term_recipient', ptyId: 'pty-one', incarnationId: 'incarnation-one', worktreeId: 'workspace-one', worktreePath: '/project', executionHostId: 'local', agentIdentity: 'claude' };
++const sender: HandoffTarget = { ...recipient, handle: 'term_sender', ptyId: 'pty-sender', incarnationId: 'incarnation-sender', agentIdentity: 'codex' };
++const request = (): HandoffRequest => ({ schemaVersion: 1, messageId: 'test-handoff-1', from: 'codex', recipient, returnAddress: sender, text: 'Review this evidence.\nArtifact: /project/report.txt\tPlease reply once.' });
++const response = (result: Record<string, unknown>): CliResponse => ({ ok: true, _meta: { runtimeId: recipient.runtimeId }, result });
++async function harness() {
++  const dir = await mkdtemp(join(tmpdir(), 'handoff-fake-'));
++  const calls: { method: string; params: Record<string, any> }[] = [];
++  let show = 0, send = 0;
++  let current: Record<string, unknown> = { ...recipient, connected: true, writable: true, orphaned: false, agentWait: null };
++  let busy = false;
++  let hook: (method: string, params: Record<string, any>, count: number) => Promise<CliResponse | undefined> = async () => undefined;
++  const run: OrcaExecutor = async (method, params) => {
++    calls.push({ method, params });
++    const count = method === 'terminal.show' ? ++show : method === 'terminal.send' ? ++send : 0;
++    const custom = await hook(method, params, count); if (custom) return custom;
++    if (method === 'status.get') return response({ runtimeId: recipient.runtimeId, appVersion: '1.4.224' });
++    if (method === 'terminal.list') return response({ terminals: [current], truncated: false });
++    if (method === 'terminal.show') return response({ terminal: current });
++    if (method === 'terminal.wait') return response({ wait: { handle: recipient.handle, condition: 'tui-idle', status: 'running', satisfied: !busy } });
++    assert.equal(method, 'terminal.send');
++    const disk = JSON.parse(await readFile(join(dir, request().messageId + '.json'), 'utf8'));
++    assert.equal(disk[params.enter ? 'submit' : 'text'], 'uncertain', 'ambiguity fence must precede BOTH writes');
++    assert.equal(params.requireAgentStatus, 'sendable'); assert.equal(params.requireWriteSettlement, true);
++    assert.deepEqual(params.client, { id: 'session-handoff', type: 'desktop' });
++    assert.equal(params.terminal, recipient.handle); assert.equal('agentPrompt' in params, false);
++    assert.equal(!!params.text && !!params.enter, false, 'guarded combined prompts are forbidden');
++    return response({ send: { handle: recipient.handle, accepted: true, writeSettlement: { outcome: 'accepted' } } });
++  };
++  return { dir, calls, run, current,
++    hook(value: typeof hook) { hook = value; }, busy() { busy = true; },
++    writes: () => calls.filter(c => c.method === 'terminal.send'),
++    cleanup: () => rm(dir, { recursive: true, force: true }) };
++}
++
++test('fake executor: read-only inventory returns exact target identity, never focus/title or send', async () => {
++  const h = await harness(); try {
++    assert.deepEqual(await listHandoffTargets('/project', h.run), [recipient]);
++    assert.deepEqual(h.calls, [{ method: 'terminal.list', params: { worktree: 'path:/project' } }]);
++    await assert.rejects(listHandoffTargets('relative', h.run), /absolute/);
++    h.hook(async method => method === 'terminal.list' ? response({ terminals: [recipient], truncated: true }) : undefined);
++    await assert.rejects(listHandoffTargets('/project', h.run), /Complete/);
++  } finally { await h.cleanup(); }
++});
++
++test('fake executor: exact identity and durable evidence precede each guarded phase; truthful receipt', async () => {
++  const h = await harness(); try {
++    const result = await sendHandoff(request(), h.dir, h.run);
++    assert.equal(result.delivery, 'submitted'); assert.equal(result.text, 'accepted'); assert.equal(result.submit, 'accepted');
++    assert.equal(result.turnStarted, 'unknown'); assert.equal(result.reply, 'unknown'); assert.equal(result.completion, 'unknown'); assert.equal(result.humanApproval, false);
++    assert.deepEqual(h.calls.map(c => c.method), ['status.get', 'terminal.show', 'terminal.wait', 'status.get', 'terminal.show', 'terminal.send', 'terminal.wait', 'status.get', 'terminal.show', 'terminal.send']);
++    const text = h.writes()[0].params.text as string;
++    assert.doesNotMatch(text, /[\x00-\x1f\x7f-\x9f]/); assert.match(text, /Agent-origin/); assert.match(text, /not a human approval/);
++    const data = JSON.parse(text); assert.equal(data.messageId, request().messageId); assert.deepEqual(data.returnAddress, sender); assert.equal(data.text, request().text);
++    assert.equal('text' in h.writes()[1].params, false); assert.equal(h.writes()[1].params.enter, true);
++    assert.deepEqual(JSON.parse(await readFile(join(h.dir, result.messageId + '.json'), 'utf8')), result);
++    // A new invocation returns evidence, including after a rejected or uncertain attempt.
++    assert.deepEqual(await sendHandoff(request(), h.dir, async () => { throw new Error('must not contact Orca'); }), result);
++    await assert.rejects(sendHandoff({ ...request(), text: 'different' }, h.dir, h.run), /conflicting/);
++    assert.equal(h.writes().length, 2);
++  } finally { await h.cleanup(); }
++});
++
++test('missing, guessed, nonlocal and control-bearing requests fail before any runtime call', async () => {
++  const h = await harness(); try {
++    for (const bad of [undefined, {}, { ...request(), recipient: { handle: recipient.handle } },
++      { ...request(), recipient: { ...recipient, handle: 'current' } }, { ...request(), recipient: { ...recipient, executionHostId: 'remote' } },
++      { ...request(), returnAddress: recipient }, { ...request(), from: 'claude' }, { ...request(), messageId: '../escape' },
++      { ...request(), text: 'x'.repeat(8001) }, ...['\x1b[2J', '\r', '\x00', '\x7f', '\x9b'].map(text => ({ ...request(), text }))]) {
++      await assert.rejects(sendHandoff(bad, h.dir, h.run));
++    }
++    assert.equal(h.calls.length, 0);
++    assert.equal(parseHandoff(request()).text, request().text, 'ordinary newline/tab are data');
++  } finally { await h.cleanup(); }
++});
++
++for (const change of [{ incarnationId: 'replacement' }, { ptyId: 'replacement' }, { worktreePath: '/other' }, { agentIdentity: 'codex' }, { handle: 'term_other' }, { connected: false }, { writable: false }, { orphaned: true }, { agentWait: { kind: 'permission' } }, { agentWait: undefined }]) {
++  test(`fake executor: wrong/closed/waiting recipient ${JSON.stringify(change)} cannot receive input`, async () => {
++    const h = await harness(); try { Object.assign(h.current, change); await assert.rejects(sendHandoff(request(), h.dir, h.run)); assert.equal(h.writes().length, 0); } finally { await h.cleanup(); }
++  });
++}
++
++test('fake executor: busy or unreachable recipient is never submitted', async () => {
++  const h = await harness(); try {
++    h.busy(); await assert.rejects(sendHandoff(request(), h.dir, h.run), /busy/); assert.equal(h.writes().length, 0);
++    h.hook(async () => { throw new Error('unreachable'); }); await assert.rejects(sendHandoff(request(), h.dir, h.run), /unreachable/); assert.equal(h.writes().length, 0);
++  } finally { await h.cleanup(); }
++});
++
++for (const [label, mutate] of [
++  ['agent exits', (t: Record<string, unknown>) => { t.agentIdentity = undefined; }],
++  ['permission appears', (t: Record<string, unknown>) => { t.agentWait = { kind: 'permission' }; }],
++  ['incarnation changes', (t: Record<string, unknown>) => { t.incarnationId = 'new-incarnation'; }],
++] as const) {
++  test(`fake executor: ${label} after text prevents Enter and leaves partial evidence`, async () => {
++    const h = await harness(); try {
++      h.hook(async (method, _, count) => { if (method === 'terminal.show' && count === 3) mutate(h.current); return undefined; });
++      const receipt = await sendHandoff(request(), h.dir, h.run);
++      assert.equal(receipt.delivery, 'partial'); assert.equal(receipt.text, 'accepted'); assert.equal(receipt.submit, 'not-attempted');
++      assert.equal(h.writes().length, 1); assert.equal(h.calls.some(c => c.params.enter), false);
++      await sendHandoff(request(), h.dir, h.run); assert.equal(h.writes().length, 1);
++    } finally { await h.cleanup(); }
++  });
++}
++
++for (const phase of [1, 2]) {
++  for (const outcome of ['refused', 'unverifiable', 'missing', 'throw', 'wrong-runtime'] as const) {
++    test(`fake executor: phase ${phase} ${outcome} stops without retry, completion or approval`, async () => {
++      const h = await harness(); try {
++        h.hook(async (method, _, count) => {
++          if (method !== 'terminal.send' || count !== phase) return undefined;
++          if (outcome === 'throw') throw new Error('lost after possible acceptance');
++          const result = response({ send: { handle: recipient.handle, accepted: outcome !== 'refused', ...(outcome === 'missing' ? {} : { writeSettlement: { outcome: outcome === 'wrong-runtime' ? 'accepted' : outcome } }) } });
++          if (outcome === 'wrong-runtime') result._meta!.runtimeId = 'replacement-runtime';
++          return result;
++        });
++        const receipt = await sendHandoff(request(), h.dir, h.run);
++        assert.equal(receipt.delivery, phase === 2 ? 'partial' : outcome === 'refused' ? 'refused' : 'uncertain');
++        assert.equal(receipt[phase === 1 ? 'text' : 'submit'], outcome === 'refused' ? 'refused' : 'uncertain');
++        assert.equal(receipt.turnStarted, 'unknown'); assert.equal(receipt.completion, 'unknown'); assert.equal(receipt.humanApproval, false);
++        assert.equal(h.writes().length, phase);
++        await sendHandoff(request(), h.dir, h.run); assert.equal(h.writes().length, phase);
++      } finally { await h.cleanup(); }
++    });
++  }
++}
++
++test('fake executor: corrupt/preexisting attempt evidence fails closed; duplicate concurrent calls cannot duplicate writes', async () => {
++  const h = await harness(); try {
++    await writeFile(join(h.dir, request().messageId + '.json'), 'crash-truncated');
++    await assert.rejects(sendHandoff(request(), h.dir, h.run)); assert.equal(h.calls.length, 0);
++    await rm(join(h.dir, request().messageId + '.json'));
++    const results = await Promise.allSettled([sendHandoff(request(), h.dir, h.run), sendHandoff(request(), h.dir, h.run)]);
++    assert.equal(results.some(r => r.status === 'fulfilled'), true); assert.equal(h.writes().length, 2);
++  } finally { await h.cleanup(); }
++});
++
++test('CLI rejects unknown/retry/interrupt/send omission and can list without any send', async () => {
++  const h = await harness(); try {
++    for (const args of [[], ['send'], ['list', '--workspace', '/project', '--interrupt', 'yes'], ['send', '--retry-request', 'id'], ['list', '--workspace', '/project', '--workspace', '/other']]) await assert.rejects(handoffCli(args, h.run));
++    assert.equal(h.calls.length, 0); assert.deepEqual(await handoffCli(['list', '--workspace', '/project'], h.run), { targets: [recipient] }); assert.equal(h.writes().length, 0);
++  } finally { await h.cleanup(); }
++});
++
++
++test('fake executor: busy transition after text never presses Enter', async () => {
++  const h = await harness(); try {
++    h.hook(async (method, _, count) => { if (method === 'terminal.send' && count === 1) h.busy(); return undefined; });
++    const receipt = await sendHandoff(request(), h.dir, h.run);
++    assert.equal(receipt.delivery, 'partial'); assert.equal(receipt.submit, 'not-attempted'); assert.equal(h.writes().length, 1);
++  } finally { await h.cleanup(); }
++});
++
++test('fake executor: final identity check before text catches a replacement after readiness', async () => {
++  const h = await harness(); try {
++    h.hook(async (method, _, count) => { if (method === 'terminal.show' && count === 2) h.current.incarnationId = 'replacement'; return undefined; });
++    const receipt = await sendHandoff(request(), h.dir, h.run);
++    assert.equal(receipt.delivery, 'refused'); assert.equal(receipt.text, 'not-attempted'); assert.equal(h.writes().length, 0);
++  } finally { await h.cleanup(); }
++});
++
++
++test('fake executor: unsupported/missing host guard version refuses before any terminal input', async () => {
++  const h = await harness(); try {
++    for (const appVersion of [undefined, '1.4.223', '1.4.225']) {
++      h.hook(async method => method === 'status.get' ? response({ runtimeId: recipient.runtimeId, appVersion }) : undefined);
++      await assert.rejects(sendHandoff(request(), h.dir, h.run), /Unsupported/);
++    }
++    assert.equal(h.writes().length, 0);
++  } finally { await h.cleanup(); }
++});
+--- /dev/null
++++ b/orchestration/SESSION-HANDOFF.md
+@@ -0,0 +1,80 @@
++# On-demand session handoff
++
++`src/session-handoff.ts` sends one explicitly addressed agent message through the installed Orca local RuntimeClient. It adds no daemon, watcher, mailbox, session owner, provider adapter or factory action. Inventory is read-only. Execute `send` only for a user-authorized action addressed to the selected exact recipient; listing sessions does not authorize a send. No live recipient is preselected.
++
++Build and list from this directory:
++
++```sh
++npm run build
++node dist/src/session-handoff.js list --workspace /absolute/workspace
++```
++
++Choose the intended recipient and sender return address from fresh inventory. Use a bounded `orca terminal read --terminal <exact-handle> --screen --limit 2000 --json` inspection when needed to confirm the session, without sending input. Titles, focus and previews are not recipient selectors. Preserve every returned identity field; a replacement session requires a new explicit choice. This wrapper supports local Codex/Claude PTYs only.
++
++Prepare a JSON request with this shape. The placeholder strings below deliberately do not identify a live session:
++
++```json
++{
++  "schemaVersion": 1,
++  "messageId": "handoff-unique-message-id",
++  "from": "codex",
++  "recipient": {
++    "runtimeId": "from-fresh-inventory",
++    "handle": "term_from-fresh-inventory",
++    "ptyId": "from-fresh-inventory",
++    "incarnationId": "from-fresh-inventory",
++    "worktreeId": "from-fresh-inventory",
++    "worktreePath": "/absolute/workspace",
++    "executionHostId": "local",
++    "agentIdentity": "claude"
++  },
++  "returnAddress": {
++    "runtimeId": "from-fresh-inventory",
++    "handle": "term_sender-from-fresh-inventory",
++    "ptyId": "from-fresh-inventory",
++    "incarnationId": "from-fresh-inventory",
++    "worktreeId": "from-fresh-inventory",
++    "worktreePath": "/absolute/workspace",
++    "executionHostId": "local",
++    "agentIdentity": "codex"
++  },
++  "text": "One request, evidence paths and the expected reply."
++}
++```
++
++Only after the particular addressed action is authorized:
++
++```sh
++node dist/src/session-handoff.js send --request /absolute/request.json --receipts /absolute/retained-handoff-receipts
++```
++
++The message is limited to 8,000 UTF-8 bytes. Newline/tab are allowed as message data; terminal controls are rejected. The wire envelope is one JSON line, labels agent origin, carries the message ID and exact return address, and requests one `received <id>` reply followed by `completed <id>` with evidence or `blocked <id>` with a reason. An addressed reply needs authorization for that action. Do not acknowledge acknowledgments. Long reports remain ordinary artifacts referenced by path.
++
++## Transport and receipts
++
++The installed Orca 1.4.224 CLI supports durable direct prompts, but does not expose the agent-send guard. The installed runtime's guarded RPC intentionally refuses text-plus-Enter in one call. This wrapper therefore uses two separate existing RPC calls:
++
++```text
++terminal.send { terminal: exactHandle, text: envelope,
++  requireAgentStatus: "sendable", requireWriteSettlement: true,
++  client: { id: "session-handoff", type: "desktop" } }
++terminal.send { terminal: exactHandle, enter: true,
++  requireAgentStatus: "sendable", requireWriteSettlement: true,
++  client: { id: "session-handoff", type: "desktop" } }
++```
++
++Before writing text, and again before Enter, it verifies runtime, handle, PTY, incarnation, workspace, local host and provider, plus connected/writable/non-orphaned state and `agentWait: null`. A bounded idle observation precedes text and Enter. Each write then uses Orca's host guard, which rechecks the live agent, permission state and PTY binding before writing. The source-verified local runtime version is pinned to 1.4.224; a missing/different version refuses sends until reviewed. There is no unguarded or native-chat fallback.
++
++The two phases are **not atomic**. Readiness/provider identity may change between the read and host guard; the guard verifies sendability and PTY binding, not a caller-supplied expected provider. A partial message can remain as draft input. This wrapper does not own or clear the composer. It never presses Escape, interrupts, recreates or substitutes a terminal.
++
++Receipts distinguish each phase as `not-attempted`, `accepted`, `refused` or `uncertain`. `delivery: submitted` means only that Orca returned matching whole-write settlement acceptance for text and Enter. `partial` means text was accepted and Enter was not proven accepted. `uncertain` includes transport loss, malformed/mismatched responses or missing settlement proof. A host refusal without settlement proof is conservatively uncertain. Turn start, read, reply and completion are always **unknown**: two-phase writes do not supply Orca's durable prompt/turn-start receipt. Agent messages and all receipt states are evidence only, never human approval or factory authority.
++
++The per-message receipt is exclusively created, synced before external writes and updated before each phase. Reusing the same ID with identical normalized content reads the receipt without contacting Orca; different content conflicts. Existing partial/uncertain/refused attempts never retry. Keep one receipt directory and retain records. This is local duplicate suppression, **not host idempotency or exactly-once delivery**. A new message ID, another receipt directory or deleting records can bypass local duplicate suppression. After uncertainty, inspect the exact session and reconcile before any new addressed action. The wrapper offers no resend/retry switch. Orca CLI `--retry-request` applies to its durable combined prompt route, not these guarded writes.
++
++If local IPC is sandbox-blocked, use the normal permission process for the required command. Do not restart Orca or use permission-bypass flags.
++
++## Validation status
++
++Fake-executor tests cover addressed identity, readiness, missing/wrong recipients, closed/unreachable sessions, permission/agent/identity changes after text, refusal/ambiguous/missing settlement, runtime/version mismatch, persistence fences, concurrent duplicate attempts and unchanged approval/completion semantics. Real read-only CLI inventory/show/wait and wrapper RuntimeClient inventory/status were verified against installed 1.4.224.
++
++A genuine addressed round trip is **NOT RUN**. No target has been selected by the user and no live input has been sent. Once a particular recipient/action is authorized, a single harmless unique-ID request and one addressed reply can be checked against receipt and observed reply evidence; then stop.

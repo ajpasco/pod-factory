@@ -1,0 +1,42 @@
+{
+  "baseCommit": "a82a857346ce07b55faaa80fce4626c5406bd9d9",
+  "patchSha256": "7c6cd3ac087d9a33e6ba57e24363c0aacdb145a35bfd7552d9fb4c68562955cd",
+  "files": [
+    {
+      "path": "packages/cli/src/commands/approve.ts",
+      "beforeSha256": "c87324ffdefa5e2b3576c745f70e06d13f130a68c385504b316639043a44f672",
+      "afterSha256": "8a3f52ed422422d4a65ee65d1d13efeaacca03b9b2fd7037f7585455e147ac1f",
+      "lockedByPinnedPatterns": false
+    },
+    {
+      "path": "packages/cli/src/check-runner/gate-check.ts",
+      "beforeSha256": "ac37518c7c3ff164083f05b44c8cedb3b5d85c6bc1bfb613b1709842495a5fde",
+      "afterSha256": "fc2d6a0cf68af43d3756d7575aa259ecd6150daee8014f0280a54da2e4644e6e",
+      "lockedByPinnedPatterns": false
+    },
+    {
+      "path": "packages/cli/src/lock-state.ts",
+      "beforeSha256": "963c29ea969e693c1335ba2ceaadc879ed8c3b60c5a1be4f61b9e3c73346353c",
+      "afterSha256": "bf2cdbe77995103ef7340ecee61b1bbb658d90a2b02e92773db482e5eccdbf7b",
+      "lockedByPinnedPatterns": false
+    },
+    {
+      "path": "packages/cli/src/records/format.ts",
+      "beforeSha256": "692934420714b26021d3b8ccf54731ef3067778872028dd1fb55f8f1283c4494",
+      "afterSha256": "9c273ea939c0cda4b70deccea412f62f31ff7936b21eea774bbd7c4cc0fa7e4b",
+      "lockedByPinnedPatterns": false
+    },
+    {
+      "path": "packages/cli/src/records/validate.ts",
+      "beforeSha256": "0d182695b869538bb6e98d82f5ce3637824d64799c8c6ad4a5d4eb532865a742",
+      "afterSha256": "32d42e94ce6c4949385f0591f51db0089259c24255aa78797c9bcb9a55a4a9b1",
+      "lockedByPinnedPatterns": false
+    },
+    {
+      "path": "packages/cli/test/maintenance.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "8842fc00799b207f00d3971dd0ac2d6b4cdfe09af30a731dc7533699990e8c9c",
+      "lockedByPinnedPatterns": true
+    }
+  ]
+}

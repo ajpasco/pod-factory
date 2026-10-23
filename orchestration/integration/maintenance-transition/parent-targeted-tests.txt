@@ -1,0 +1,35 @@
+
+ RUN  v5.0.4 /private/var/folders/x2/dxxzn0054dbcd2qzhxjwz_hc0000gn/T/root-maint-review-00q6kmc0/packages/cli
+
+ ✓ test/maintenance.test.ts (23 tests) 38794ms
+   ✓ exact-content maintenance amendments (23)
+     ✓ explicit ceremony binds the full mixed diff without locking unlocked paths or approving execution 3176ms
+     ✓ supports unlocked-only maintenance without contaminating lock state 1616ms
+     ✓ old complete amendments grant no merge authority, and their original hash stays valid 1686ms
+     ✓ refuses partial maintenance coverage 1549ms
+     ✓ refuses empty maintenance coverage 1418ms
+     ✓ refuses extra maintenance coverage 1508ms
+     ✓ refuses before maintenance coverage 1548ms
+     ✓ refuses after maintenance coverage 1508ms
+     ✓ refuses wrong-pr maintenance coverage 1430ms
+     ✓ refuses wrong-tree maintenance coverage 1405ms
+     ✓ refuses wrong-lock maintenance coverage 1431ms
+     ✓ refuses stale-locked maintenance coverage 1402ms
+     ✓ refuses without a current passing verify, including revoked or moved content 3753ms
+     ✓ revocation during the records reread removes maintenance authority 1736ms
+     ✓ CLI refuses partial, extra, duplicate and empty path sets before prompting 1323ms
+     ✓ CLI refuses a moved PR during confirmation 1260ms
+     ✓ binds the PR number and marker in the confirmed hash and rejects invalid marker use 754ms
+     ✓ an empty PR diff, revoked lock, or replacement lock cannot reuse maintenance authority 3410ms
+     ✓ unlocked edits and deletions bind their actual merge-base content 1969ms
+     ✓ maintenance still refuses an agent session before reading or prompting 789ms
+     ✓ unmarked historical amendments retain whole-record hash and held semantics outside patterns 992ms
+     ✓ maintenance flag refuses non-amendment targets before any prompt 779ms
+     ✓ repeated mixed approval safely refuses without prompting or writing, and revocation permits a fresh review 2350ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  00:29:25
+   Duration  40.04s (tests 100%)
+
+JSON report written to /private/var/folders/x2/dxxzn0054dbcd2qzhxjwz_hc0000gn/T/root-maint-review-00q6kmc0/.factory/work/reports/cli.json

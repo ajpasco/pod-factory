@@ -1,0 +1,75 @@
+{
+  "recordedAt": "2026-10-19T02:30:18.966Z",
+  "evidenceKind": "Real local browser/CLI/HTTP/workflow; synthetic model outputs and Orca transport",
+  "overallJourney": "BLOCKED",
+  "results": [
+    {
+      "id": "CON-01",
+      "status": "PASS",
+      "observation": "Real CLI created preparation; browser displayed it and saved answer; CLI read the same answer and identity."
+    },
+    {
+      "id": "CON-02",
+      "status": "PASS",
+      "observation": "Real notification adapter addressed one injected Orca target with a status pointer, not user content or approval. Live Orca delivery is not exercised."
+    },
+    {
+      "id": "CON-03",
+      "status": "PASS",
+      "observation": "Stale CLI action refused without drafting; current CLI draft reached browser and clickable sandboxed mockup. No notification loop."
+    },
+    {
+      "id": "CON-04",
+      "status": "PASS",
+      "observation": "Wrong digest refused; browser selected exact blueprint and generated one plan/review; real CLI read matching draft handoff."
+    },
+    {
+      "id": "CON-05",
+      "status": "PASS",
+      "observation": "Service restart retained identical preparation and handoff without redelivery or duplicate work."
+    },
+    {
+      "id": "CON-06",
+      "status": "PASS",
+      "observation": "Missing approval/dispatch routes refuse with valid request token; CLI refuses approval; no authority or state was fabricated."
+    },
+    {
+      "id": "FACTORY-01",
+      "status": "BLOCKED",
+      "observation": "No trusted approval, protected executable harness registration or factory dispatch adapter exists in this service.",
+      "remainingBlockers": [
+        "Independent acceptance test authoring and review have not been performed.",
+        "Implementation and acceptance test execution have not been performed.",
+        "Trusted gate approvals and protected approval integration are not implemented.",
+        "Factory dispatch integration is not implemented."
+      ]
+    },
+    {
+      "id": "CON-07",
+      "status": "PASS",
+      "observation": "Product revision invalidated downstream plan and handoff in browser and HTTP; old content cannot be dispatched as current."
+    },
+    {
+      "id": "APP-01",
+      "status": "NOT RUN",
+      "observation": "No React/FastAPI/PostgreSQL application was built or exercised. Stack appears in synthetic planning output only."
+    }
+  ],
+  "providerCalls": {
+    "draft": 2,
+    "technical": 1,
+    "plan": 1,
+    "review": 1
+  },
+  "fixtureNotifications": 3,
+  "inputHashes": {
+    "test/equipment-connections.mjs": "036b0f03ce0c41ae8d180383c6414e428fb9fefbc7ee04c31e8a55f4f734963f",
+    "public/index.html": "ac22202cdf9a50085a904bf0b17d5420b172d3a589040d9a3f5fe2ff56280c13",
+    "public/app.js": "aee7ef625e06668cc3a585f40e191f69e5fa5c2b0274162b9102528f088b2899",
+    "src/server.ts": "0da185e3fc9fa304c60a2175dcdbf3d1f68f8c9b4c84ea094fa3c3e3fa5a8755",
+    "src/workflow.ts": "6c021c21f387b8111dd5c526142b83e69839751c664cb7b76c024a05beadb5ab",
+    "src/cli.ts": "f1e3326b42e6faa2a9d5574de197d2d01d31d37a44778aadc01365b4674700da",
+    "src/orca-bridge.ts": "f62b771864dd5f23624595f88ceef23de9f2f9c4eb25fbde38c88fd9c1d9ced1"
+  }
+}
+connections exit=0

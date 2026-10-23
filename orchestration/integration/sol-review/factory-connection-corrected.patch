@@ -1,0 +1,975 @@
+--- a/README.md
++++ b/README.md
+@@ -17,6 +17,13 @@
+ Open http://127.0.0.1:4317. Use that address, rather than a LAN address. One process owns one data directory. Preparation is stored under ignored `.preparation/`; no credentials are stored there.
+ 
+ Optional process environment: `ORCH_PORT` (default 4317), `ORCH_DATA_DIR` (default `.preparation` here), `ORCH_MODEL` (default `sonnet`). `.env` is ignored but not automatically loaded. No Docker or new API key is needed. The provider uses the existing Claude login, requests structured text with all model tools and MCP disabled, limits each draft to $2 and 180 seconds, and writes no output selected by the model. A task that times out stays unresolved; it is not automatically retried.
++
++Read-only factory diagnostics are unconfigured by default. For an explicitly selected local checkout and repository-relative harness directory, start the service with `ORCH_FACTORY_REPO=/absolute/path/to/repo ORCH_FACTORY_HARNESS_ROOT=docs/projects/equipment-checkout npm start`. Optional: `ORCH_FACTORY_REMOTE` (default `origin`) and `ORCH_FACTORY_CLI_PACKAGE` (explicit installed CLI package.json for version provenance). Partial or invalid settings report `configuration.status: invalid` and select no route. Diagnostics never fetch, check out files, write records or launch a builder.
++
++Use `npm run cli -- factory --story story-N` for locally cached observations, or `GET /api/factory?story=story-N`. Omitting `story` selects nothing. The result separates `observations` (minimally parsed candidate records and path/hash heuristics) from `prerequisites` (exact-package validation unconnected; real dispatch unsupported). Cached refs may be stale. Factory schema, history, writer rules, effective amendments, protected harness/runner hashes, and the exported package's scope/contract binding are unverified. A matching cached story hash, including an unrelated application's story, supplies no package authorization. `route.authority` is `non-authoritative`, `route.packageBinding` is `unverified`, and dispatch stays blocked even if every observation matches. Missing local refs report `uncertain`.
++
++`npm run cli -- factory-package` or `GET /api/factory?include=package` exports the full reviewed draft after planning completes. It includes requirements, decisions, evals, coverage, story scope and artifact/source references. Recompute `manifestDigest` as SHA-256 over LF-normalized UTF-8 of `JSON.stringify(bodyWithoutManifestDigest, null, 2) + "\n"`. This proves content integrity only; it is not a factory approval. No approval or dispatch endpoint is added.
++
+ 
+ Each successful draft produces immutable artifact files and content digests. Requested changes are explicit scope input; suggestions remain separate. The actual meaning and completeness of model-generated documents still need review—schema and hashes do not prove their content is right.
+ 
+--- a/src/cli.ts
++++ b/src/cli.ts
+@@ -25,9 +25,13 @@
+   review-plan --id PREP --revision N --operation-id ID
+   packet
+   artifact --kind prd|mockup|technical|build-plan|handoff
++  factory [--story story-N]     Read locally cached diagnostics for an explicit story
++  factory-package               Print the exact draft export; not factory authorization
+ Optional for every command: --url http://127.0.0.1:4317
+ JSON output. Draft/revise acceptance is not completion: inspect status afterwards.
+-Start the service with npm start in orchestration. No approval or build commands.`;
++Start the service with npm start in orchestration. No approval or build commands.
++factory observations are non-authoritative and unverified for the exported package. Real dispatch is blocked.
++For service diagnostics, set ORCH_FACTORY_REPO and ORCH_FACTORY_HARNESS_ROOT; optional ORCH_FACTORY_REMOTE (origin) and ORCH_FACTORY_CLI_PACKAGE. No fetch is performed.`;
+ 
+ export async function runCli(args: string[]): Promise<unknown> {
+   if (args.length === 0 || args[0] === '--help' || args[0] === 'help') return { help };
+@@ -50,7 +54,7 @@
+     'select-technical': ['--digest', '--id', '--revision', '--operation-id'],
+     plan: ['--id', '--revision', '--operation-id'],
+     'review-plan': ['--id', '--revision', '--operation-id'],
+-    packet: [], artifact: ['--kind'],
++    packet: [], artifact: ['--kind'], factory: ['--story'], 'factory-package': [],
+   };
+   if (!allowed[command]) throw new Error(`Unknown command ${command}. No approval or dispatch commands exist. Use --help.`);
+   for (const name of Object.keys(flags)) if (name !== '--url' && !allowed[command].includes(name)) throw new Error(`Unknown option ${name} for ${command}.`);
+@@ -83,6 +87,12 @@
+     return { url: url.origin, browserLaunchRequested: true, nextAction: 'The user can review or answer on the shared page. Read status to see saved changes; opening is not an approval.' };
+   }
+   if (command === 'packet') return JSON.parse(await request('/api/artifacts/packet'));
++  if (command === 'factory') {
++    const story = flags['--story'];
++    if (story !== undefined && !/^story-[1-9][0-9]*$/.test(story)) throw new Error('Name the story as story-N.');
++    return JSON.parse(await request('/api/factory' + (story === undefined ? '' : `?story=${story}`)));
++  }
++  if (command === 'factory-package') return JSON.parse(await request('/api/factory?include=package'));
+   if (command === 'artifact') {
+     if (!['prd', 'mockup', 'technical', 'build-plan', 'handoff'].includes(flags['--kind'])) throw new Error('Select --kind prd, mockup, technical, build-plan or handoff.');
+     return { kind: flags['--kind'], content: await request('/api/artifacts/' + flags['--kind']) };
+--- a/src/factory.ts
++++ b/src/factory.ts
+@@ -0,0 +1,334 @@
++// Draft export and read-only diagnostics. Cached records are observations, not authorization of
++// this package. This module never writes records, fetches refs, approves work or launches builders.
++import { createHash } from 'node:crypto';
++import { execFileSync } from 'node:child_process';
++import { readFileSync } from 'node:fs';
++import { WorkflowError } from './types.js';
++import type { ArtifactReference, BuildPlanOutput, Preparation, PlanningSources, TechnicalOutput } from './types.js';
++
++/** sha256 over LF-normalized UTF-8: the factory's own `hashAlgorithm`, so hashes compare directly. */
++export const sha256Lf = (content: string): string => createHash('sha256').update(content.replace(/\r\n/g, '\n'), 'utf8').digest('hex');
++
++/** The five outcomes the interface may render. Anything unproven is never `ready`. */
++export type FactoryOutcome = 'ready' | 'waiting-for-user' | 'blocked' | 'failed' | 'uncertain';
++
++export interface FactoryPrerequisite {
++  id: string;
++  satisfied: boolean;
++  requirement: string;
++  observed: string;
++  /** The exact command a person must run, when a human action is the only thing missing. */
++  humanAction?: string;
++}
++
++export interface FactoryRouteState {
++  outcome: FactoryOutcome;
++  summary: string;
++  readOnly: true;
++  source: 'locally-cached-factory-records' | 'fixture' | 'none';
++  authority: 'non-authoritative' | 'fixture-only';
++  packageBinding: 'unverified' | 'fixture-only';
++  observedAt: string;
++  observations?: FactoryPrerequisite[];
++  factoryVersion: string | null;
++  recordsCommit: string | null;
++  trunkCommit: string | null;
++  prerequisites: FactoryPrerequisite[];
++}
++
++export interface FactoryRecord {
++  recordId?: string;
++  recordType?: string;
++  createdAt?: string;
++  schemaVersion?: number | string;
++  actor?: { name?: string; email?: string; kind?: string };
++  binds?: { tree: string | null; files: Record<string, string> };
++  outcome?: string;
++  refs?: string[];
++  approval?: { kind?: string; gate?: number | null; story?: string | null; pullRequest?: number | null };
++  lock?: { patterns: string[]; testCommands: string[] };
++  revocation?: { revokes: string; reason?: string };
++}
++
++/** Minimally parsed diagnostic fields; factory schema/history/writer validation is not performed. */
++export type ValidRecord = FactoryRecord & { recordId: string; recordType: string; createdAt: string };
++
++/** One prepared story, exported exactly as the reviewed plan states it. */
++export interface ExportedStory {
++  id: string;
++  title: string;
++  requirements: string[];
++  evals: string[];
++  scope: string[];
++  dependsOn: string[];
++  parallelGroup?: string;
++}
++
++export interface FactoryExportPackage {
++  schemaVersion: 1;
++  projectId: string;
++  preparationRevision: number;
++  authority: 'draft-only';
++  approvalStatus: 'approval-channel-not-implemented';
++  sources: PlanningSources;
++  artifacts: { technical: ArtifactReference; plan: ArtifactReference; review: ArtifactReference; handoff: ArtifactReference };
++  technicalDecision: { digest: string; at: string; authority: 'local-review-only' };
++  stack: string;
++  layers: number;
++  requirements: TechnicalOutput['requirements'];
++  decisions: TechnicalOutput['decisions'];
++  evals: BuildPlanOutput['evals'];
++  coverage: BuildPlanOutput['coverage'];
++  stories: ExportedStory[];
++  /** Planned procedures are not runnable tests. This states that plainly inside the package. */
++  harness: { executableTestsAuthored: false; baselineRun: false; protectedByLock: false; note: string };
++  manifestDigest: string;
++}
++
++const canonical = (pkg: Omit<FactoryExportPackage, 'manifestDigest'>): string => JSON.stringify(pkg, null, 2) + '\n';
++
++/**
++ * Exports the reviewed package, or refuses. It never summarizes: every requirement, eval, coverage
++ * row and story scope entry the plan holds is carried across, and a mismatch is an error rather
++ * than a quietly shorter package.
++ */
++export function buildExportPackage(state: Preparation): FactoryExportPackage {
++  const planning = state.planning;
++  if (!planning || planning.phase !== 'planning-complete') throw new WorkflowError('EXPORT_NOT_READY', 'Complete the planning review before exporting to the factory.');
++  const { technical, plan, review, handoff, technicalDecision } = planning;
++  if (!technical || !plan || !review || !handoff || !technicalDecision) throw new WorkflowError('EXPORT_NOT_READY', 'The reviewed package is incomplete; export refused.');
++  if (review.technicalDigest !== technical.artifact.digest || review.planDigest !== plan.artifact.digest) throw new WorkflowError('EXPORT_STALE', 'The review does not match the current blueprint and plan; export refused.');
++  if (technicalDecision.digest !== technical.artifact.digest) throw new WorkflowError('EXPORT_STALE', 'The local blueprint choice does not match the current blueprint; export refused.');
++
++  const stories: ExportedStory[] = plan.stories.map(story => {
++    if (story.scope.length === 0) throw new WorkflowError('EXPORT_INCOMPLETE', `Story ${story.id} has no permitted scope; export refused rather than widened.`);
++    if (story.requirements.length === 0 || story.evals.length === 0) throw new WorkflowError('EXPORT_INCOMPLETE', `Story ${story.id} must keep its requirement and eval references.`);
++    return { id: story.id, title: story.title, requirements: [...story.requirements], evals: [...story.evals], scope: [...story.scope], dependsOn: [...story.dependsOn], ...(story.parallelGroup === undefined ? {} : { parallelGroup: story.parallelGroup }) };
++  });
++  for (const requirement of technical.requirements) {
++    if (!plan.coverage.some(row => row.requirementId === requirement.id)) throw new WorkflowError('EXPORT_INCOMPLETE', `Requirement ${requirement.id} has no coverage row; export refused.`);
++  }
++  if (plan.coverage.some(row => row.status === 'gap')) throw new WorkflowError('EXPORT_INCOMPLETE', 'Coverage still reports a gap; resolve it before exporting.');
++
++  const body: Omit<FactoryExportPackage, 'manifestDigest'> = {
++    schemaVersion: 1, projectId: state.id, preparationRevision: state.revision,
++    authority: 'draft-only', approvalStatus: 'approval-channel-not-implemented',
++    sources: planning.sources,
++    artifacts: { technical: technical.artifact, plan: plan.artifact, review: review.artifact, handoff },
++    technicalDecision, stack: technical.stack, layers: technical.layers,
++    requirements: technical.requirements, decisions: technical.decisions,
++    evals: plan.evals, coverage: plan.coverage, stories,
++    harness: { executableTestsAuthored: false, baselineRun: false, protectedByLock: false,
++      note: 'These evals are planned procedures. An authored and independently reviewed executable harness, a classified baseline run and a lock covering it are prerequisites the factory must hold before dispatch.' },
++  };
++  return { ...body, manifestDigest: sha256Lf(canonical(body)) };
++}
++
++export interface DispatchRequest {
++  operationId: string;
++  preparationRevision: number;
++  packageDigest: string;
++  story: string;
++}
++
++export interface DispatchLedgerEntry {
++  operationId: string;
++  packageDigest: string;
++  story: string;
++  requestedAt: string;
++  status: 'running' | 'succeeded' | 'failed' | 'uncertain';
++  factoryRef?: string;
++  detail?: string;
++}
++
++export interface DispatchDecision {
++  outcome: FactoryOutcome;
++  reasons: string[];
++  blockedBy: FactoryPrerequisite[];
++  /** Set when an existing attempt answers this request, so no second builder is started. */
++  existing?: DispatchLedgerEntry;
++}
++
++/**
++ * Contract evaluator, exercised by the fixture adapter; it does not establish real authority.
++ * New attempts require an intact package, a ready route and no unresolved earlier attempt.
++ */
++export function evaluateDispatch(input: { state: FactoryRouteState; pkg: FactoryExportPackage; request: DispatchRequest; ledger: readonly DispatchLedgerEntry[] }): DispatchDecision {
++  const { state, pkg, request, ledger } = input;
++  const reasons: string[] = [];
++
++  const replay = ledger.find(entry => entry.operationId === request.operationId);
++  if (replay) {
++    const outcome: FactoryOutcome = replay.status === 'succeeded' ? 'ready' : replay.status === 'failed' ? 'failed' : replay.status === 'uncertain' ? 'uncertain' : 'waiting-for-user';
++    return { outcome, reasons: [`Operation ${request.operationId} was already requested at ${replay.requestedAt}; reporting its recorded result instead of dispatching again.`], blockedBy: [], existing: replay };
++  }
++
++  const { manifestDigest, ...body } = pkg;
++  if (sha256Lf(canonical(body)) !== manifestDigest) reasons.push('The package content does not match its manifest digest; the exported bytes changed.');
++  if (request.packageDigest !== pkg.manifestDigest) reasons.push('The requested package digest does not match the reviewed package; the inputs changed after review.');
++  if (request.preparationRevision !== pkg.preparationRevision) reasons.push(`The request names preparation revision ${request.preparationRevision} but the reviewed package is revision ${pkg.preparationRevision}.`);
++  if (!pkg.stories.some(story => story.id === request.story)) reasons.push(`The reviewed plan has no story ${request.story}.`);
++  if (reasons.length > 0) return { outcome: 'blocked', reasons, blockedBy: [] };
++
++  const unresolved = ledger.filter(entry => entry.story === request.story && (entry.status === 'running' || entry.status === 'uncertain'));
++  if (unresolved.length > 0) {
++    const first = unresolved[0];
++    return { outcome: 'uncertain', reasons: [`An earlier attempt on ${request.story} (${first.operationId}, ${first.status}) is unresolved. Reconcile it against the factory's own records before requesting again; a retry must not start a second builder.`], blockedBy: [], existing: first };
++  }
++  const stale = ledger.find(entry => entry.story === request.story && entry.status === 'succeeded' && entry.packageDigest !== request.packageDigest);
++  if (stale) reasons.push(`${request.story} already ran against a different reviewed package (${stale.packageDigest.slice(0, 12)}). A changed package needs its own authorization.`);
++
++  const missing = state.prerequisites.filter(prerequisite => !prerequisite.satisfied);
++  if (reasons.length > 0) return { outcome: 'blocked', reasons, blockedBy: missing };
++  if (state.authority === 'non-authoritative') return { outcome: 'blocked', reasons: ['Locally cached diagnostics cannot authorize this exported package.', state.summary], blockedBy: missing };
++  if (state.outcome !== 'ready') return { outcome: state.outcome, reasons: [state.summary, ...missing.map(p => p.observed)], blockedBy: missing };
++  if (missing.length > 0) {
++    const onlyHuman = missing.every(prerequisite => prerequisite.humanAction !== undefined);
++    return { outcome: onlyHuman ? 'waiting-for-user' : 'blocked', reasons: missing.map(p => p.observed), blockedBy: missing };
++  }
++  return { outcome: 'ready', reasons: ['Fixture prerequisites are satisfied and the request matches the intact exported package; this is not real factory authorization.'], blockedBy: [] };
++}
++
++/**
++ * The one rule every adapter uses before acting. A decision carrying `existing` is reporting an
++ * attempt that already happened, so it is never permission to start another one, however its
++ * outcome reads.
++ */
++export const mayDispatch = (decision: DispatchDecision): boolean => decision.outcome === 'ready' && decision.existing === undefined;
++
++/** What a route adapter must provide. `requestDispatch` is the only non-read operation. */
++export interface FactoryRoute {
++  inspect(story: string): Promise<FactoryRouteState>;
++  requestDispatch(request: DispatchRequest, pkg: FactoryExportPackage): Promise<{ decision: DispatchDecision; entry?: DispatchLedgerEntry }>;
++}
++
++export interface RealFactoryRouteOptions {
++  /** Explicit local checkout. No network access or repository mutation. */
++  repoPath: string;
++  remote?: string;
++  /** Explicit repository-relative path; no application is selected by default. */
++  harnessRoot: string;
++  cliPackagePath?: string;
++  ledger?: readonly DispatchLedgerEntry[];
++}
++
++export type FactoryDiagnosticsConfig = Partial<Omit<RealFactoryRouteOptions, 'ledger'>>;
++
++/** Normal startup uses these exact settings; a partial configuration never selects a target. */
++export function factoryDiagnosticsConfigFromEnv(env: NodeJS.ProcessEnv): FactoryDiagnosticsConfig {
++  return { repoPath: env.ORCH_FACTORY_REPO, harnessRoot: env.ORCH_FACTORY_HARNESS_ROOT,
++    remote: env.ORCH_FACTORY_REMOTE, cliPackagePath: env.ORCH_FACTORY_CLI_PACKAGE };
++}
++
++export function configureFactoryDiagnostics(config: FactoryDiagnosticsConfig = {}) {
++  const configured = Object.values(config).some(value => value !== undefined);
++  const repoPath = config.repoPath?.trim();
++  const harnessRoot = config.harnessRoot?.trim();
++  const remote = config.remote ?? 'origin';
++  const valid = repoPath && harnessRoot && !harnessRoot.startsWith('/') &&
++    !harnessRoot.split('/').some(part => !part || part === '.' || part === '..') &&
++    /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(remote);
++  const configuration = !configured
++    ? { status: 'unconfigured' as const, summary: 'Factory diagnostics are unconfigured. Set ORCH_FACTORY_REPO and ORCH_FACTORY_HARNESS_ROOT explicitly.' }
++    : !valid
++      ? { status: 'invalid' as const, summary: 'Factory diagnostics need an explicit repository and repository-relative harness root without empty, dot or parent segments; the remote must be a simple name.' }
++      : { status: 'configured' as const, summary: 'Read-only diagnostics use locally cached refs only; package authorization is unverified.' };
++  return { configuration, route: valid ? new RealFactoryRoute({ repoPath, harnessRoot, remote, cliPackagePath: config.cliPackagePath }) : undefined };
++}
++
++/** Read-only local observations. Not a substitute for factory validation or exact package binding. */
++export class RealFactoryRoute implements FactoryRoute {
++  private readonly remote: string;
++  constructor(private readonly options: RealFactoryRouteOptions) { this.remote = options.remote ?? 'origin'; }
++
++  private tryGit(args: string[]): string | null {
++    try {
++      return execFileSync('git', args, { cwd: this.options.repoPath, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
++    } catch { return null; }
++  }
++
++  /** Only minimal shape parsing, deliberately not the factory's authority engine. */
++  private records(commit: string): ValidRecord[] {
++    const listing = this.tryGit(['ls-tree', '-r', '--name-only', commit, 'records/']);
++    if (listing === null) return [];
++    const out: ValidRecord[] = [];
++    for (const path of listing.split('\n').filter(line => line.endsWith('.json') && line.lastIndexOf('/') === 'records'.length)) {
++      const content = this.tryGit(['show', `${commit}:${path}`]);
++      if (content === null) continue;
++      try {
++        const record = JSON.parse(content) as FactoryRecord;
++        if (record?.schemaVersion === 1 && typeof record.recordId === 'string' && typeof record.recordType === 'string' && typeof record.createdAt === 'string') out.push(record as ValidRecord);
++      } catch { /* Unparseable records do not supply observations. */ }
++    }
++    return out.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
++  }
++
++  async inspect(story: string): Promise<FactoryRouteState> {
++    const recordsCommit = this.tryGit(['rev-parse', '--verify', `refs/remotes/${this.remote}/pod-factory/records^{commit}`])?.trim() ?? null;
++    const trunkCommit = this.tryGit(['rev-parse', '--verify', `refs/remotes/${this.remote}/main^{commit}`])?.trim() ?? null;
++    const base = { readOnly: true as const, source: 'locally-cached-factory-records' as const,
++      authority: 'non-authoritative' as const, packageBinding: 'unverified' as const,
++      observedAt: new Date().toISOString(), factoryVersion: this.cliVersion(), recordsCommit, trunkCommit };
++    const prerequisites: FactoryPrerequisite[] = [
++      { id: 'exact-package-authority', satisfied: false, requirement: 'The factory validates its records and binds the exact exported application package.',
++        observed: 'Not connected: these diagnostics validate neither factory record history/writer rules/effective amendments nor this package contract, scope, harness or runner bytes.' },
++      { id: 'dispatch-supported', satisfied: false, requirement: 'A supported submission path is connected.', observed: 'Real dispatch is not implemented; no builder is launched.' },
++    ];
++    if (!/^story-[1-9][0-9]*$/.test(story)) return { ...base, outcome: 'blocked', summary: 'Select an explicit story-N for diagnostics.', prerequisites, observations: [] };
++    if (recordsCommit === null || trunkCommit === null) return { ...base, outcome: 'uncertain',
++      summary: 'Configured local records or trunk ref is unavailable. No fetch is attempted; cached diagnostics cannot establish package authorization.', prerequisites, observations: [] };
++
++    const all = this.records(recordsCommit);
++    // Latest minimally parsed candidates, without claiming validity, active status or authority.
++    const gate2 = all.filter(r => r.recordType === 'approval' && r.approval?.kind === 'gate' && r.approval.gate === 2).at(-1);
++    const lock = all.filter(r => r.recordType === 'lock').at(-1);
++    const gate3 = all.filter(r => r.recordType === 'approval' && r.approval?.kind === 'gate' && r.approval.gate === 3).at(-1);
++    const trunkFiles = (this.tryGit(['ls-tree', '-r', '--name-only', trunkCommit]) ?? '').split('\n').filter(Boolean);
++    const root = this.options.harnessRoot.replace(/\/+$/, '');
++    const harnessFiles = trunkFiles.filter(path => path.startsWith(`${root}/`));
++    const storyPath = `.factory/work/${story}/story.md`;
++    const boundStoryHash = gate3?.binds?.files?.[storyPath];
++    const storyContent = trunkFiles.includes(storyPath) ? this.tryGit(['show', `${trunkCommit}:${storyPath}`]) : null;
++    const patterns = Array.isArray(lock?.lock?.patterns) ? lock.lock.patterns.filter(p => typeof p === 'string') : [];
++    const commands = Array.isArray(lock?.lock?.testCommands) ? lock.lock.testCommands.filter(c => typeof c === 'string') : [];
++    const observation = (id: string, satisfied: boolean, observed: string): FactoryPrerequisite => ({ id, satisfied, requirement: 'Diagnostic observation only; not proof of approval, executable harness or protection.', observed });
++    const describe = (record: ValidRecord | undefined) => record ? `Cached candidate ${record.recordId}, actor field ${record.actor?.kind ?? 'unknown'}; not factory-validated.` : 'No minimally parsed candidate record found.';
++    const observations = [
++      observation('gate-2-record', gate2 !== undefined, describe(gate2)),
++      observation('lock-record', lock !== undefined, describe(lock)),
++      observation('test-directory-present', harnessFiles.some(path => /\/tests?\//.test(path)), `${harnessFiles.length} cached trunk path(s) under ${root}; presence does not prove executable acceptance tests.`),
++      observation('lock-pattern-match', patterns.some(pattern => harnessFiles.some(file => globToRegExp(pattern).test(file))), 'Candidate lock patterns compared to cached paths only; effective amendments and protected file bytes are unverified.'),
++      observation('lock-command-mentions-root', commands.some(command => command.includes(root)), 'Substring comparison only; runner executability, runner hash and protection are unverified.'),
++      observation('gate-3-record', gate3 !== undefined, describe(gate3)),
++      observation('story-hash-mentioned', typeof boundStoryHash === 'string', `Cached candidate record ${typeof boundStoryHash === 'string' ? 'mentions' : 'does not mention'} ${storyPath}; this does not bind the exported application package.`),
++      observation('story-hash-matches-trunk', typeof boundStoryHash === 'string' && storyContent !== null && sha256Lf(storyContent) === boundStoryHash,
++        'Comparison is only the cached story file and candidate hash; unrelated story records supply no application package authority.'),
++    ];
++    return { ...base, outcome: 'blocked', prerequisites, observations,
++      summary: `Locally cached observations for ${story}; exact exported package authorization is unverified and real dispatch is blocked.` };
++  }
++
++  /** Replays report existing results; every new real request remains blocked. */
++  async requestDispatch(request: DispatchRequest, pkg: FactoryExportPackage): Promise<{ decision: DispatchDecision; entry?: DispatchLedgerEntry }> {
++    const state = await this.inspect(request.story);
++    const decision = evaluateDispatch({ state, pkg, request, ledger: this.options.ledger ?? [] });
++    return { decision, ...(decision.existing === undefined ? {} : { entry: decision.existing }) };
++  }
++
++  private cliVersion(): string | null {
++    if (this.options.cliPackagePath === undefined) return null;
++    try { const version = JSON.parse(readFileSync(this.options.cliPackagePath, 'utf8')).version; return typeof version === 'string' ? version : null; } catch { return null; }
++  }
++}
++
++/** Diagnostic glob comparison only, not a factory lock-policy validation. */
++export function globToRegExp(pattern: string): RegExp {
++  let source = '';
++  for (let i = 0; i < pattern.length; i++) {
++    const c = pattern[i];
++    if (c === '*' && pattern[i + 1] === '*') { source += '.*'; i++; }
++    else if (c === '*') { source += '[^/]*'; }
++    else { source += c.replace(/[.+?^${}()|[\]\\]/g, '\\$&'); }
++  }
++  return new RegExp(`^${source}$`);
++}
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -8,6 +8,7 @@
+ import { ClaudePlanningProvider } from './claude-planning-provider.js';
+ import { PreparationStore } from './store.js';
+ import { OrcaBridge, type OrcaTransport } from './orca-bridge.js';
++import { buildExportPackage, configureFactoryDiagnostics, factoryDiagnosticsConfigFromEnv, type FactoryDiagnosticsConfig, type FactoryRoute, type FactoryRouteState } from './factory.js';
+ import type { Preparation } from './types.js';
+ 
+ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+@@ -15,7 +16,10 @@
+ const shellCsp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+ const mockupCsp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; sandbox allow-scripts";
+ 
+-export async function createPreparationServer(options: { dataDir: string; provider: DraftProvider; planningProvider?: PlanningProvider; providerLabel?: string; executionLimitMs?: number; orcaTransport?: OrcaTransport; workspacePath?: string }) {
++export async function createPreparationServer(options: { dataDir: string; provider: DraftProvider; planningProvider?: PlanningProvider; providerLabel?: string; executionLimitMs?: number; orcaTransport?: OrcaTransport; workspacePath?: string; factoryRoute?: FactoryRoute; factoryDiagnostics?: FactoryDiagnosticsConfig }) {
++  const diagnostics = configureFactoryDiagnostics(options.factoryDiagnostics);
++  const factoryRoute = options.factoryRoute ?? diagnostics.route;
++  const factoryConfiguration = options.factoryRoute ? { status: 'configured', summary: 'Explicitly injected read-only route; fixture routes carry no real authority.' } : diagnostics.configuration;
+   const dataDir = resolve(options.dataDir);
+   await mkdir(dataDir, { recursive: true });
+   const service = new WorkflowService({ dataDir, provider: options.provider, planningProvider: options.planningProvider, executionLimitMs: options.executionLimitMs ?? 180_000 });
+@@ -78,6 +82,24 @@
+         if (url.pathname === '/api/preparation') {
+           const id = await currentId();
+           send(res, 200, JSON.stringify({ preparation: id ? await service.get(id) : null, capabilities: { drafting: true, planning: Boolean(options.planningProvider), provider: options.providerLabel ?? 'configured provider' } })); return;
++        }
++        if (url.pathname === '/api/factory') {
++          const id = await currentId(); if (!id) throw new WorkflowError('NOT_FOUND', 'Start a preparation first.', 404);
++          const state = await service.get(id);
++          let exported: { manifestDigest: string; stories: string[]; preparationRevision: number } | null = null;
++          let exportRefusal: string | undefined;
++          try { const pkg = buildExportPackage(state); exported = { manifestDigest: pkg.manifestDigest, stories: pkg.stories.map(story => story.id), preparationRevision: pkg.preparationRevision }; }
++          catch (error) { exportRefusal = error instanceof WorkflowError ? error.message : 'The reviewed package could not be exported.'; }
++          if (url.searchParams.get('include') === 'package') { send(res, 200, JSON.stringify(buildExportPackage(state), null, 2) + '\n'); return; }
++          const story = url.searchParams.get('story');
++          if (story !== null && !/^story-[1-9][0-9]*$/.test(story)) throw new WorkflowError('FACTORY_STORY', 'Name an explicit story as story-N.', 400);
++          const route: FactoryRouteState = story !== null && factoryRoute !== undefined ? await factoryRoute.inspect(story) : {
++            outcome: 'blocked', readOnly: true, source: 'none', authority: 'non-authoritative', packageBinding: 'unverified', observedAt: new Date().toISOString(),
++            summary: factoryRoute === undefined ? factoryConfiguration.summary : 'Select an explicit story-N for locally cached diagnostics; no story is selected automatically.',
++            prerequisites: [], observations: [], factoryVersion: null, recordsCommit: null, trunkCommit: null,
++          };
++          send(res, 200, JSON.stringify({ story, package: exported, ...(exportRefusal === undefined ? {} : { exportRefusal }), configuration: factoryConfiguration, route,
++            dispatch: { implemented: false, note: 'Read-only diagnostics and draft export only. Cached observations do not authorize this package; real dispatch is blocked.' } })); return;
+         }
+         if (['/api/artifacts/prd', '/api/artifacts/mockup', '/api/artifacts/packet', '/api/artifacts/technical', '/api/artifacts/build-plan', '/api/artifacts/handoff'].includes(url.pathname)) {
+           const id = await currentId(); if (!id) throw new WorkflowError('NOT_FOUND', 'Start a preparation first.', 404);
+@@ -185,6 +207,6 @@
+   if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('ORCH_PORT must be between 1024 and 65535.');
+   const provider = new ClaudeDraftProvider({ workingRoot: resolve(dataDir, 'provider-work'), model: process.env.ORCH_MODEL });
+   const planningProvider = new ClaudePlanningProvider({ workingRoot: resolve(dataDir, 'provider-work'), model: process.env.ORCH_MODEL });
+-  const { server } = await createPreparationServer({ dataDir, provider, planningProvider, providerLabel: `Claude CLI (${process.env.ORCH_MODEL ?? 'sonnet'})` });
++  const { server } = await createPreparationServer({ dataDir, provider, planningProvider, providerLabel: `Claude CLI (${process.env.ORCH_MODEL ?? 'sonnet'})`, factoryDiagnostics: factoryDiagnosticsConfigFromEnv(process.env) });
+   server.listen(port, '127.0.0.1', () => console.log(`Preparation: http://127.0.0.1:${port}\nData: ${dataDir}\nDrafting and review only; trusted approvals and dispatch are not implemented.`));
+ }
+--- a/test/factory-diagnostics.test.ts
++++ b/test/factory-diagnostics.test.ts
+@@ -0,0 +1,71 @@
++import assert from 'node:assert/strict';
++import { execFileSync } from 'node:child_process';
++import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import test from 'node:test';
++import { configureFactoryDiagnostics, factoryDiagnosticsConfigFromEnv, RealFactoryRoute, sha256Lf } from '../src/factory.js';
++
++const harnessRoot = 'docs/projects/equipment-checkout';
++
++test('diagnostics require explicit repo and harness config; absent, partial and unsafe values select nothing', () => {
++  assert.equal(configureFactoryDiagnostics(factoryDiagnosticsConfigFromEnv({})).configuration.status, 'unconfigured');
++  for (const config of [{ repoPath: '/tmp/repo' }, { harnessRoot }, { repoPath: '', harnessRoot },
++    { repoPath: '/tmp/repo', harnessRoot: '../other' }, { repoPath: '/tmp/repo', harnessRoot: '/absolute' },
++    { repoPath: '/tmp/repo', harnessRoot, remote: '--help' }, { remote: 'origin' }]) {
++    const result = configureFactoryDiagnostics(config);
++    assert.equal(result.configuration.status, 'invalid');
++    assert.equal(result.route, undefined);
++  }
++  const explicit = configureFactoryDiagnostics(factoryDiagnosticsConfigFromEnv({ ORCH_FACTORY_REPO: '/tmp/repo', ORCH_FACTORY_HARNESS_ROOT: harnessRoot }));
++  assert.equal(explicit.configuration.status, 'configured');
++  assert.ok(explicit.route instanceof RealFactoryRoute);
++});
++
++test('missing local refs are uncertain and remain explicitly non-authoritative', async t => {
++  const repoPath = await mkdtemp(join(tmpdir(), 'factory-missing-'));
++  t.after(() => rm(repoPath, { recursive: true, force: true }));
++  const result = await new RealFactoryRoute({ repoPath, harnessRoot }).inspect('story-2');
++  assert.equal(result.outcome, 'uncertain');
++  assert.equal(result.source, 'locally-cached-factory-records');
++  assert.equal(result.authority, 'non-authoritative');
++  assert.equal(result.packageBinding, 'unverified');
++  assert.equal(result.recordsCommit, null);
++  assert.match(result.summary, /No fetch/);
++});
++
++test('even all matching cached indicators cannot authorize an unrelated exported application or dispatch', async t => {
++  const repoPath = await mkdtemp(join(tmpdir(), 'factory-cached-'));
++  t.after(() => rm(repoPath, { recursive: true, force: true }));
++  const git = (...args: string[]) => execFileSync('git', args, { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
++  git('init', '-q');
++  async function file(path: string, content: string) {
++    const target = join(repoPath, path); await mkdir(join(target, '..'), { recursive: true }); await writeFile(target, content);
++  }
++  const storyPath = '.factory/work/story-2/story.md';
++  const story = '# Meetings snapshot list and modal\nScope: docs/projects/meeting-reminder/web/src/main.ts\n';
++  await file(storyPath, story);
++  await file(`${harnessRoot}/test/acceptance.test.ts`, '// presence alone is not an executable reviewed harness\n');
++  const record = (recordId: string, recordType: string, extra: object) => JSON.stringify({ schemaVersion: 1, recordId, recordType, createdAt: '2026-10-18T00:00:00Z', actor: { kind: 'human' }, ...extra });
++  await file('records/gate2.json', record('candidate-2', 'approval', { approval: { kind: 'gate', gate: 2 } }));
++  await file('records/gate3.json', record('candidate-3', 'approval', { approval: { kind: 'gate', gate: 3 }, binds: { tree: null, files: { [storyPath]: sha256Lf(story) } } }));
++  await file('records/lock.json', record('candidate-lock', 'lock', { lock: { patterns: [`${harnessRoot}/**`], testCommands: [`echo ${harnessRoot}`] } }));
++  await file('records/malformed.json', 'null');
++  git('add', '.');
++  git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'Disposable cached diagnostics fixture');
++  git('update-ref', 'refs/remotes/origin/main', 'HEAD');
++  git('update-ref', 'refs/remotes/origin/pod-factory/records', 'HEAD');
++  git('config', 'remote.origin.url', 'https://example.invalid/never-fetch');
++  const before = { status: git('status', '--porcelain'), refs: git('show-ref'), head: git('rev-parse', 'HEAD'), config: git('config', '--local', '--list') };
++  const route = new RealFactoryRoute({ repoPath, harnessRoot });
++  const result = await route.inspect('story-2');
++  assert.equal(result.observations!.length, 8);
++  assert.ok(result.observations!.every(p => p.satisfied), 'fixture intentionally supplies every heuristic indicator');
++  assert.equal(result.outcome, 'blocked');
++  assert.equal(result.authority, 'non-authoritative');
++  assert.equal(result.packageBinding, 'unverified');
++  assert.deepEqual(result.prerequisites.filter(p => !p.satisfied).map(p => p.id), ['exact-package-authority', 'dispatch-supported']);
++  assert.match(result.summary, /Locally cached/);
++  assert.ok(result.prerequisites.every(p => p.humanAction === undefined), 'no unvalidated approval instructions are supplied');
++  assert.deepEqual({ status: git('status', '--porcelain'), refs: git('show-ref'), head: git('rev-parse', 'HEAD'), config: git('config', '--local', '--list') }, before);
++});
+--- a/test/factory-fake.ts
++++ b/test/factory-fake.ts
+@@ -0,0 +1,50 @@
++// FAKE FACTORY ADAPTER — fixture only. It proves the dispatch contract and carries no authority.
++// Nothing here reads or writes a real record, and no outcome it reports is evidence about the
++// real factory. Real behaviour is observed by test/factory-real-route.mjs.
++import { evaluateDispatch, mayDispatch } from '../src/factory.js';
++import type { DispatchDecision, DispatchLedgerEntry, DispatchRequest, FactoryExportPackage, FactoryOutcome, FactoryPrerequisite, FactoryRoute, FactoryRouteState } from '../src/factory.js';
++
++export const PREREQUISITE_IDS = ['gate-2-approval', 'gate-2-lock', 'harness-authored', 'harness-protected', 'test-command-locked', 'gate-3-approval', 'story-authorized', 'story-bytes-match'] as const;
++export type PrerequisiteId = (typeof PREREQUISITE_IDS)[number];
++/** Only these are things a person fixes with a command; the rest need work to exist first. */
++const HUMAN_FIXABLE = new Set<PrerequisiteId>(['gate-2-approval', 'gate-2-lock', 'harness-protected', 'test-command-locked', 'gate-3-approval', 'story-authorized']);
++
++export interface FakeExecution { operationId: string; story: string; packageDigest: string; factoryRef: string; candidate: string }
++
++export class FakeFactoryRoute implements FactoryRoute {
++  readonly label = 'FAKE FACTORY ADAPTER — fixture only, never real authority';
++  readonly executions: FakeExecution[] = [];
++  readonly ledger: DispatchLedgerEntry[] = [];
++  private satisfied: Set<PrerequisiteId>;
++  constructor(private readonly world: { satisfied?: PrerequisiteId[]; result?: 'succeeded' | 'failed' | 'uncertain'; candidate?: string; routeOutcome?: FactoryOutcome } = {}) {
++    this.satisfied = new Set(world.satisfied ?? PREREQUISITE_IDS);
++  }
++  withdraw(id: PrerequisiteId): void { this.satisfied.delete(id); }
++
++  async inspect(story: string): Promise<FactoryRouteState> {
++    const prerequisites: FactoryPrerequisite[] = PREREQUISITE_IDS.map(id => {
++      const ok = this.satisfied.has(id);
++      return { id, satisfied: ok, requirement: `fixture requirement ${id}`, observed: ok ? `fixture: ${id} satisfied` : `fixture: ${id} is not satisfied`,
++        ...(ok || !HUMAN_FIXABLE.has(id) ? {} : { humanAction: `fixture human action for ${id}` }) };
++    });
++    const missing = prerequisites.filter(p => !p.satisfied);
++    const outcome: FactoryOutcome = this.world.routeOutcome ?? (missing.length === 0 ? 'ready' : missing.every(p => p.humanAction !== undefined) ? 'waiting-for-user' : 'blocked');
++    return { outcome, readOnly: true, source: 'fixture', authority: 'fixture-only', packageBinding: 'fixture-only', observedAt: new Date().toISOString(), factoryVersion: 'fixture', recordsCommit: 'f'.repeat(40), trunkCommit: '0'.repeat(40), prerequisites,
++      summary: missing.length === 0 ? `fixture: ${story} is authorized` : `fixture: ${missing.length} prerequisite(s) unmet for ${story}` };
++  }
++
++  async requestDispatch(request: DispatchRequest, pkg: FactoryExportPackage): Promise<{ decision: DispatchDecision; entry?: DispatchLedgerEntry }> {
++    const state = await this.inspect(request.story);
++    const decision = evaluateDispatch({ state, pkg, request, ledger: this.ledger });
++    if (!mayDispatch(decision)) return { decision, ...(decision.existing === undefined ? {} : { entry: decision.existing }) };
++    const factoryRef = `fixture-run-${this.executions.length + 1}`;
++    const candidate = this.world.candidate ?? 'fixture-candidate-0123456789ab';
++    this.executions.push({ operationId: request.operationId, story: request.story, packageDigest: request.packageDigest, factoryRef, candidate });
++    const status = this.world.result ?? 'succeeded';
++    const entry: DispatchLedgerEntry = { operationId: request.operationId, packageDigest: request.packageDigest, story: request.story, requestedAt: new Date().toISOString(), status, factoryRef,
++      detail: status === 'succeeded' ? `fixture run ${factoryRef} verified candidate ${candidate}` : status === 'failed' ? `fixture run ${factoryRef} failed on candidate ${candidate}` : `fixture run ${factoryRef} returned no decisive result` };
++    this.ledger.push(entry);
++    const outcome: FactoryOutcome = status === 'succeeded' ? 'ready' : status === 'failed' ? 'failed' : 'uncertain';
++    return { decision: { outcome, blockedBy: [], reasons: [`${entry.detail}. Reported from the factory reference ${factoryRef}, not from an agent's account of it.`] }, entry };
++  }
++}
+--- a/test/factory-http.test.ts
++++ b/test/factory-http.test.ts
+@@ -0,0 +1,145 @@
++import assert from 'node:assert/strict';
++import { spawn } from 'node:child_process';
++import { createServer as createPortProbe } from 'node:net';
++import { fileURLToPath } from 'node:url';
++import { mkdtemp, rm } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import test from 'node:test';
++import type { AddressInfo } from 'node:net';
++import { createPreparationServer } from '../src/server.js';
++import type { BuildPlanOutput, DraftProvider, PlanningInput, PlanningProvider, TechnicalOutput } from '../src/types.js';
++import { runCli } from '../src/cli.js';
++import type { FactoryDiagnosticsConfig } from '../src/factory.js';
++import { FakeFactoryRoute, PREREQUISITE_IDS } from './factory-fake.js';
++
++const draft: DraftProvider = { async draft() { return { prdMarkdown: '# Equipment checkout\nBorrow and return one item.', mockupHtml: '<html><body><button>Borrow</button></body></html>', proposals: [], findings: [] }; } };
++const technical = (input: PlanningInput): TechnicalOutput => ({ markdown: '# Blueprint', stack: 'React, FastAPI, PostgreSQL', layers: 3,
++  requirements: [{ id: 'EQ-06', description: 'A member borrows an available item.', authority: 'PRD checkout journey' }],
++  decisions: (['architecture', 'testability', 'security', 'configuration', 'docker', 'production'] as const).map(topic => ({ topic, decision: 'proportionate', rationale: 'one database, no external service' })), findings: [] });
++const plan = (input: PlanningInput): BuildPlanOutput => ({ markdown: '# Plan',
++  evals: (['correctness', 'restraint', 'production'] as const).map((kind, i) => ({ id: `E${i + 1}`, requirements: ['EQ-06'], kind, procedure: 'Exercise checkout.', expected: 'One loan.', evidence: 'automated' as const })),
++  stories: [{ id: 'story-7', title: 'Checkout', requirements: ['EQ-06'], evals: ['E1', 'E2', 'E3'], scope: ['api/loans.py'], dependsOn: [] }],
++  coverage: [{ requirementId: 'EQ-06', status: 'covered' as const, reason: 'story-7 covers it.' }], findings: [] });
++const planningProvider: PlanningProvider = { async technical(input) { return technical(input); }, async plan(input) { return plan(input); }, async review() { return { findings: [] }; } };
++
++async function serve(t: { after(fn: () => Promise<void>): void }, factoryRoute?: FakeFactoryRoute, factoryDiagnostics?: FactoryDiagnosticsConfig) {
++  const dataDir = await mkdtemp(join(tmpdir(), 'factory-http-'));
++  const { server, service } = await createPreparationServer({ dataDir, workspacePath: dataDir, provider: draft, planningProvider, orcaTransport: { async targets() { return []; }, async verify(target) { return { target, state: 'ready' }; }, async send() { return { accepted: true, requestId: 'fixture', stage: 'input_accepted' }; }, async prepareSession(provider, preference) { return { state: 'uncertain', provider, preference, sessionId: 'f', createParams: {}, optionRequests: [], reason: 'fixture' }; }, async launchSession() { throw new Error('not used'); } }, providerLabel: 'test fixture', ...(factoryRoute === undefined ? {} : { factoryRoute }), factoryDiagnostics });
++  await new Promise<void>((done, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', () => done()); });
++  const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
++  t.after(async () => { await new Promise<void>(done => server.close(() => done())); await rm(dataDir, { recursive: true, force: true }); });
++  const token = /content="([a-f0-9]{64})"/.exec(await (await fetch(`${origin}/`)).text())![1];
++  const post = (path: string, body: object) => fetch(origin + path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-preparation-token': token }, body: JSON.stringify(body) });
++  const read = async () => (await (await fetch(`${origin}/api/preparation`)).json()).preparation;
++  // Draft/plan responses only acknowledge the task, exactly as the CLI documents; wait for the save.
++  const step = async (path: string, body: object) => {
++    const response = await post(path, body);
++    assert.ok(response.ok, `${path} -> ${response.status} ${await response.text()}`);
++    for (let attempt = 0; attempt < 200; attempt++) {
++      const current = await read();
++      if (current !== null && current.task?.status !== 'running') return current;
++      await new Promise(done => setTimeout(done, 10));
++    }
++    throw new Error(`${path} never settled`);
++  };
++  return { origin, service, post, read, step };
++}
++
++test('GET /api/factory reports the route read-only and refuses to export before the review completes', async t => {
++  const route = new FakeFactoryRoute({ satisfied: PREREQUISITE_IDS.filter(id => id !== 'harness-authored') });
++  const { origin, post, read, step } = await serve(t, route);
++  await post('/api/preparation', { idea: 'A shared-equipment checkout app', operationId: 'create' });
++
++  const early = await (await fetch(`${origin}/api/factory`)).json();
++  assert.equal(early.package, null);
++  assert.match(early.exportRefusal, /Complete the planning review/);
++  assert.equal(early.route.readOnly, true);
++  assert.equal(early.dispatch.implemented, false);
++
++  const state = await read();
++  let current = await step('/api/answer', { revision: state.revision, operationId: 'answer', answer: 'One member borrows one item.' });
++  current = await step('/api/draft', { revision: current.revision, operationId: 'draft' });
++  current = await step('/api/technical', { revision: current.revision, operationId: 'tech', preferences: 'React, FastAPI, PostgreSQL' });
++  current = await step('/api/select-technical', { revision: current.revision, operationId: 'select', digest: current.planning.technical.artifact.digest });
++  current = await step('/api/plan', { revision: current.revision, operationId: 'plan' });
++  current = await step('/api/review-plan', { revision: current.revision, operationId: 'review' });
++  assert.equal(current.planning.phase, 'planning-complete');
++
++  const ready = await (await fetch(`${origin}/api/factory?story=story-7`)).json();
++  assert.equal(ready.story, 'story-7');
++  assert.match(ready.package.manifestDigest, /^[a-f0-9]{64}$/);
++  assert.deepEqual(ready.package.stories, ['story-7']);
++  assert.equal(ready.route.outcome, 'blocked');
++  assert.deepEqual(ready.route.prerequisites.filter((p: { satisfied: boolean }) => !p.satisfied).map((p: { id: string }) => p.id), ['harness-authored']);
++
++  const full = await (await fetch(`${origin}/api/factory?include=package`)).json();
++  assert.equal(full.manifestDigest, ready.package.manifestDigest);
++  assert.equal(full.authority, 'draft-only');
++  assert.deepEqual(full.stories[0].scope, ['api/loans.py']);
++});
++
++test('the service still has no approval or dispatch action, and the factory route is read-only', async t => {
++  const { origin, post } = await serve(t, new FakeFactoryRoute());
++  for (const path of ['/api/approve', '/api/factory/dispatch', '/api/dispatch', '/api/factory']) {
++    const response = await post(path, {});
++    assert.equal(response.status, 404, `${path} must not accept a POST`);
++    assert.match((await response.json()).error, /No approval or dispatch action is available here|does not exist/);
++  }
++  assert.equal((await fetch(`${origin}/api/factory`)).status, 404, 'with no preparation there is nothing to report');
++});
++
++
++test('HTTP and CLI report absent/partial diagnostics and never choose a story automatically', async t => {
++  for (const [config, expected] of [[undefined, 'unconfigured'], [{ repoPath: '/explicit/repo' }, 'invalid'], [{ repoPath: '/missing/repo', harnessRoot: 'docs/projects/equipment-checkout' }, 'configured']] as const) {
++    const { origin, post } = await serve(t, undefined, config);
++    await post('/api/preparation', { idea: 'Equipment checkout', operationId: 'create' });
++    const noStory = await runCli(['factory', '--url', origin]) as any;
++    assert.equal(noStory.story, null);
++    assert.equal(noStory.configuration.status, expected);
++    assert.equal(noStory.route.outcome, 'blocked');
++    assert.equal(noStory.route.source, 'none');
++    assert.equal(noStory.route.packageBinding, 'unverified');
++    const explicit = await runCli(['factory', '--story', 'story-2', '--url', origin]) as any;
++    assert.equal(explicit.route.outcome, expected === 'configured' ? 'uncertain' : 'blocked');
++    assert.equal(explicit.route.authority, 'non-authoritative');
++    assert.equal(explicit.dispatch.implemented, false);
++    assert.equal((await fetch(`${origin}/api/factory?story=bad`)).status, 400);
++    const font = await fetch(`${origin}/fonts/IBMPlexSans-latin.woff2`);
++    assert.equal(font.status, 200);
++    assert.equal(font.headers.get('content-type'), 'font/woff2');
++    assert.equal(Buffer.from(await font.arrayBuffer()).subarray(0, 4).toString(), 'wOF2');
++    for (const path of ['/fonts/missing.woff2', '/fonts/sub/dir.woff2']) assert.equal((await fetch(origin + path)).status, 404);
++  }
++});
++
++
++test('normal server entry point uses explicit environment diagnostics configuration', async t => {
++  const dataDir = await mkdtemp(join(tmpdir(), 'factory-startup-'));
++  const probe = createPortProbe();
++  await new Promise<void>(done => probe.listen(0, '127.0.0.1', done));
++  const port = (probe.address() as AddressInfo).port;
++  await new Promise<void>(done => probe.close(() => done()));
++  const child = spawn(process.execPath, [fileURLToPath(new URL('../src/server.js', import.meta.url))], {
++    env: { ...process.env, ORCH_DATA_DIR: dataDir, ORCH_PORT: String(port), ORCH_FACTORY_REPO: dataDir, ORCH_FACTORY_HARNESS_ROOT: 'docs/projects/equipment-checkout', ORCH_FACTORY_REMOTE: 'origin' },
++    stdio: ['ignore', 'pipe', 'pipe'],
++  });
++  t.after(async () => {
++    if (child.exitCode === null && child.signalCode === null) await new Promise<void>(done => { child.once('exit', () => done()); child.kill(); });
++    await rm(dataDir, { recursive: true, force: true });
++  });
++  await new Promise<void>((done, reject) => {
++    const timeout = setTimeout(() => reject(new Error('normal startup did not listen')), 10_000);
++    child.once('error', error => { clearTimeout(timeout); reject(error); });
++    child.stdout.on('data', chunk => { if (chunk.toString().includes('Preparation:')) { clearTimeout(timeout); done(); } });
++    child.once('exit', code => { clearTimeout(timeout); reject(new Error(`server exited ${code}`)); });
++  });
++  const origin = `http://127.0.0.1:${port}`;
++  await runCli(['start', '--text', 'Equipment checkout', '--operation-id', 'normal-startup', '--url', origin]);
++  const result = await runCli(['factory', '--story', 'story-2', '--url', origin]) as any;
++  assert.equal(result.configuration.status, 'configured');
++  assert.equal(result.route.source, 'locally-cached-factory-records');
++  assert.equal(result.route.outcome, 'uncertain', 'the explicit directory has no cached factory refs');
++  assert.equal(result.route.packageBinding, 'unverified');
++  assert.equal(result.dispatch.implemented, false);
++});
+--- a/test/factory-real-route.mjs
++++ b/test/factory-real-route.mjs
+@@ -0,0 +1,15 @@
++// Explicit local diagnostics only: no fetch, writes, approvals or builders. JSON goes to stdout.
++// npm run build && node test/factory-real-route.mjs REPO_PATH HARNESS_ROOT story-N [REMOTE]
++import { resolve } from 'node:path';
++import { configureFactoryDiagnostics } from '../dist/src/factory.js';
++
++const [repo, harnessRoot, story, remote] = process.argv.slice(2);
++if (!repo || !harnessRoot || !/^story-[1-9][0-9]*$/.test(story ?? '')) {
++  console.error('Supply explicit REPO_PATH HARNESS_ROOT story-N [REMOTE]. Cached diagnostics do not authorize an application package.');
++  process.exitCode = 1;
++} else {
++  const { configuration, route } = configureFactoryDiagnostics({ repoPath: resolve(repo), harnessRoot, remote });
++  const state = route ? await route.inspect(story) : null;
++  console.log(JSON.stringify({ configuration, story, route: state, dispatch: { implemented: false } }, null, 2));
++  process.exitCode = state && state.outcome !== 'uncertain' ? 0 : 1;
++}
+--- a/test/factory.test.ts
++++ b/test/factory.test.ts
+@@ -0,0 +1,232 @@
++import assert from 'node:assert/strict';
++import { mkdtemp, rm } from 'node:fs/promises';
++import { tmpdir } from 'node:os';
++import { join } from 'node:path';
++import test from 'node:test';
++import { BuildPlanOutput, DraftProvider, PlanningInput, PlanningProvider, Preparation, TechnicalOutput, WorkflowError, WorkflowService } from '../src/workflow.js';
++import { buildExportPackage, evaluateDispatch, sha256Lf } from '../src/factory.js';
++import type { DispatchLedgerEntry, DispatchRequest, FactoryExportPackage } from '../src/factory.js';
++import { FakeFactoryRoute, PREREQUISITE_IDS } from './factory-fake.js';
++
++const draft: DraftProvider = { async draft(input) { return { prdMarkdown: `# Equipment checkout\n${input.confirmedScope.join('\n')}`, mockupHtml: '<html><body><h1>Equipment</h1><button>Borrow</button></body></html>', proposals: [{ id: 'reservations', description: 'Reservations stay unaccepted.' }], findings: [] }; } };
++
++function technical(input: PlanningInput): TechnicalOutput {
++  return { markdown: '# Blueprint\nReact client, FastAPI service, PostgreSQL.', stack: 'React, FastAPI, PostgreSQL', layers: 3,
++    requirements: [
++      { id: 'EQ-06', description: 'A member borrows an available item; borrower and time are recorded.', authority: 'Confirmed scope; PRD checkout journey' },
++      { id: 'EQ-09', description: 'Two concurrent checkouts leave exactly one active loan.', authority: 'Confirmed scope; PRD conflict clause' },
++    ],
++    decisions: (['architecture', 'testability', 'security', 'configuration', 'docker', 'production'] as const).map(topic => ({ topic, decision: `${topic}: proportionate to one internal app`, rationale: 'The confirmed scope has one database and no external service.' })), findings: [] };
++}
++function plan(input: PlanningInput): BuildPlanOutput {
++  const requirements = input.technical!.requirements.map(r => r.id);
++  return { markdown: '# Plan\nOne builder owns the loan endpoint.',
++    evals: (['correctness', 'restraint', 'production'] as const).map((kind, i) => ({ id: `E${i + 1}`, requirements, kind, procedure: 'Exercise the checkout journey against the API and the database.', expected: 'One active loan; the second request conflicts.', evidence: 'automated' as const })),
++    stories: [{ id: 'story-7', title: 'Checkout and return', requirements, evals: ['E1', 'E2', 'E3'], scope: ['api/loans.py', 'web/src/Loan.tsx'], dependsOn: [] }],
++    coverage: requirements.map(requirementId => ({ requirementId, status: 'covered' as const, reason: 'story-7 and E1 to E3 exercise this requirement.' })), findings: [] };
++}
++const provider: PlanningProvider = { async technical(input) { return technical(input); }, async plan(input) { return plan(input); }, async review() { return { findings: [] }; } };
++const mutate = (state: Preparation, operationId: string) => ({ expectedRevision: state.revision, operationId });
++
++async function prepared(t: { after(fn: () => Promise<void>): void }, planningProvider = provider) {
++  const dataDir = await mkdtemp(join(tmpdir(), 'factory-export-')); t.after(() => rm(dataDir, { recursive: true, force: true }));
++  const service = new WorkflowService({ dataDir, provider: draft, planningProvider, executionLimitMs: 2000 });
++  const created = await service.create({ idea: 'A shared-equipment checkout app', operationId: 'create' });
++  const answered = await service.answer(created.id, { ...mutate(created, 'answer'), answer: 'A team member borrows one shared item and returns it.' });
++  const drafted = await service.draft(created.id, mutate(answered, 'draft'));
++  const authored = await service.technical(created.id, { ...mutate(drafted, 'technical'), preferences: 'React, FastAPI, PostgreSQL' });
++  const selection = await service.acceptTechnical(created.id, { ...mutate(authored, 'select'), digest: authored.planning!.technical!.artifact.digest });
++  const planned = await service.plan(created.id, mutate(selection, 'plan'));
++  const completed = await service.reviewPlan(created.id, mutate(planned, 'review'));
++  return { service, dataDir, state: completed };
++}
++const request = (pkg: FactoryExportPackage, operationId: string, story = 'story-7'): DispatchRequest =>
++  ({ operationId, preparationRevision: pkg.preparationRevision, packageDigest: pkg.manifestDigest, story });
++const code = (expected: string) => (error: unknown) => error instanceof WorkflowError && error.code === expected;
++
++// 1. The exact reviewed package crosses the boundary, with nothing dropped.
++test('export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++  assert.equal(pkg.authority, 'draft-only');
++  assert.equal(pkg.approvalStatus, 'approval-channel-not-implemented');
++  assert.deepEqual(pkg.requirements.map(r => r.id), ['EQ-06', 'EQ-09']);
++  assert.deepEqual(pkg.evals.map(e => e.id), ['E1', 'E2', 'E3']);
++  assert.deepEqual(pkg.coverage.map(c => c.requirementId), ['EQ-06', 'EQ-09']);
++  assert.deepEqual(pkg.stories[0].scope, ['api/loans.py', 'web/src/Loan.tsx']);
++  assert.deepEqual(pkg.stories[0].evals, ['E1', 'E2', 'E3']);
++  assert.equal(pkg.decisions.length, 6);
++  assert.deepEqual(pkg.sources, state.planning!.sources);
++  assert.equal(pkg.artifacts.handoff.digest, state.planning!.handoff!.digest);
++  assert.equal(pkg.technicalDecision.authority, 'local-review-only');
++  // Planned procedures are declared as plans inside the package itself.
++  assert.deepEqual(pkg.harness, { executableTestsAuthored: false, baselineRun: false, protectedByLock: false, note: pkg.harness.note });
++  assert.match(pkg.harness.note, /planned procedures/i);
++  // The manifest digest is a function of the content, recomputable by a reviewer.
++  const { manifestDigest, ...body } = pkg;
++  assert.equal(manifestDigest, sha256Lf(JSON.stringify(body, null, 2) + '\n'));
++  assert.notEqual(manifestDigest, sha256Lf(JSON.stringify({ ...body, stack: 'Something else' }, null, 2) + '\n'));
++});
++
++// 1b. A package that would quietly lose scope or coverage is refused instead of exported.
++test('export refuses a story without scope, a requirement without coverage, and an unresolved gap', async t => {
++  // The existing plan validator already refuses an empty story scope, so planning never completes.
++  const noScope: PlanningProvider = { ...provider, async plan(input) { const base = plan(input); return { ...base, stories: [{ ...base.stories[0], scope: [] }] }; } };
++  await assert.rejects(() => prepared(t, noScope), code('PLAN_REQUIRED'));
++
++  const { state } = await prepared(t);
++  const widened = structuredClone(state);
++  widened.planning!.plan!.stories[0].scope = [];
++  assert.throws(() => buildExportPackage(widened), code('EXPORT_INCOMPLETE'));
++  const missingCoverage = structuredClone(state);
++  missingCoverage.planning!.plan!.coverage = missingCoverage.planning!.plan!.coverage.filter(row => row.requirementId !== 'EQ-09');
++  assert.throws(() => buildExportPackage(missingCoverage), code('EXPORT_INCOMPLETE'));
++
++  const gap = structuredClone(state);
++  gap.planning!.plan!.coverage[0] = { requirementId: 'EQ-06', status: 'gap', reason: 'No decision about repeat requests.' };
++  assert.throws(() => buildExportPackage(gap), code('EXPORT_INCOMPLETE'));
++
++  const unreviewed = structuredClone(state);
++  delete unreviewed.planning!.review;
++  assert.throws(() => buildExportPackage(unreviewed), code('EXPORT_NOT_READY'));
++});
++
++// 2. A missing approval or an unprotected harness refuses before anything is launched.
++test('missing gate-3 approval or unprotected harness refuses, and launches nothing', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++
++  const noGate3 = new FakeFactoryRoute({ satisfied: PREREQUISITE_IDS.filter(id => id !== 'gate-3-approval' && id !== 'story-authorized') });
++  const first = await noGate3.requestDispatch(request(pkg, 'op-1'), pkg);
++  assert.equal(first.decision.outcome, 'waiting-for-user');
++  assert.deepEqual(first.decision.blockedBy.map(p => p.id), ['gate-3-approval', 'story-authorized']);
++  assert.equal(noGate3.executions.length, 0);
++
++  const noHarness = new FakeFactoryRoute({ satisfied: PREREQUISITE_IDS.filter(id => id !== 'harness-authored') });
++  const second = await noHarness.requestDispatch(request(pkg, 'op-2'), pkg);
++  assert.equal(second.decision.outcome, 'blocked');
++  assert.deepEqual(second.decision.blockedBy.map(p => p.id), ['harness-authored']);
++  assert.equal(noHarness.executions.length, 0);
++
++  const noLock = new FakeFactoryRoute({ satisfied: PREREQUISITE_IDS.filter(id => id !== 'harness-protected' && id !== 'test-command-locked') });
++  const third = await noLock.requestDispatch(request(pkg, 'op-3'), pkg);
++  assert.equal(third.decision.outcome, 'waiting-for-user');
++  assert.equal(noLock.executions.length, 0);
++  assert.match(third.decision.blockedBy.map(p => p.humanAction).join(' '), /harness-protected|test-command-locked/);
++});
++
++// 3. Changed bytes invalidate the authorization rather than riding on the old review.
++test('a changed package, revision or story refuses, and a later revision cannot reuse the old digest', async t => {
++  const { service, state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++  const route = new FakeFactoryRoute();
++
++  const wrongDigest = await route.requestDispatch({ ...request(pkg, 'op-digest'), packageDigest: sha256Lf('something else') }, pkg);
++  assert.equal(wrongDigest.decision.outcome, 'blocked');
++  assert.match(wrongDigest.decision.reasons.join(' '), /does not match the reviewed package/);
++
++  const wrongRevision = await route.requestDispatch({ ...request(pkg, 'op-revision'), preparationRevision: pkg.preparationRevision + 1 }, pkg);
++  assert.equal(wrongRevision.decision.outcome, 'blocked');
++  assert.match(wrongRevision.decision.reasons.join(' '), /revision/);
++
++  const unknownStory = await route.requestDispatch(request(pkg, 'op-story', 'story-99'), pkg);
++  assert.equal(unknownStory.decision.outcome, 'blocked');
++  assert.match(unknownStory.decision.reasons.join(' '), /no story story-99/);
++  assert.equal(route.executions.length, 0);
++
++  // A real upstream change clears planning, so the old package can no longer be produced at all.
++  const revised = await service.requestChanges(state.id, { ...mutate(state, 'changes'), feedback: 'Add an out-of-service state to the detail screen.' });
++  assert.equal(revised.planning, undefined);
++  assert.throws(() => buildExportPackage(revised), code('EXPORT_NOT_READY'));
++  const afterChange = await route.requestDispatch(request(pkg, 'op-after-change'), pkg);
++  assert.equal(afterChange.decision.outcome, 'ready', 'the fixture route still authorizes the old package');
++  assert.equal(route.executions.length, 1, 'which is exactly why the service must refuse to export it');
++});
++
++// 4. One authorized request is one execution; a replay or an unresolved attempt adds none.
++test('one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++
++  const route = new FakeFactoryRoute();
++  const first = await route.requestDispatch(request(pkg, 'op-once'), pkg);
++  assert.equal(first.decision.outcome, 'ready');
++  assert.equal(route.executions.length, 1);
++  const replay = await route.requestDispatch(request(pkg, 'op-once'), pkg);
++  assert.equal(route.executions.length, 1, 'a replayed operation id must not start a second builder');
++  assert.equal(replay.decision.existing?.factoryRef, first.entry!.factoryRef);
++  assert.match(replay.decision.reasons.join(' '), /already requested/);
++
++  const uncertain = new FakeFactoryRoute({ result: 'uncertain' });
++  const attempt = await uncertain.requestDispatch(request(pkg, 'op-uncertain'), pkg);
++  assert.equal(attempt.decision.outcome, 'uncertain');
++  assert.equal(uncertain.executions.length, 1);
++  const retry = await uncertain.requestDispatch(request(pkg, 'op-retry'), pkg);
++  assert.equal(retry.decision.outcome, 'uncertain');
++  assert.equal(uncertain.executions.length, 1, 'a retry while an attempt is unresolved must reconcile, not dispatch');
++  assert.match(retry.decision.reasons.join(' '), /Reconcile it against the factory/);
++});
++
++// 5. Failure is reported as failure; success cites the factory's own reference.
++test('failure is reported as failure and success cites the factory reference and candidate', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++
++  const failing = new FakeFactoryRoute({ result: 'failed' });
++  const failed = await failing.requestDispatch(request(pkg, 'op-fail'), pkg);
++  assert.equal(failed.decision.outcome, 'failed');
++  assert.equal(failed.entry!.status, 'failed');
++  assert.match(failed.decision.reasons.join(' '), /failed on candidate/);
++
++  const passing = new FakeFactoryRoute({ result: 'succeeded', candidate: 'cand-abcdef123456' });
++  const ok = await passing.requestDispatch(request(pkg, 'op-pass'), pkg);
++  assert.equal(ok.decision.outcome, 'ready');
++  assert.equal(ok.entry!.factoryRef, 'fixture-run-1');
++  assert.match(ok.decision.reasons.join(' '), /cand-abcdef123456/);
++  assert.match(ok.decision.reasons.join(' '), /not from an agent's account/);
++});
++
++// The decision function on its own, with no adapter at all.
++test('evaluateDispatch refuses by default and never reports ready on an unproven route', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++  const ready = await new FakeFactoryRoute().inspect('story-7');
++  const ledger: DispatchLedgerEntry[] = [];
++
++  assert.equal(evaluateDispatch({ state: ready, pkg, request: request(pkg, 'op'), ledger }).outcome, 'ready');
++  assert.equal(evaluateDispatch({ state: { ...ready, outcome: 'uncertain', summary: 'records unreadable' }, pkg, request: request(pkg, 'op'), ledger }).outcome, 'uncertain');
++  assert.equal(evaluateDispatch({ state: { ...ready, outcome: 'failed', summary: 'git failed' }, pkg, request: request(pkg, 'op'), ledger }).outcome, 'failed');
++
++  const succeeded: DispatchLedgerEntry[] = [{ operationId: 'earlier', packageDigest: sha256Lf('older package'), story: 'story-7', requestedAt: '2026-10-19T00:00:00Z', status: 'succeeded', factoryRef: 'run-0' }];
++  const changed = evaluateDispatch({ state: ready, pkg, request: request(pkg, 'op-new'), ledger: succeeded });
++  assert.equal(changed.outcome, 'blocked');
++  assert.match(changed.reasons.join(' '), /already ran against a different reviewed package/);
++});
++
++test('tampered package content with matching claimed digests refuses before any fixture execution', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++  const altered = structuredClone(pkg);
++  altered.stories[0].scope.push('unapproved/**');
++  const route = new FakeFactoryRoute();
++  const refused = await route.requestDispatch(request(altered, 'tampered-scope'), altered);
++  assert.equal(altered.manifestDigest, pkg.manifestDigest, 'the original digest claim is retained');
++  assert.equal(refused.decision.outcome, 'blocked');
++  assert.match(refused.decision.reasons.join(' '), /content does not match its manifest digest/);
++  assert.equal(route.executions.length, 0);
++});
++
++test('blocked and waiting routes cannot fall through to ready with empty or satisfied prerequisites', async t => {
++  const { state } = await prepared(t);
++  const pkg = buildExportPackage(state);
++  const ready = await new FakeFactoryRoute().inspect('story-7');
++  for (const outcome of ['blocked', 'waiting-for-user'] as const) {
++    for (const prerequisites of [[], ready.prerequisites]) {
++      const decision = evaluateDispatch({ state: { ...ready, outcome, prerequisites, summary: `route says ${outcome}` }, pkg, request: request(pkg, outcome), ledger: [] });
++      assert.equal(decision.outcome, outcome);
++      assert.match(decision.reasons.join(' '), new RegExp(`route says ${outcome}`));
++    }
++  }
++  const nonAuthority = evaluateDispatch({ state: { ...ready, authority: 'non-authoritative' }, pkg, request: request(pkg, 'cached'), ledger: [] });
++  assert.equal(nonAuthority.outcome, 'blocked', 'cached diagnostics cannot become permission even if mislabeled ready');
++});

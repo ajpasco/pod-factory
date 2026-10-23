@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "projectId": "prep-fa8847b0c33183273f594550",
+  "preparationRevision": 11,
+  "authority": "draft-only",
+  "approvalStatus": "approval-channel-not-implemented",
+  "sources": {
+    "prd": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/dbc97a59-1fb0-4357-a7f1-0a3e1e0cfd62/prd.md",
+      "digest": "e36d45c0c58ca660bba5e809b129e6850849238210538778c7200e8778a4a718",
+      "revision": 1
+    },
+    "mockup": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/dbc97a59-1fb0-4357-a7f1-0a3e1e0cfd62/mockup.html",
+      "digest": "13cca48b6efb1b72c9e9ba9be2cda8942fde0dd777db7db386b73f058a9a94d6",
+      "revision": 1
+    },
+    "confirmedScopeDigest": "9377e43413552b9970f0b78ecdb1d591a5732fb9c4c2b1c5ee314496d1fdafd0"
+  },
+  "artifacts": {
+    "technical": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/6dcb7415-582e-480d-ac1d-75f9d6e74462/technical.md",
+      "digest": "71f3a790903e7494bc0c5c78e779ed833e42ef2cbb7deb99b9b3592db21c28b8",
+      "revision": 6
+    },
+    "plan": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/5c9764dd-9305-4d70-996f-828ba130d29f/build-plan.md",
+      "digest": "2ac9c64481965923a0a80efc3d7383d2334fd02386404619ba75b1e15ade1caa",
+      "revision": 9
+    },
+    "review": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/c84a7c97-ad11-4ddd-ab6f-4073de80320b/planning-review.json",
+      "digest": "8aa973100a15bf817985395637131e838cf84e427be4792583def923f020f5fa",
+      "revision": 11
+    },
+    "handoff": {
+      "path": "prep-fa8847b0c33183273f594550/artifacts/c84a7c97-ad11-4ddd-ab6f-4073de80320b/planning-handoff.json",
+      "digest": "973d6d86ce44ab092b1bba939b9132ab9754d1383d6f07f4d69234dc25c79b8e",
+      "revision": 11
+    }
+  },
+  "technicalDecision": {
+    "digest": "71f3a790903e7494bc0c5c78e779ed833e42ef2cbb7deb99b9b3592db21c28b8",
+    "at": "2026-10-19T02:28:50.125Z",
+    "authority": "local-review-only"
+  },
+  "stack": "React, FastAPI, PostgreSQL",
+  "layers": 3,
+  "requirements": [
+    {
+      "id": "EQ-06",
+      "description": "A member borrows an available item; borrower and time are recorded.",
+      "authority": "Confirmed scope; PRD checkout journey"
+    },
+    {
+      "id": "EQ-09",
+      "description": "Two concurrent checkouts leave exactly one active loan.",
+      "authority": "Confirmed scope; PRD conflict clause"
+    }
+  ],
+  "decisions": [
+    {
+      "topic": "architecture",
+      "decision": "architecture: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    },
+    {
+      "topic": "testability",
+      "decision": "testability: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    },
+    {
+      "topic": "security",
+      "decision": "security: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    },
+    {
+      "topic": "configuration",
+      "decision": "configuration: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    },
+    {
+      "topic": "docker",
+      "decision": "docker: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    },
+    {
+      "topic": "production",
+      "decision": "production: proportionate to one internal app",
+      "rationale": "One database, no external service."
+    }
+  ],
+  "evals": [
+    {
+      "id": "E1",
+      "requirements": [
+        "EQ-06",
+        "EQ-09"
+      ],
+      "kind": "correctness",
+      "procedure": "Exercise checkout against the API and the database.",
+      "expected": "One active loan; the second request conflicts.",
+      "evidence": "automated"
+    },
+    {
+      "id": "E2",
+      "requirements": [
+        "EQ-06",
+        "EQ-09"
+      ],
+      "kind": "restraint",
+      "procedure": "Exercise checkout against the API and the database.",
+      "expected": "One active loan; the second request conflicts.",
+      "evidence": "automated"
+    },
+    {
+      "id": "E3",
+      "requirements": [
+        "EQ-06",
+        "EQ-09"
+      ],
+      "kind": "production",
+      "procedure": "Exercise checkout against the API and the database.",
+      "expected": "One active loan; the second request conflicts.",
+      "evidence": "automated"
+    }
+  ],
+  "coverage": [
+    {
+      "requirementId": "EQ-06",
+      "status": "covered",
+      "reason": "story-4 and E1 to E3 exercise this requirement."
+    },
+    {
+      "requirementId": "EQ-09",
+      "status": "covered",
+      "reason": "story-4 and E1 to E3 exercise this requirement."
+    }
+  ],
+  "stories": [
+    {
+      "id": "story-4",
+      "title": "Checkout and return",
+      "requirements": [
+        "EQ-06",
+        "EQ-09"
+      ],
+      "evals": [
+        "E1",
+        "E2",
+        "E3"
+      ],
+      "scope": [
+        "docs/projects/equipment-checkout/api/loans.py"
+      ],
+      "dependsOn": []
+    }
+  ],
+  "harness": {
+    "executableTestsAuthored": false,
+    "baselineRun": false,
+    "protectedByLock": false,
+    "note": "These evals are planned procedures. An authored and independently reviewed executable harness, a classified baseline run and a lock covering it are prerequisites the factory must hold before dispatch."
+  },
+  "manifestDigest": "b962a2b2c771a2cc901cdaf428c36b15504810fc45516110701fa3887f5085b9"
+}

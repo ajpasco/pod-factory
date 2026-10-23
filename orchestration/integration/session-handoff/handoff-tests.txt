@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: fake executor: read-only inventory returns exact target identity, never focus/title or send
+ok 1 - fake executor: read-only inventory returns exact target identity, never focus/title or send
+  ---
+  duration_ms: 10.367125
+  type: 'test'
+  ...
+# Subtest: fake executor: exact identity and durable evidence precede each guarded phase; truthful receipt
+ok 2 - fake executor: exact identity and durable evidence precede each guarded phase; truthful receipt
+  ---
+  duration_ms: 137.163375
+  type: 'test'
+  ...
+# Subtest: missing, guessed, nonlocal and control-bearing requests fail before any runtime call
+ok 3 - missing, guessed, nonlocal and control-bearing requests fail before any runtime call
+  ---
+  duration_ms: 4.081833
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"incarnationId":"replacement"} cannot receive input
+ok 4 - fake executor: wrong/closed/waiting recipient {"incarnationId":"replacement"} cannot receive input
+  ---
+  duration_ms: 7.370166
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"ptyId":"replacement"} cannot receive input
+ok 5 - fake executor: wrong/closed/waiting recipient {"ptyId":"replacement"} cannot receive input
+  ---
+  duration_ms: 5.804333
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"worktreePath":"/other"} cannot receive input
+ok 6 - fake executor: wrong/closed/waiting recipient {"worktreePath":"/other"} cannot receive input
+  ---
+  duration_ms: 6.6335
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"agentIdentity":"codex"} cannot receive input
+ok 7 - fake executor: wrong/closed/waiting recipient {"agentIdentity":"codex"} cannot receive input
+  ---
+  duration_ms: 2.534791
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"handle":"term_other"} cannot receive input
+ok 8 - fake executor: wrong/closed/waiting recipient {"handle":"term_other"} cannot receive input
+  ---
+  duration_ms: 3.982333
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"connected":false} cannot receive input
+ok 9 - fake executor: wrong/closed/waiting recipient {"connected":false} cannot receive input
+  ---
+  duration_ms: 4.405083
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"writable":false} cannot receive input
+ok 10 - fake executor: wrong/closed/waiting recipient {"writable":false} cannot receive input
+  ---
+  duration_ms: 4.9255
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"orphaned":true} cannot receive input
+ok 11 - fake executor: wrong/closed/waiting recipient {"orphaned":true} cannot receive input
+  ---
+  duration_ms: 5.929583
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"agentWait":{"kind":"permission"}} cannot receive input
+ok 12 - fake executor: wrong/closed/waiting recipient {"agentWait":{"kind":"permission"}} cannot receive input
+  ---
+  duration_ms: 5.376
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {} cannot receive input
+ok 13 - fake executor: wrong/closed/waiting recipient {} cannot receive input
+  ---
+  duration_ms: 4.649417
+  type: 'test'
+  ...
+# Subtest: fake executor: busy or unreachable recipient is never submitted
+ok 14 - fake executor: busy or unreachable recipient is never submitted
+  ---
+  duration_ms: 7.016875
+  type: 'test'
+  ...
+# Subtest: fake executor: agent exits after text prevents Enter and leaves partial evidence
+ok 15 - fake executor: agent exits after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 90.338666
+  type: 'test'
+  ...
+# Subtest: fake executor: permission appears after text prevents Enter and leaves partial evidence
+ok 16 - fake executor: permission appears after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 124.374375
+  type: 'test'
+  ...
+# Subtest: fake executor: incarnation changes after text prevents Enter and leaves partial evidence
+ok 17 - fake executor: incarnation changes after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 109.200125
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 refused stops without retry, completion or approval
+ok 18 - fake executor: phase 1 refused stops without retry, completion or approval
+  ---
+  duration_ms: 55.848416
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 unverifiable stops without retry, completion or approval
+ok 19 - fake executor: phase 1 unverifiable stops without retry, completion or approval
+  ---
+  duration_ms: 55.033666
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 missing stops without retry, completion or approval
+ok 20 - fake executor: phase 1 missing stops without retry, completion or approval
+  ---
+  duration_ms: 53.238
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 throw stops without retry, completion or approval
+ok 21 - fake executor: phase 1 throw stops without retry, completion or approval
+  ---
+  duration_ms: 53.053917
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 wrong-runtime stops without retry, completion or approval
+ok 22 - fake executor: phase 1 wrong-runtime stops without retry, completion or approval
+  ---
+  duration_ms: 73.544958
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 refused stops without retry, completion or approval
+ok 23 - fake executor: phase 2 refused stops without retry, completion or approval
+  ---
+  duration_ms: 81.183083
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 unverifiable stops without retry, completion or approval
+ok 24 - fake executor: phase 2 unverifiable stops without retry, completion or approval
+  ---
+  duration_ms: 81.986583
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 missing stops without retry, completion or approval
+ok 25 - fake executor: phase 2 missing stops without retry, completion or approval
+  ---
+  duration_ms: 80.351084
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 throw stops without retry, completion or approval
+ok 26 - fake executor: phase 2 throw stops without retry, completion or approval
+  ---
+  duration_ms: 91.86525
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 wrong-runtime stops without retry, completion or approval
+ok 27 - fake executor: phase 2 wrong-runtime stops without retry, completion or approval
+  ---
+  duration_ms: 103.166375
+  type: 'test'
+  ...
+# Subtest: fake executor: corrupt/preexisting attempt evidence fails closed; duplicate concurrent calls cannot duplicate writes
+ok 28 - fake executor: corrupt/preexisting attempt evidence fails closed; duplicate concurrent calls cannot duplicate writes
+  ---
+  duration_ms: 109.683625
+  type: 'test'
+  ...
+# Subtest: CLI rejects unknown/retry/interrupt/send omission and can list without any send
+ok 29 - CLI rejects unknown/retry/interrupt/send omission and can list without any send
+  ---
+  duration_ms: 2.72375
+  type: 'test'
+  ...
+# Subtest: fake executor: busy transition after text never presses Enter
+ok 30 - fake executor: busy transition after text never presses Enter
+  ---
+  duration_ms: 91.697375
+  type: 'test'
+  ...
+# Subtest: fake executor: final identity check before text catches a replacement after readiness
+ok 31 - fake executor: final identity check before text catches a replacement after readiness
+  ---
+  duration_ms: 60.843291
+  type: 'test'
+  ...
+# Subtest: fake executor: unsupported/missing host guard version refuses before any terminal input
+ok 32 - fake executor: unsupported/missing host guard version refuses before any terminal input
+  ---
+  duration_ms: 4.966875
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1618.899958

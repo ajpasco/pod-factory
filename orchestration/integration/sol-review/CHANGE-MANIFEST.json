@@ -1,0 +1,429 @@
+{
+  "recordedAt": "2026-10-19T03:21:01.816267+00:00",
+  "sourceRoot": "<home>/orca/workspaces/orca-software-factory/scad/orchestration",
+  "disposableExport": "/private/tmp/d7-sol-review-do6xb2jm/candidate",
+  "patch": "factory-connection-corrected.patch",
+  "patchSha256": "a09fe5cc84f8f35007d6a21c1fcf2ec7c6cdd7edef4ba8a114f43d6ed1f4e8bf",
+  "archivalPatchSha256": "7e66cf71fc440bfcc4b431492af4709f8361c85257663d8ed2777a045b53bc81",
+  "hashAlgorithm": "sha256 of exact bytes",
+  "changed": [
+    {
+      "path": "README.md",
+      "beforeSha256": "add914f41475b2769d58b00c2318cee39c3c690baf726d937c6aafd1894141a1",
+      "afterSha256": "14e9248b9967507ffdeaa1c7648962988173aef4198a17aa8a96e287c7dec8d5"
+    },
+    {
+      "path": "src/cli.ts",
+      "beforeSha256": "7b66b9cecd2ec8439059ec9d2101d8e39b22c2beef82a4dd17ba4925a53abdaf",
+      "afterSha256": "1d768be85a48ca4c174637d8d2028007ba77c08d29d8a70a945fce1640c2695d"
+    },
+    {
+      "path": "src/factory.ts",
+      "beforeSha256": null,
+      "afterSha256": "141bbeb75fdf70e2b0a31f5617d6fe2ff4c8b8883f4c425849f7619426288ab4"
+    },
+    {
+      "path": "src/server.ts",
+      "beforeSha256": "ada5c4a43cf2e5fb79c7355c31eb70eb3e9356b06355658b846b76503869fe94",
+      "afterSha256": "f1fbe4de4d8809ba3d9d387f4d92166834ab0c92f02355780876fbde8a93c267"
+    },
+    {
+      "path": "test/factory-diagnostics.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "40fbd87089a3d42242bf81900522b4f17d4d354852498462eb61eb20bfb499c0"
+    },
+    {
+      "path": "test/factory-fake.ts",
+      "beforeSha256": null,
+      "afterSha256": "414443b46ee8e32f1b4291db5fa987d2990ef5edb7190f2a60baab06f864bbbb"
+    },
+    {
+      "path": "test/factory-http.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "2e09f3e511ad0333dfa07484f6bde2f52a30d42bfcd779c5aac73ae849fa6dea"
+    },
+    {
+      "path": "test/factory-real-route.mjs",
+      "beforeSha256": null,
+      "afterSha256": "dd00a3c0d2092384887f635c5401f7006f2b6d7b68a3d437d6f12eafdc2162ff"
+    },
+    {
+      "path": "test/factory.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "bfd2bc9c41f32070b97322f1f038a59c3f174479cfeb579e609b22101b687564"
+    }
+  ],
+  "baseline": [
+    {
+      "path": "README.md",
+      "sha256": "add914f41475b2769d58b00c2318cee39c3c690baf726d937c6aafd1894141a1"
+    },
+    {
+      "path": "design/CLAUDE-FULL-JOURNEY-QA-PROMPT.md",
+      "sha256": "d011a8766f6a38559044d2429079637ef3e2dec207e12978f908f00e6989e79d"
+    },
+    {
+      "path": "design/THEME-BASELINE.json",
+      "sha256": "7f314168c3698370a80a05c9d40ef7ba83cdcfa4ba6050f7f062113de1f9602f"
+    },
+    {
+      "path": "design/THEME-BUILD-PLAN.md",
+      "sha256": "aaa63633604fa69373434fe3dfb95883138eca51e2b94296344b1549a9d5021b"
+    },
+    {
+      "path": "design/THEME-EVALS.md",
+      "sha256": "9306ab9efa51f691c29eb1e8857d32d1381fe05ee60d7f1b4f9aa5fd9bb4dbf9"
+    },
+    {
+      "path": "design/THEME-SPEC.md",
+      "sha256": "ea56be304b12dccfaf0d67a7471c4e3c68ff6e55ff64c587304df7126142923d"
+    },
+    {
+      "path": "design/THEME-TECH-SPEC.md",
+      "sha256": "912d58df947adadf26d9e65a93173648444ad8d88bd4b5881f9521d1a662a458"
+    },
+    {
+      "path": "design/mockups/tokens.html",
+      "sha256": "cf107bceb3aae198f0fe22d992f58bcdb4db2f181a297f93f159481e432c8112"
+    },
+    {
+      "path": "design/mockups/workspace.html",
+      "sha256": "6b0ca9ffe4e8fa386999ad87e62576694ea8ead178f6726a4852b65be5785503"
+    },
+    {
+      "path": "examples/orca-prebuild-walkthrough.html",
+      "sha256": "44c919e369ce84affbbb175b02e145279117f06f39d73ce035063e0f1cd031db"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d1ec70da909e63088a1cf7db3d18a2dfccdf86cd15e4571f8a114603984c7bb9"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7ca6a178f755ad4edf65aa0ecc277391f895137d043917e997fd508ebae4f412"
+    },
+    {
+      "path": "public/app.js",
+      "sha256": "80f2e24bf23e94f745e19068b38a6e772dd1b36cc062477ceb83a0967733decc"
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-400-latin.woff2",
+      "sha256": "c36f509c0a8f9f85f29cb44bc8701d8a9e0b14c499e77a884f789ead7093a7ac"
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-500-latin.woff2",
+      "sha256": "a76f53ca6612e7b3828eec2311098675b7f9849ae4169a8bcef6302aec02a6c0"
+    },
+    {
+      "path": "public/fonts/IBMPlexSans-latin.woff2",
+      "sha256": "056e4e2459f57a0033c8c9c844ff19d6e42ac8602027803d4345823bcc939818"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "3733da87fd246d9e00c0515c2dc904d754f8ca63209b1691bd55e6ea41853623"
+    },
+    {
+      "path": "public/style.css",
+      "sha256": "2583e6c3811c69834f1e0d2dd7ba5e5aba2e319e9bbab3e8fa5bebe3ffdcd8f7"
+    },
+    {
+      "path": "src/claude-planning-provider.ts",
+      "sha256": "c53fc11c257309e7af5d61dfad896ee3228420d582d1b38a149d1e132dfd4449"
+    },
+    {
+      "path": "src/claude-provider.ts",
+      "sha256": "3f9ce1c59fe89ee665c484b1737196fede66ff4d7dfdf1036006bfd5753849ea"
+    },
+    {
+      "path": "src/cli.ts",
+      "sha256": "7b66b9cecd2ec8439059ec9d2101d8e39b22c2beef82a4dd17ba4925a53abdaf"
+    },
+    {
+      "path": "src/draft.ts",
+      "sha256": "b32fb052b14216cd85a83ab036d9980e059be94665ec7d858df2a8d2c7c972af"
+    },
+    {
+      "path": "src/orca-bridge.ts",
+      "sha256": "f62b771864dd5f23624595f88ceef23de9f2f9c4eb25fbde38c88fd9c1d9ced1"
+    },
+    {
+      "path": "src/orca-native.ts",
+      "sha256": "406e5a42d3f30aaa37703128768d771801d5e3f7f71f26314aa0dab86a40b936"
+    },
+    {
+      "path": "src/planning.ts",
+      "sha256": "5cf46b1ab8374e33db35974744794a1816ca38a02a0bef752173d017c74c167f"
+    },
+    {
+      "path": "src/server.ts",
+      "sha256": "ada5c4a43cf2e5fb79c7355c31eb70eb3e9356b06355658b846b76503869fe94"
+    },
+    {
+      "path": "src/store.ts",
+      "sha256": "772c7801ff2726db963bc1edda813e5c452f09978e79a6c8121499b8f4f7ea46"
+    },
+    {
+      "path": "src/types.ts",
+      "sha256": "3aa890d1cef03690054a333cdc811166af0d00619126fb3ed208552e0184643d"
+    },
+    {
+      "path": "src/workflow.ts",
+      "sha256": "6c021c21f387b8111dd5c526142b83e69839751c664cb7b76c024a05beadb5ab"
+    },
+    {
+      "path": "test/browser-flow.mjs",
+      "sha256": "db618cea30a85d7a65fa1c9dfadccd3e43caf3cf16fe8243147f124d09430fab"
+    },
+    {
+      "path": "test/cli.test.ts",
+      "sha256": "160c57e00461ee1952a8555383a5a1b5d2727ab325e6482f0dc9b64bc9339a25"
+    },
+    {
+      "path": "test/equipment-connections.mjs",
+      "sha256": "036b0f03ce0c41ae8d180383c6414e428fb9fefbc7ee04c31e8a55f4f734963f"
+    },
+    {
+      "path": "test/live-orca.mjs",
+      "sha256": "2e156396e8bca0db5ea017c7db6e8b735bf6fc8de12d1e86e9e1ae66174b23a6"
+    },
+    {
+      "path": "test/live-planning.mjs",
+      "sha256": "cd46d81fe2bde062fd5ee9052471757f6d9fe5ff3c44b602054f46fcdf02ffed"
+    },
+    {
+      "path": "test/orca-bridge.test.ts",
+      "sha256": "69043715389a822203050d387660c300e16649a35c0be45a3c1a3988ffdb74cc"
+    },
+    {
+      "path": "test/orca-http.test.ts",
+      "sha256": "de452ca2350fe2dbf547f688e8b4093fc0c9ff1f6feb64cfcd42ba0c8b6a5f3c"
+    },
+    {
+      "path": "test/orca-native.test.ts",
+      "sha256": "e3e0a87a5d10f1aa7ac1c014195a27a09d87892141a503d1344baa9b69448900"
+    },
+    {
+      "path": "test/planning.test.ts",
+      "sha256": "ce2351813606cf74a45525d594d736b439722af6196b2468599410a7e9d0d2d5"
+    },
+    {
+      "path": "test/provider.test.ts",
+      "sha256": "154436ff7f2aae1a0e73d1fff801d7ddd040538ad91fc94438e2c9772497d9e2"
+    },
+    {
+      "path": "test/server.test.ts",
+      "sha256": "3fd6e106f3f1bc126db605d0071a2ab399caa90235236987ef2551e53079c7ac"
+    },
+    {
+      "path": "test/theme-layout.mjs",
+      "sha256": "f570041e634d40d5fc6c40efd1f2608d9e78849ad8b4d54e7779bae2497226eb"
+    },
+    {
+      "path": "test/theme-review.mjs",
+      "sha256": "4e852e5db3dda1f8f531702437921915cb73a2b40725f0afdba2ebf7d5750ed3"
+    },
+    {
+      "path": "test/workflow.test.ts",
+      "sha256": "285edba7ca6b38b5c1f678818f7ed7e8b642072009401b19183febf014890938"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "a5dc0ac721ea4c43846222be8ec3d3cfdeaee862150bcd3d78ad1ef821f29dbf"
+    }
+  ],
+  "allBaselineStillMatchesShared": true,
+  "preserved": [
+    {
+      "path": "design/CLAUDE-FULL-JOURNEY-QA-PROMPT.md",
+      "sha256": "d011a8766f6a38559044d2429079637ef3e2dec207e12978f908f00e6989e79d"
+    },
+    {
+      "path": "design/THEME-BASELINE.json",
+      "sha256": "7f314168c3698370a80a05c9d40ef7ba83cdcfa4ba6050f7f062113de1f9602f"
+    },
+    {
+      "path": "design/THEME-BUILD-PLAN.md",
+      "sha256": "aaa63633604fa69373434fe3dfb95883138eca51e2b94296344b1549a9d5021b"
+    },
+    {
+      "path": "design/THEME-EVALS.md",
+      "sha256": "9306ab9efa51f691c29eb1e8857d32d1381fe05ee60d7f1b4f9aa5fd9bb4dbf9"
+    },
+    {
+      "path": "design/THEME-SPEC.md",
+      "sha256": "ea56be304b12dccfaf0d67a7471c4e3c68ff6e55ff64c587304df7126142923d"
+    },
+    {
+      "path": "design/THEME-TECH-SPEC.md",
+      "sha256": "912d58df947adadf26d9e65a93173648444ad8d88bd4b5881f9521d1a662a458"
+    },
+    {
+      "path": "design/mockups/tokens.html",
+      "sha256": "cf107bceb3aae198f0fe22d992f58bcdb4db2f181a297f93f159481e432c8112"
+    },
+    {
+      "path": "design/mockups/workspace.html",
+      "sha256": "6b0ca9ffe4e8fa386999ad87e62576694ea8ead178f6726a4852b65be5785503"
+    },
+    {
+      "path": "examples/orca-prebuild-walkthrough.html",
+      "sha256": "44c919e369ce84affbbb175b02e145279117f06f39d73ce035063e0f1cd031db"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d1ec70da909e63088a1cf7db3d18a2dfccdf86cd15e4571f8a114603984c7bb9"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7ca6a178f755ad4edf65aa0ecc277391f895137d043917e997fd508ebae4f412"
+    },
+    {
+      "path": "public/app.js",
+      "sha256": "80f2e24bf23e94f745e19068b38a6e772dd1b36cc062477ceb83a0967733decc"
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-400-latin.woff2",
+      "sha256": "c36f509c0a8f9f85f29cb44bc8701d8a9e0b14c499e77a884f789ead7093a7ac"
+    },
+    {
+      "path": "public/fonts/IBMPlexMono-500-latin.woff2",
+      "sha256": "a76f53ca6612e7b3828eec2311098675b7f9849ae4169a8bcef6302aec02a6c0"
+    },
+    {
+      "path": "public/fonts/IBMPlexSans-latin.woff2",
+      "sha256": "056e4e2459f57a0033c8c9c844ff19d6e42ac8602027803d4345823bcc939818"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "3733da87fd246d9e00c0515c2dc904d754f8ca63209b1691bd55e6ea41853623"
+    },
+    {
+      "path": "public/style.css",
+      "sha256": "2583e6c3811c69834f1e0d2dd7ba5e5aba2e319e9bbab3e8fa5bebe3ffdcd8f7"
+    },
+    {
+      "path": "src/claude-planning-provider.ts",
+      "sha256": "c53fc11c257309e7af5d61dfad896ee3228420d582d1b38a149d1e132dfd4449"
+    },
+    {
+      "path": "src/claude-provider.ts",
+      "sha256": "3f9ce1c59fe89ee665c484b1737196fede66ff4d7dfdf1036006bfd5753849ea"
+    },
+    {
+      "path": "src/draft.ts",
+      "sha256": "b32fb052b14216cd85a83ab036d9980e059be94665ec7d858df2a8d2c7c972af"
+    },
+    {
+      "path": "src/orca-bridge.ts",
+      "sha256": "f62b771864dd5f23624595f88ceef23de9f2f9c4eb25fbde38c88fd9c1d9ced1"
+    },
+    {
+      "path": "src/orca-native.ts",
+      "sha256": "406e5a42d3f30aaa37703128768d771801d5e3f7f71f26314aa0dab86a40b936"
+    },
+    {
+      "path": "src/planning.ts",
+      "sha256": "5cf46b1ab8374e33db35974744794a1816ca38a02a0bef752173d017c74c167f"
+    },
+    {
+      "path": "src/store.ts",
+      "sha256": "772c7801ff2726db963bc1edda813e5c452f09978e79a6c8121499b8f4f7ea46"
+    },
+    {
+      "path": "src/types.ts",
+      "sha256": "3aa890d1cef03690054a333cdc811166af0d00619126fb3ed208552e0184643d"
+    },
+    {
+      "path": "src/workflow.ts",
+      "sha256": "6c021c21f387b8111dd5c526142b83e69839751c664cb7b76c024a05beadb5ab"
+    },
+    {
+      "path": "test/browser-flow.mjs",
+      "sha256": "db618cea30a85d7a65fa1c9dfadccd3e43caf3cf16fe8243147f124d09430fab"
+    },
+    {
+      "path": "test/cli.test.ts",
+      "sha256": "160c57e00461ee1952a8555383a5a1b5d2727ab325e6482f0dc9b64bc9339a25"
+    },
+    {
+      "path": "test/equipment-connections.mjs",
+      "sha256": "036b0f03ce0c41ae8d180383c6414e428fb9fefbc7ee04c31e8a55f4f734963f"
+    },
+    {
+      "path": "test/live-orca.mjs",
+      "sha256": "2e156396e8bca0db5ea017c7db6e8b735bf6fc8de12d1e86e9e1ae66174b23a6"
+    },
+    {
+      "path": "test/live-planning.mjs",
+      "sha256": "cd46d81fe2bde062fd5ee9052471757f6d9fe5ff3c44b602054f46fcdf02ffed"
+    },
+    {
+      "path": "test/orca-bridge.test.ts",
+      "sha256": "69043715389a822203050d387660c300e16649a35c0be45a3c1a3988ffdb74cc"
+    },
+    {
+      "path": "test/orca-http.test.ts",
+      "sha256": "de452ca2350fe2dbf547f688e8b4093fc0c9ff1f6feb64cfcd42ba0c8b6a5f3c"
+    },
+    {
+      "path": "test/orca-native.test.ts",
+      "sha256": "e3e0a87a5d10f1aa7ac1c014195a27a09d87892141a503d1344baa9b69448900"
+    },
+    {
+      "path": "test/planning.test.ts",
+      "sha256": "ce2351813606cf74a45525d594d736b439722af6196b2468599410a7e9d0d2d5"
+    },
+    {
+      "path": "test/provider.test.ts",
+      "sha256": "154436ff7f2aae1a0e73d1fff801d7ddd040538ad91fc94438e2c9772497d9e2"
+    },
+    {
+      "path": "test/server.test.ts",
+      "sha256": "3fd6e106f3f1bc126db605d0071a2ab399caa90235236987ef2551e53079c7ac"
+    },
+    {
+      "path": "test/theme-layout.mjs",
+      "sha256": "f570041e634d40d5fc6c40efd1f2608d9e78849ad8b4d54e7779bae2497226eb"
+    },
+    {
+      "path": "test/theme-review.mjs",
+      "sha256": "4e852e5db3dda1f8f531702437921915cb73a2b40725f0afdba2ebf7d5750ed3"
+    },
+    {
+      "path": "test/workflow.test.ts",
+      "sha256": "285edba7ca6b38b5c1f678818f7ed7e8b642072009401b19183febf014890938"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "a5dc0ac721ea4c43846222be8ec3d3cfdeaee862150bcd3d78ad1ef821f29dbf"
+    }
+  ],
+  "allPreservedIdentical": true,
+  "testResults": {
+    "npm test": {
+      "pass": 66,
+      "fail": 0,
+      "evidence": "evidence/unit-all.txt"
+    },
+    "npm run test:browser": {
+      "pass": 3,
+      "fail": 0,
+      "evidence": "evidence/browser.txt"
+    }
+  },
+  "boundary": {
+    "realDispatch": "blocked; unsupported",
+    "packageAuthority": "non-authoritative; unverified",
+    "writesInSharedTree": [
+      "orchestration/integration/sol-review/**"
+    ],
+    "liveServiceRestarted": false,
+    "savedPreparationTouched": false,
+    "recordsLocksSettingsTouched": false
+  },
+  "patchCheck": {
+    "command": "git apply --check integration/sol-review/factory-connection-corrected.patch",
+    "cwd": "orchestration/",
+    "exitCode": 0
+  }
+}

@@ -1,0 +1,598 @@
+TAP version 13
+# Subtest: CLI and browser share one workflow, reject stale/duplicate actions, and produce draft-only artifacts
+ok 1 - CLI and browser share one workflow, reject stale/duplicate actions, and produce draft-only artifacts
+  ---
+  duration_ms: 1569.2335
+  type: 'test'
+  ...
+# Subtest: CLI reports interrupted tasks as failure and never automatically retries them
+ok 2 - CLI reports interrupted tasks as failure and never automatically retries them
+  ---
+  duration_ms: 777.326458
+  type: 'test'
+  ...
+# Subtest: CLI refuses authority commands, remote origins and incomplete mutation options before connecting
+ok 3 - CLI refuses authority commands, remote origins and incomplete mutation options before connecting
+  ---
+  duration_ms: 185.5225
+  type: 'test'
+  ...
+# Subtest: CLI saves independent Claude and Codex preferences without starting or pairing a session
+ok 4 - CLI saves independent Claude and Codex preferences without starting or pairing a session
+  ---
+  duration_ms: 532.028208
+  type: 'test'
+  ...
+# Subtest: CLI reports uncertain native creation as failure and a repeated request does not create again
+ok 5 - CLI reports uncertain native creation as failure and a repeated request does not create again
+  ---
+  duration_ms: 307.041792
+  type: 'test'
+  ...
+# Subtest: diagnostics require explicit repo and harness config; absent, partial and unsafe values select nothing
+ok 6 - diagnostics require explicit repo and harness config; absent, partial and unsafe values select nothing
+  ---
+  duration_ms: 1.77175
+  type: 'test'
+  ...
+# Subtest: missing local refs are uncertain and remain explicitly non-authoritative
+ok 7 - missing local refs are uncertain and remain explicitly non-authoritative
+  ---
+  duration_ms: 34.611667
+  type: 'test'
+  ...
+# Subtest: even all matching cached indicators cannot authorize an unrelated exported application or dispatch
+ok 8 - even all matching cached indicators cannot authorize an unrelated exported application or dispatch
+  ---
+  duration_ms: 958.583125
+  type: 'test'
+  ...
+# Subtest: GET /api/factory reports the route read-only and refuses to export before the review completes
+ok 9 - GET /api/factory reports the route read-only and refuses to export before the review completes
+  ---
+  duration_ms: 1042.647042
+  type: 'test'
+  ...
+# Subtest: the service still has no approval or dispatch action, and the factory route is read-only
+ok 10 - the service still has no approval or dispatch action, and the factory route is read-only
+  ---
+  duration_ms: 23.81
+  type: 'test'
+  ...
+# Subtest: HTTP and CLI report absent/partial diagnostics and never choose a story automatically
+ok 11 - HTTP and CLI report absent/partial diagnostics and never choose a story automatically
+  ---
+  duration_ms: 345.420875
+  type: 'test'
+  ...
+# Subtest: normal server entry point uses explicit environment diagnostics configuration
+ok 12 - normal server entry point uses explicit environment diagnostics configuration
+  ---
+  duration_ms: 188.182583
+  type: 'test'
+  ...
+# Subtest: export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes
+ok 13 - export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes
+  ---
+  duration_ms: 854.628084
+  type: 'test'
+  ...
+# Subtest: export refuses a story without scope, a requirement without coverage, and an unresolved gap
+ok 14 - export refuses a story without scope, a requirement without coverage, and an unresolved gap
+  ---
+  duration_ms: 1543.021
+  type: 'test'
+  ...
+# Subtest: missing gate-3 approval or unprotected harness refuses, and launches nothing
+ok 15 - missing gate-3 approval or unprotected harness refuses, and launches nothing
+  ---
+  duration_ms: 819.322042
+  type: 'test'
+  ...
+# Subtest: a changed package, revision or story refuses, and a later revision cannot reuse the old digest
+ok 16 - a changed package, revision or story refuses, and a later revision cannot reuse the old digest
+  ---
+  duration_ms: 943.917541
+  type: 'test'
+  ...
+# Subtest: one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry
+ok 17 - one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry
+  ---
+  duration_ms: 436.519083
+  type: 'test'
+  ...
+# Subtest: failure is reported as failure and success cites the factory reference and candidate
+ok 18 - failure is reported as failure and success cites the factory reference and candidate
+  ---
+  duration_ms: 440.687083
+  type: 'test'
+  ...
+# Subtest: evaluateDispatch refuses by default and never reports ready on an unproven route
+ok 19 - evaluateDispatch refuses by default and never reports ready on an unproven route
+  ---
+  duration_ms: 478.503208
+  type: 'test'
+  ...
+# Subtest: tampered package content with matching claimed digests refuses before any fixture execution
+ok 20 - tampered package content with matching claimed digests refuses before any fixture execution
+  ---
+  duration_ms: 431.573042
+  type: 'test'
+  ...
+# Subtest: blocked and waiting routes cannot fall through to ready with empty or satisfied prerequisites
+ok 21 - blocked and waiting routes cannot fall through to ready with empty or satisfied prerequisites
+  ---
+  duration_ms: 354.804958
+  type: 'test'
+  ...
+# Subtest: explicit owner receives one pointer after a persisted attempt, without preparation content
+ok 22 - explicit owner receives one pointer after a persisted attempt, without preparation content
+  ---
+  duration_ms: 128.599667
+  type: 'test'
+  ...
+# Subtest: busy owner defers without a timer and explicit resume verifies readiness again
+ok 23 - busy owner defers without a timer and explicit resume verifies readiness again
+  ---
+  duration_ms: 148.536209
+  type: 'test'
+  ...
+# Subtest: wrong incarnation, wrong workspace, dead and permission targets never receive input
+ok 24 - wrong incarnation, wrong workspace, dead and permission targets never receive input
+  ---
+  duration_ms: 197.659208
+  type: 'test'
+  ...
+# Subtest: uncertain submission survives restart and never automatically or manually resends
+ok 25 - uncertain submission survives restart and never automatically or manually resends
+  ---
+  duration_ms: 101.363083
+  type: 'test'
+  ...
+# Subtest: detaching prevents pending delivery and changing ownership requires explicit detach
+ok 26 - detaching prevents pending delivery and changing ownership requires explicit detach
+  ---
+  duration_ms: 163.568167
+  type: 'test'
+  ...
+# Subtest: bounded history refuses overflow while retaining all receipts and duplicate suppression
+ok 27 - bounded history refuses overflow while retaining all receipts and duplicate suppression
+  ---
+  duration_ms: 4882.1025
+  type: 'test'
+  ...
+# Subtest: notification cannot be sent unless its attempt is durably recorded
+ok 28 - notification cannot be sent unless its attempt is durably recorded
+  ---
+  duration_ms: 46.23225
+  type: 'test'
+  ...
+# Subtest: installed CLI discovery refuses unsupported shell-fallback delivery
+ok 29 - installed CLI discovery refuses unsupported shell-fallback delivery
+  ---
+  duration_ms: 0.464833
+  type: 'test'
+  ...
+# Subtest: unsupported installed transport can pair but saves notices as pending without repeated runtime probes
+ok 30 - unsupported installed transport can pair but saves notices as pending without repeated runtime probes
+  ---
+  duration_ms: 74.192375
+  type: 'test'
+  ...
+# Subtest: task notices require a saved terminal task state, including failures
+ok 31 - task notices require a saved terminal task state, including failures
+  ---
+  duration_ms: 67.470333
+  type: 'test'
+  ...
+# Subtest: provider model preferences persist independently of the paired session and send nothing
+ok 32 - provider model preferences persist independently of the paired session and send nothing
+  ---
+  duration_ms: 39.161959
+  type: 'test'
+  ...
+# Subtest: legacy bridge state reads default preferences without rewriting until explicitly saved
+ok 33 - legacy bridge state reads default preferences without rewriting until explicitly saved
+  ---
+  duration_ms: 41.443083
+  type: 'test'
+  ...
+# Subtest: successful native launch can switch provider only through explicit detach and another start
+ok 34 - successful native launch can switch provider only through explicit detach and another start
+  ---
+  duration_ms: 102.439083
+  type: 'test'
+  ...
+# Subtest: browser save notifies exact paired owner; CLI, failed mutation and restart do not create notification loops
+ok 35 - browser save notifies exact paired owner; CLI, failed mutation and restart do not create notification loops
+  ---
+  duration_ms: 1139.668375
+  type: 'test'
+  ...
+# Subtest: explicit native start persists create/options, accepts defaults and pairs without a prompt
+ok 36 - explicit native start persists create/options, accepts defaults and pairs without a prompt
+  ---
+  duration_ms: 252.96925
+  type: 'test'
+  ...
+# Subtest: mismatched model mutation acknowledgement leaves the exact created session partial and never creates another
+ok 37 - mismatched model mutation acknowledgement leaves the exact created session partial and never creates another
+  ---
+  duration_ms: 144.289541
+  type: 'test'
+  ...
+# Subtest: idle Claude family alias pairs after exact requested model receipts with provider confirmation pending
+ok 38 - idle Claude family alias pairs after exact requested model receipts with provider confirmation pending
+  ---
+  duration_ms: 277.262333
+  type: 'test'
+  ...
+# Subtest: uncertain create and partial configuration retain requests across restart without retry
+ok 39 - uncertain create and partial configuration retain requests across restart without retry
+  ---
+  duration_ms: 258.057375
+  type: 'test'
+  ...
+# Subtest: native inventory rejects missing, stale runtime, wrong provider and wrong workspace targets
+ok 40 - native inventory rejects missing, stale runtime, wrong provider and wrong workspace targets
+  ---
+  duration_ms: 18.216458
+  type: 'test'
+  ...
+# Subtest: native notice uses exact mailbox and real captured sender, and delivered means durable enqueue only
+ok 41 - native notice uses exact mailbox and real captured sender, and delivered means durable enqueue only
+  ---
+  duration_ms: 427.929292
+  type: 'test'
+  ...
+# Subtest: absent sender stays pending and wrong sender workspace never enqueues
+ok 42 - absent sender stays pending and wrong sender workspace never enqueues
+  ---
+  duration_ms: 99.206584
+  type: 'test'
+  ...
+# Subtest: technical selection, eval/story plan and independent review yield draft-only handoff bound to exact sources
+ok 43 - technical selection, eval/story plan and independent review yield draft-only handoff bound to exact sources
+  ---
+  duration_ms: 882.998584
+  type: 'test'
+  ...
+# Subtest: selection refuses wrong digest, no selection refuses planning, and PRD changes invalidate all planning
+ok 44 - selection refuses wrong digest, no selection refuses planning, and PRD changes invalidate all planning
+  ---
+  duration_ms: 891.728541
+  type: 'test'
+  ...
+# Subtest: regenerating technical blueprint resets selection, plan and review without promoting preferences to scope
+ok 45 - regenerating technical blueprint resets selection, plan and review without promoting preferences to scope
+  ---
+  duration_ms: 949.099625
+  type: 'test'
+  ...
+# Subtest: overlayer blueprint fails durably; invalid eval refs and missing coverage fail without a handoff
+ok 46 - overlayer blueprint fails durably; invalid eval refs and missing coverage fail without a handoff
+  ---
+  duration_ms: 1474.903791
+  type: 'test'
+  ...
+# Subtest: explicit requirement gaps and independent blocking findings prevent handoff; retry receives review findings
+ok 47 - explicit requirement gaps and independent blocking findings prevent handoff; retry receives review findings
+  ---
+  duration_ms: 1112.298833
+  type: 'test'
+  ...
+# Subtest: dependency cycles, shared parallel scope, fictitious deferrals and self-resolved findings refuse
+ok 48 - dependency cycles, shared parallel scope, fictitious deferrals and self-resolved findings refuse
+  ---
+  duration_ms: 0.760125
+  type: 'test'
+  ...
+# Subtest: planning input and task are durable before invocation; matching result recovers after missed state commit
+ok 49 - planning input and task are durable before invocation; matching result recovers after missed state commit
+  ---
+  duration_ms: 292.500875
+  type: 'test'
+  ...
+# Subtest: tampered structured technical evidence cannot be selected even if artifact markdown remains unchanged
+ok 50 - tampered structured technical evidence cannot be selected even if artifact markdown remains unchanged
+  ---
+  duration_ms: 244.325333
+  type: 'test'
+  ...
+# Subtest: review cannot block on an uncited preference or claim to resolve its own finding
+ok 51 - review cannot block on an uncited preference or claim to resolve its own finding
+  ---
+  duration_ms: 345.821709
+  type: 'test'
+  ...
+# Subtest: planning serializes with product drafting and restart refuses unresolved old-instance output
+ok 52 - planning serializes with product drafting and restart refuses unresolved old-instance output
+  ---
+  duration_ms: 144.386291
+  type: 'test'
+  ...
+# Subtest: planning timeout remains unresolved across restart and never emits handoff
+ok 53 - planning timeout remains unresolved across restart and never emits handoff
+  ---
+  duration_ms: 135.084292
+  type: 'test'
+  ...
+# Subtest: provider-owned timeout is an unresolved workflow interruption, not a retryable failure
+ok 54 - provider-owned timeout is an unresolved workflow interruption, not a retryable failure
+  ---
+  duration_ms: 140.479792
+  type: 'test'
+  ...
+# Subtest: structured transport disables tools, passes schema and rejects unsuccessful or malformed output
+ok 55 - structured transport disables tools, passes schema and rejects unsuccessful or malformed output
+  ---
+  duration_ms: 300.446292
+  type: 'test'
+  ...
+# Subtest: HTTP journey retains answers, revises both artifacts and resumes after server restart
+ok 56 - HTTP journey retains answers, revises both artifacts and resumes after server restart
+  ---
+  duration_ms: 794.507333
+  type: 'test'
+  ...
+# Subtest: simultaneous starts retain exactly one active preparation and explicitly refuse the other
+ok 57 - simultaneous starts retain exactly one active preparation and explicitly refuse the other
+  ---
+  duration_ms: 83.314333
+  type: 'test'
+  ...
+# Subtest: timeout allows an explicit separate preparation, preserving the unresolved original without rerunning it
+ok 58 - timeout allows an explicit separate preparation, preserving the unresolved original without rerunning it
+  ---
+  duration_ms: 530.518375
+  type: 'test'
+  ...
+# Subtest: HTTP refuses cross-origin/missing-token mutations, has no authority endpoints and isolates mockups
+ok 59 - HTTP refuses cross-origin/missing-token mutations, has no authority endpoints and isolates mockups
+  ---
+  duration_ms: 400.914041
+  type: 'test'
+  ...
+# Subtest: fake executor: read-only inventory returns exact target identity, never focus/title or send
+ok 60 - fake executor: read-only inventory returns exact target identity, never focus/title or send
+  ---
+  duration_ms: 22.413875
+  type: 'test'
+  ...
+# Subtest: fake executor: exact identity and durable evidence precede each guarded phase; truthful receipt
+ok 61 - fake executor: exact identity and durable evidence precede each guarded phase; truthful receipt
+  ---
+  duration_ms: 269.06875
+  type: 'test'
+  ...
+# Subtest: missing, guessed, nonlocal and control-bearing requests fail before any runtime call
+ok 62 - missing, guessed, nonlocal and control-bearing requests fail before any runtime call
+  ---
+  duration_ms: 13.029709
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"incarnationId":"replacement"} cannot receive input
+ok 63 - fake executor: wrong/closed/waiting recipient {"incarnationId":"replacement"} cannot receive input
+  ---
+  duration_ms: 9.690125
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"ptyId":"replacement"} cannot receive input
+ok 64 - fake executor: wrong/closed/waiting recipient {"ptyId":"replacement"} cannot receive input
+  ---
+  duration_ms: 10.799875
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"worktreePath":"/other"} cannot receive input
+ok 65 - fake executor: wrong/closed/waiting recipient {"worktreePath":"/other"} cannot receive input
+  ---
+  duration_ms: 12.825417
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"agentIdentity":"codex"} cannot receive input
+ok 66 - fake executor: wrong/closed/waiting recipient {"agentIdentity":"codex"} cannot receive input
+  ---
+  duration_ms: 10.037042
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"handle":"term_other"} cannot receive input
+ok 67 - fake executor: wrong/closed/waiting recipient {"handle":"term_other"} cannot receive input
+  ---
+  duration_ms: 2.826791
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"connected":false} cannot receive input
+ok 68 - fake executor: wrong/closed/waiting recipient {"connected":false} cannot receive input
+  ---
+  duration_ms: 13.910708
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"writable":false} cannot receive input
+ok 69 - fake executor: wrong/closed/waiting recipient {"writable":false} cannot receive input
+  ---
+  duration_ms: 14.671875
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"orphaned":true} cannot receive input
+ok 70 - fake executor: wrong/closed/waiting recipient {"orphaned":true} cannot receive input
+  ---
+  duration_ms: 9.930959
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {"agentWait":{"kind":"permission"}} cannot receive input
+ok 71 - fake executor: wrong/closed/waiting recipient {"agentWait":{"kind":"permission"}} cannot receive input
+  ---
+  duration_ms: 11.750792
+  type: 'test'
+  ...
+# Subtest: fake executor: wrong/closed/waiting recipient {} cannot receive input
+ok 72 - fake executor: wrong/closed/waiting recipient {} cannot receive input
+  ---
+  duration_ms: 9.109417
+  type: 'test'
+  ...
+# Subtest: fake executor: busy or unreachable recipient is never submitted
+ok 73 - fake executor: busy or unreachable recipient is never submitted
+  ---
+  duration_ms: 3.143875
+  type: 'test'
+  ...
+# Subtest: fake executor: agent exits after text prevents Enter and leaves partial evidence
+ok 74 - fake executor: agent exits after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 221.373541
+  type: 'test'
+  ...
+# Subtest: fake executor: permission appears after text prevents Enter and leaves partial evidence
+ok 75 - fake executor: permission appears after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 235.769625
+  type: 'test'
+  ...
+# Subtest: fake executor: incarnation changes after text prevents Enter and leaves partial evidence
+ok 76 - fake executor: incarnation changes after text prevents Enter and leaves partial evidence
+  ---
+  duration_ms: 201.54975
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 refused stops without retry, completion or approval
+ok 77 - fake executor: phase 1 refused stops without retry, completion or approval
+  ---
+  duration_ms: 120.383875
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 unverifiable stops without retry, completion or approval
+ok 78 - fake executor: phase 1 unverifiable stops without retry, completion or approval
+  ---
+  duration_ms: 127.363167
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 missing stops without retry, completion or approval
+ok 79 - fake executor: phase 1 missing stops without retry, completion or approval
+  ---
+  duration_ms: 112.572542
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 throw stops without retry, completion or approval
+ok 80 - fake executor: phase 1 throw stops without retry, completion or approval
+  ---
+  duration_ms: 118.378667
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 1 wrong-runtime stops without retry, completion or approval
+ok 81 - fake executor: phase 1 wrong-runtime stops without retry, completion or approval
+  ---
+  duration_ms: 124.857167
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 refused stops without retry, completion or approval
+ok 82 - fake executor: phase 2 refused stops without retry, completion or approval
+  ---
+  duration_ms: 214.026125
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 unverifiable stops without retry, completion or approval
+ok 83 - fake executor: phase 2 unverifiable stops without retry, completion or approval
+  ---
+  duration_ms: 192.605875
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 missing stops without retry, completion or approval
+ok 84 - fake executor: phase 2 missing stops without retry, completion or approval
+  ---
+  duration_ms: 174.265
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 throw stops without retry, completion or approval
+ok 85 - fake executor: phase 2 throw stops without retry, completion or approval
+  ---
+  duration_ms: 174.017833
+  type: 'test'
+  ...
+# Subtest: fake executor: phase 2 wrong-runtime stops without retry, completion or approval
+ok 86 - fake executor: phase 2 wrong-runtime stops without retry, completion or approval
+  ---
+  duration_ms: 191.8895
+  type: 'test'
+  ...
+# Subtest: fake executor: corrupt/preexisting attempt evidence fails closed; duplicate concurrent calls cannot duplicate writes
+ok 87 - fake executor: corrupt/preexisting attempt evidence fails closed; duplicate concurrent calls cannot duplicate writes
+  ---
+  duration_ms: 197.528708
+  type: 'test'
+  ...
+# Subtest: CLI rejects unknown/retry/interrupt/send omission and can list without any send
+ok 88 - CLI rejects unknown/retry/interrupt/send omission and can list without any send
+  ---
+  duration_ms: 11.03975
+  type: 'test'
+  ...
+# Subtest: fake executor: busy transition after text never presses Enter
+ok 89 - fake executor: busy transition after text never presses Enter
+  ---
+  duration_ms: 162.264792
+  type: 'test'
+  ...
+# Subtest: fake executor: final identity check before text catches a replacement after readiness
+ok 90 - fake executor: final identity check before text catches a replacement after readiness
+  ---
+  duration_ms: 97.869042
+  type: 'test'
+  ...
+# Subtest: fake executor: unsupported/missing host guard version refuses before any terminal input
+ok 91 - fake executor: unsupported/missing host guard version refuses before any terminal input
+  ---
+  duration_ms: 12.538667
+  type: 'test'
+  ...
+# Subtest: saved answer and coordinated artifact revisions survive restart; packet binds exact current bytes
+ok 92 - saved answer and coordinated artifact revisions survive restart; packet binds exact current bytes
+  ---
+  duration_ms: 541.309792
+  type: 'test'
+  ...
+# Subtest: silence and encouragement cannot answer the material question; stale mutations and duplicate operations refuse
+ok 93 - silence and encouragement cannot answer the material question; stale mutations and duplicate operations refuse
+  ---
+  duration_ms: 334.349584
+  type: 'test'
+  ...
+# Subtest: task identity and exact inputs persist before provider execution; polling keeps own task running
+ok 94 - task identity and exact inputs persist before provider execution; polling keeps own task running
+  ---
+  duration_ms: 319.799
+  type: 'test'
+  ...
+# Subtest: restart preserves unresolved execution and refuses stale output from old instance
+ok 95 - restart preserves unresolved execution and refuses stale output from old instance
+  ---
+  duration_ms: 204.135417
+  type: 'test'
+  ...
+# Subtest: matching durable result reconciles after interrupted state commit
+ok 96 - matching durable result reconciles after interrupted state commit
+  ---
+  duration_ms: 380.540292
+  type: 'test'
+  ...
+# Subtest: provider failure is durable and explicitly retryable; timeout stays unresolved
+ok 97 - provider failure is durable and explicitly retryable; timeout stays unresolved
+  ---
+  duration_ms: 680.348917
+  type: 'test'
+  ...
+# Subtest: artifact tampering and unreadable saved state refuse with actionable errors
+ok 98 - artifact tampering and unreadable saved state refuse with actionable errors
+  ---
+  duration_ms: 296.698208
+  type: 'test'
+  ...
+1..98
+# tests 98
+# suites 0
+# pass 98
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6567.34925

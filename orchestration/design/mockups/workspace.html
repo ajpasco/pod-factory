@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en" data-theme="graphite">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preparation workspace — layout and theme mockup</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ---- tokens: the whole theme contract lives here ------------------------ */
+:root,
+[data-theme="graphite"] {
+  --ground: #F2F3F2;  --surface: #FFFFFF;  --ink: #16191A;  --ink-body: #3C4346;
+  --muted: #5E6568;   --line: #E0E3E2;     --soft: #E6E9E8; --soft-line: #DCE0DF;
+  --accent: #23282A;  --accent-ink: #23282A; --on-accent: #FFFFFF;
+  --notice-bg: #FCE9DC; --notice-ink: #8A3609;
+  --radius: 9px;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+[data-theme="orca"] {
+  --ground: #FAFAFA;  --surface: #FFFFFF;  --ink: #0A0A0A;  --ink-body: #333333;
+  --muted: #737373;   --line: #E5E5E5;     --soft: #F5F5F5; --soft-line: #E5E5E5;
+  --accent: #171717;  --accent-ink: #171717; --on-accent: #FAFAFA;
+  --notice-bg: #FEF3C7; --notice-ink: #7A5200;
+  --radius: 10px;
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+[data-theme="clay"] {
+  --ground: #FAF8F4;  --surface: #FFFFFF;  --ink: #1C1B19;  --ink-body: #3E3A34;
+  --muted: #6A635A;   --line: #E6E1D8;     --soft: #F6E8DF; --soft-line: #EADBD0;
+  --accent: #B4531F;  --accent-ink: #9A4417; --on-accent: #FFFFFF;
+  --notice-bg: #F6E8DF; --notice-ink: #8A4015;
+  --radius: 10px;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+[data-theme="indigo"] {
+  --ground: #F3F4F8;  --surface: #FFFFFF;  --ink: #15182B;  --ink-body: #3A3F55;
+  --muted: #5C617A;   --line: #E0E2EC;     --soft: #E7E9FB; --soft-line: #DDE0F0;
+  --accent: #3A46C9;  --accent-ink: #2F39A8; --on-accent: #FFFFFF;
+  --notice-bg: #FBEEDC; --notice-ink: #7A4E00;
+  --radius: 9px;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ---- base --------------------------------------------------------------- */
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--font-sans); line-height: 1.55; }
+h1, h2, h3, p, ul, ol { margin-top: 0; }
+a { color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); }
+.muted { color: var(--muted); }
+
+/* ---- header ------------------------------------------------------------- */
+.bar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;
+       padding: 14px 32px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.logo { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+        border-radius: 7px; background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 14px; }
+.project { font-size: 15px; font-weight: 600; line-height: 1.3; }
+.rev { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.notice-pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+               background: var(--notice-bg); color: var(--notice-ink); font-size: 13px; font-weight: 500; }
+
+/* ---- buttons ------------------------------------------------------------ */
+button { font: inherit; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: var(--radius);
+       font-size: 15px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.btn-small { padding: 8px 14px; font-size: 14px; }
+
+/* ---- session drawer ----------------------------------------------------- */
+.drawer { padding: 18px 32px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.drawer[hidden] { display: none; }
+.drawer-inner { max-width: 1120px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end; }
+label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius);
+                   background: var(--surface); color: var(--ink); font: inherit; font-size: 15px; }
+textarea { line-height: 1.55; resize: vertical; }
+
+/* ---- shell -------------------------------------------------------------- */
+.shell { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;
+         max-width: 1180px; margin: 0 auto; padding: 32px; }
+.rail { flex: 1 1 248px; max-width: 300px; min-width: 0; }
+.panel { flex: 999 1 560px; min-width: 0; }
+.eyebrow { margin: 0 0 14px; font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+
+/* ---- progress rail ------------------------------------------------------ */
+.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.step { width: 100%; text-align: left; display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px;
+        border-radius: var(--radius); border: 1px solid transparent; background: none; color: var(--ink); cursor: pointer; }
+.step[aria-current="step"] { background: var(--surface); border-color: var(--soft-line); }
+.step:disabled { opacity: .6; cursor: default; }
+.mark { flex: 0 0 24px; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+        border-radius: 50%; font-size: 12.5px; font-weight: 600; background: var(--soft); color: var(--muted); margin-top: 1px; }
+.step.done .mark { background: var(--accent); color: var(--on-accent); }
+.step[aria-current="step"] .mark { color: var(--accent-ink); }
+.step-title { display: block; font-size: 14px; font-weight: 500; line-height: 1.35; }
+.step-note { display: block; font-size: 12.5px; line-height: 1.4; color: var(--muted); }
+.step[aria-current="step"] .step-note { color: var(--accent-ink); }
+
+/* ---- step panel --------------------------------------------------------- */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 30px 32px; }
+.card[hidden] { display: none; }
+.step-eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-ink); }
+.card h1 { font-size: 26px; line-height: 1.25; letter-spacing: -.02em; margin-bottom: 10px; }
+.lead { font-size: 15px; line-height: 1.6; color: var(--ink-body); max-width: 62ch; margin-bottom: 22px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 20px; }
+.next-hint { font-size: 13px; color: var(--muted); }
+.callout { padding: 18px 20px; border-radius: 12px; background: var(--soft); border: 1px solid var(--soft-line); margin-bottom: 20px; }
+.warn-panel { padding: 18px 20px; border-radius: 12px; background: var(--notice-bg); color: var(--notice-ink); border: 1px solid var(--soft-line); }
+
+/* ---- tabs --------------------------------------------------------------- */
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.tab { padding: 11px 16px; border: none; border-bottom: 2px solid transparent; background: none;
+       font-size: 14.5px; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.tabpanel[hidden] { display: none; }
+
+/* ---- shared blocks ------------------------------------------------------ */
+.frame { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.frame-bar { display: flex; align-items: center; gap: 7px; padding: 10px 14px; background: var(--ground); border-bottom: 1px solid var(--line); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 16px;
+       background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.pill { flex: 0 0 auto; padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: var(--soft); color: var(--accent-ink); }
+.pill.quiet { color: var(--muted); }
+.reader { border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; background: var(--ground);
+          font-size: 14.5px; line-height: 1.65; max-height: 330px; overflow: auto; }
+.table { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.table div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 18px;
+             background: var(--surface); border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.table div:last-child { border-bottom: none; }
+.stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; }
+.stat { flex: 1 1 150px; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; background: var(--ground); }
+.stat b { display: block; font-size: 25px; font-weight: 600; line-height: 1.1; }
+.divider-block { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
+footer { max-width: 1180px; margin: 0 auto; padding: 0 32px 32px; font-size: 12.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">P</span>
+    <div>
+      <div class="project">Reading list for two</div>
+      <div class="rev">Revision 7 · saved locally</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 10px">
+    <span class="notice-pill">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.6 1.8 13h12.4L8 1.6Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.2v3.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".85" fill="currentColor"/></svg>
+      Drafting only — nothing here approves a gate
+    </span>
+    <button type="button" class="btn btn-small" id="session-toggle" aria-expanded="false" aria-controls="session">Session</button>
+  </div>
+</header>
+
+<aside class="drawer" id="session" hidden>
+  <div class="drawer-inner">
+    <div style="flex: 1 1 240px; min-width: 0">
+      <h2 style="margin: 0 0 6px; font-size: 15px">Orca session</h2>
+      <p class="muted" style="margin: 0; font-size: 13px; max-width: 44ch">Not connected. Pairing chooses who receives a saved-state notification. It grants no approval or build authority.</p>
+    </div>
+    <div style="flex: 0 1 190px">
+      <label for="agent">Agent for a new chat</label>
+      <select id="agent"><option>Claude</option><option>Codex</option></select>
+    </div>
+    <div style="flex: 0 1 190px">
+      <label for="effort">Reasoning effort</label>
+      <select id="effort"><option>Low</option><option selected>Medium</option><option>High</option></select>
+    </div>
+    <div style="flex: 0 1 190px">
+      <label for="theme">Theme</label>
+      <select id="theme">
+        <option value="graphite">Graphite &amp; Signal</option>
+        <option value="orca">Orca default</option>
+        <option value="clay">Ink &amp; Clay</option>
+        <option value="indigo">Deep Indigo</option>
+      </select>
+    </div>
+    <button type="button" class="btn">Save preferences</button>
+  </div>
+</aside>
+
+<div class="shell">
+  <nav class="rail" aria-label="Preparation steps">
+    <p class="eyebrow">Your progress</p>
+    <ol id="rail"></ol>
+    <p class="muted" style="margin: 18px 0 0; font-size: 12.5px">Each step saves as you go. Closing this page keeps your answers and files.</p>
+  </nav>
+
+  <main class="panel">
+
+    <section class="card" data-step="1">
+      <p class="step-eyebrow">Step 1 of 6</p>
+      <h1>What do you want to build?</h1>
+      <p class="lead">Describe the audience, the problem and the outcome. One or two sentences is enough — the next step asks you the single question that matters most.</p>
+      <label for="idea">Your idea</label>
+      <textarea id="idea" rows="5" maxlength="20000" placeholder="A small tool that helps…">A shared reading list for two people, so we can see what the other is reading and what is next.</textarea>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-next>Start preparation</button>
+        <span class="next-hint">Next: one question about scope</span>
+      </div>
+    </section>
+
+    <section class="card" data-step="2" hidden>
+      <p class="step-eyebrow">Step 2 of 6</p>
+      <h1>One question before drafting</h1>
+      <p class="lead">Your answer becomes confirmed scope and is quoted in the PRD. Everything else stays a suggestion until you say otherwise.</p>
+      <div class="callout"><p style="margin: 0; font-size: 15.5px; font-weight: 500">Who is the primary user, and what single outcome must they be able to complete in the first version?</p></div>
+      <label for="answer">Your answer</label>
+      <textarea id="answer" rows="4" maxlength="20000">Two housemates. Each can add a book and see what the other is reading right now.</textarea>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-next>Save answer</button>
+        <span class="next-hint">Next: generate the PRD and mockup</span>
+      </div>
+    </section>
+
+    <section class="card" data-step="3" hidden>
+      <p class="step-eyebrow">Step 3 of 6</p>
+      <h1>Your PRD and mockup</h1>
+      <p class="lead">Read them, then either request a change or carry on. Both are rewritten together on every revision.</p>
+
+      <div class="tabs" role="tablist" aria-label="Draft artifacts">
+        <button type="button" class="tab" role="tab" aria-selected="true" aria-controls="tp-exp" id="t-exp">Experience</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tp-prd" id="t-prd">PRD</button>
+        <button type="button" class="tab" role="tab" aria-selected="false" aria-controls="tp-pkt" id="t-pkt">Review packet</button>
+      </div>
+
+      <div class="tabpanel" id="tp-exp" role="tabpanel" aria-labelledby="t-exp">
+        <p class="muted" style="font-size: 13.5px">A clickable mockup built from sample data. It shows the journey — it is not the built product.</p>
+        <div class="frame">
+          <div class="frame-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="mono muted" style="margin-left: 8px; font-size: 12px">mockup.html · sample data</span></div>
+          <div style="padding: 24px">
+            <h2 style="margin-bottom: 4px; font-size: 19px">Our reading list</h2>
+            <p class="muted" style="font-size: 13.5px">2 readers · 4 books</p>
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div class="row"><span><span style="display:block; font-size:14.5px; font-weight:500">The Dispossessed</span><span class="muted" style="font-size:13px">Sam · started Tuesday</span></span><span class="pill">Reading</span></div>
+              <div class="row"><span><span style="display:block; font-size:14.5px; font-weight:500">Piranesi</span><span class="muted" style="font-size:13px">Alex · started last week</span></span><span class="pill">Reading</span></div>
+              <div class="row"><span><span style="display:block; font-size:14.5px; font-weight:500">A Pale View of Hills</span><span class="muted" style="font-size:13px">Added by Sam</span></span><span class="pill quiet">Next up</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" id="tp-prd" role="tabpanel" aria-labelledby="t-prd" hidden>
+        <p class="muted" style="font-size: 13.5px">Revision 2 · <span class="mono">a41f9c0e8b72</span></p>
+        <div class="reader">
+          <h2 style="font-size: 17px; margin-bottom: 6px">Shared reading list — PRD</h2>
+          <p style="color: var(--ink-body)">Purpose: two housemates keep one list of what each is reading and what is next.</p>
+          <h3 style="font-size: 14px; margin-bottom: 6px">Confirmed scope</h3>
+          <ul style="color: var(--ink-body)"><li>Add a book with a title and the reader's name (from your answer).</li><li>See every book and who is reading it now (from your answer).</li></ul>
+          <h3 style="font-size: 14px; margin-bottom: 6px">Acceptance criteria</h3>
+          <ul style="color: var(--ink-body); margin-bottom: 0"><li>Adding a book shows it in the list without a reload.</li><li>An empty list says so rather than showing a blank page.</li></ul>
+        </div>
+        <p style="margin: 14px 0 0; font-size: 13.5px"><a href="#">Open the full PRD in a new tab ↗</a></p>
+      </div>
+
+      <div class="tabpanel" id="tp-pkt" role="tabpanel" aria-labelledby="t-pkt" hidden>
+        <p class="muted" style="font-size: 13.5px">The exact content a reviewer would receive.</p>
+        <div class="table">
+          <div><span class="muted">Authority</span><span style="font-weight: 500">Draft only</span></div>
+          <div><span class="muted">Approval status</span><span style="font-weight: 500">Approval channel not implemented</span></div>
+          <div><span class="muted">Artifacts</span><span style="font-weight: 500">prd.md · mockup.html, revision 2</span></div>
+          <div><span class="muted">PRD digest</span><span class="mono" style="font-weight: 500">a41f9c0e8b72</span></div>
+          <div><span class="muted">Unresolved findings</span><span style="font-weight: 500">None</span></div>
+        </div>
+        <p class="muted" style="margin: 14px 0 0; font-size: 13.5px">Four gate reviews are still unperformed, and this workspace cannot approve them.</p>
+      </div>
+
+      <div class="divider-block">
+        <h2 style="font-size: 16px; margin-bottom: 8px">Want something changed?</h2>
+        <p class="muted" style="font-size: 14px; max-width: 62ch">Describe it in your own words. Both the PRD and the mockup are redrawn together, so they never disagree.</p>
+        <label for="feedback">Requested change</label>
+        <textarea id="feedback" rows="3" placeholder="Show whose turn it is to pick the next book…"></textarea>
+        <div class="actions">
+          <button type="button" class="btn">Revise the drafts</button>
+          <button type="button" class="btn btn-primary" data-next>These look right — continue</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" data-step="4" hidden>
+      <p class="step-eyebrow">Step 4 of 6</p>
+      <h1>Decide how it should be built</h1>
+      <p class="lead">The blueprint carries your PRD forward and proposes a stack, architecture, testing, security and configuration. Say what you prefer, or let it recommend the simplest fit.</p>
+      <label for="stack">Stack preferences <span style="font-weight: 400; color: var(--muted)">(optional)</span></label>
+      <textarea id="stack" rows="3" placeholder="Recommend the simplest suitable stack, or name your preferred language and frameworks."></textarea>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-next>Prepare the blueprint</button>
+        <span class="next-hint">Next: evals and builder stories</span>
+      </div>
+    </section>
+
+    <section class="card" data-step="5" hidden>
+      <p class="step-eyebrow">Step 5 of 6</p>
+      <h1>Make every requirement accountable</h1>
+      <p class="lead">Each check traces back to a requirement, and each story names its scope and the checks that prove it. These are planned checks, not results.</p>
+      <div class="stats">
+        <div class="stat"><b>6</b><span class="muted" style="font-size: 13px">Requirements covered</span></div>
+        <div class="stat"><b>9</b><span class="muted" style="font-size: 13px">Checks to run</span></div>
+        <div class="stat"><b>3</b><span class="muted" style="font-size: 13px">Builder stories</span></div>
+      </div>
+      <h2 style="font-size: 16px; margin-bottom: 10px">Builder order</h2>
+      <ol style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px">
+        <li style="font-size: 14.5px"><span style="font-weight: 500">Story 1 — show the list</span><span class="muted" style="display: block; font-size: 13px">Renders books and readers from saved data. Checks 1–4.</span></li>
+        <li style="font-size: 14.5px"><span style="font-weight: 500">Story 2 — add a book</span><span class="muted" style="display: block; font-size: 13px">Adds without reload and keeps the list ordered. Checks 5–7.</span></li>
+        <li style="font-size: 14.5px"><span style="font-weight: 500">Story 3 — empty and error states</span><span class="muted" style="display: block; font-size: 13px">Never shows a blank page. Checks 8–9.</span></li>
+      </ol>
+      <div class="actions" style="margin-top: 0">
+        <button type="button" class="btn btn-primary" data-next>Review the package for gaps</button>
+        <a href="#" style="font-size: 13.5px">Read the complete plan ↗</a>
+      </div>
+    </section>
+
+    <section class="card" data-step="6" hidden>
+      <p class="step-eyebrow">Step 6 of 6</p>
+      <h1>Planning complete — builders are still blocked</h1>
+      <p class="lead">Everything below is saved and can be reopened later. What remains is outside this workspace.</p>
+      <div class="table" style="margin-bottom: 22px">
+        <div><span><span class="mark" style="width:20px;height:20px;font-size:11px;background:var(--accent);color:var(--on-accent)">✓</span> PRD and mockup</span><span class="muted">Revision 2, saved</span></div>
+        <div><span><span class="mark" style="width:20px;height:20px;font-size:11px;background:var(--accent);color:var(--on-accent)">✓</span> Technical blueprint</span><span class="muted">Chosen for this revision</span></div>
+        <div><span><span class="mark" style="width:20px;height:20px;font-size:11px;background:var(--accent);color:var(--on-accent)">✓</span> Evals and stories</span><span class="muted">9 checks, 3 stories</span></div>
+        <div><span><span class="mark" style="width:20px;height:20px;font-size:11px">—</span> Gate reviews</span><span class="muted">Four still unperformed</span></div>
+        <div><span><span class="mark" style="width:20px;height:20px;font-size:11px">—</span> Builder dispatch</span><span class="muted">Not available in this workspace</span></div>
+      </div>
+      <div class="warn-panel">
+        <p style="margin-bottom: 8px; font-size: 14.5px; font-weight: 500">Before any builder starts</p>
+        <p style="margin: 0; font-size: 14px; max-width: 64ch">Independent review is evidence of review, not proof of correctness. Acceptance tests still need to be written and run, and the gate reviews, trusted approvals and test protection all happen in the factory, not here.</p>
+      </div>
+      <div class="actions">
+        <a href="#" class="btn btn-primary" style="text-decoration: none">Open the exact-content handoff ↗</a>
+        <button type="button" class="btn" id="restart">Start again from step 1</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>Local preparation state · factory records remain the authority for approvals and execution.</footer>
+
+<script>
+'use strict';
+/* Mockup behaviour only: step navigation, tabs, theme switching.
+   The real app keeps its existing state machine; this file exists to show layout and tokens. */
+
+var STEPS = [
+  { title: 'Your idea', done: 'Saved', todo: 'Describe what you want to build' },
+  { title: 'Clarify the scope', done: 'Answered', todo: 'One question about the first version' },
+  { title: 'PRD and mockup', done: 'Revision 2 saved', todo: 'Generate and review the drafts' },
+  { title: 'Technical blueprint', done: 'Chosen', todo: 'Decide how it is built' },
+  { title: 'Evals and stories', done: 'Prepared', todo: 'Checks and builder order' },
+  { title: 'Planning review', done: 'Complete', todo: 'What is still missing before builders' }
+];
+var current = 1;
+
+function renderRail() {
+  var rail = document.getElementById('rail');
+  rail.replaceChildren.apply(rail, STEPS.map(function (meta, index) {
+    var n = index + 1;
+    var done = n < current, here = n === current, locked = n > current;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'step' + (done ? ' done' : '');
+    if (here) button.setAttribute('aria-current', 'step');
+    button.disabled = locked;
+    button.addEventListener('click', function () { show(n); });
+    var mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.textContent = done ? '✓' : String(n);
+    var text = document.createElement('span');
+    text.style.minWidth = '0';
+    var title = document.createElement('span');
+    title.className = 'step-title';
+    title.textContent = meta.title;
+    var note = document.createElement('span');
+    note.className = 'step-note';
+    note.textContent = here ? "You're here" : done ? meta.done : meta.todo;
+    text.append(title, note);
+    button.append(mark, text);
+    var li = document.createElement('li');
+    li.append(button);
+    return li;
+  }));
+}
+
+function show(n) {
+  current = Math.max(current, n);
+  document.querySelectorAll('[data-step]').forEach(function (section) {
+    section.hidden = Number(section.dataset.step) !== n;
+  });
+  renderRail();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('[data-next]').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var section = button.closest('[data-step]');
+    show(Math.min(STEPS.length, Number(section.dataset.step) + 1));
+  });
+});
+
+document.getElementById('restart').addEventListener('click', function () { current = 1; show(1); });
+
+/* tabs */
+var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+function selectTab(tab) {
+  tabs.forEach(function (other) {
+    var on = other === tab;
+    other.setAttribute('aria-selected', String(on));
+    document.getElementById(other.getAttribute('aria-controls')).hidden = !on;
+  });
+  tab.focus();
+}
+tabs.forEach(function (tab, index) {
+  tab.addEventListener('click', function () { selectTab(tab); });
+  tab.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowRight') selectTab(tabs[(index + 1) % tabs.length]);
+    if (event.key === 'ArrowLeft') selectTab(tabs[(index - 1 + tabs.length) % tabs.length]);
+  });
+});
+
+/* session drawer */
+var toggle = document.getElementById('session-toggle');
+var drawer = document.getElementById('session');
+toggle.addEventListener('click', function () {
+  drawer.hidden = !drawer.hidden;
+  toggle.setAttribute('aria-expanded', String(!drawer.hidden));
+});
+
+/* theme: data-theme on <html>, remembered per browser, graphite if storage is unavailable */
+var THEMES = ['graphite', 'orca', 'clay', 'indigo'];
+var select = document.getElementById('theme');
+function applyTheme(name) {
+  var theme = THEMES.indexOf(name) === -1 ? 'graphite' : name;
+  document.documentElement.dataset.theme = theme;
+  select.value = theme;
+  try { localStorage.setItem('preparation-theme', theme); } catch (error) { /* private window: keep going */ }
+}
+select.addEventListener('change', function () { applyTheme(select.value); });
+try { applyTheme(localStorage.getItem('preparation-theme') || 'graphite'); }
+catch (error) { applyTheme('graphite'); }
+
+renderRail();
+</script>
+</body>
+</html>

@@ -1,0 +1,414 @@
+
+> pod-factory-preparation@0.1.0 test
+> npm run build && node --test dist/test/*.test.js
+
+
+> pod-factory-preparation@0.1.0 build
+> tsc -p tsconfig.json
+
+TAP version 13
+# Subtest: CLI and browser share one workflow, reject stale/duplicate actions, and produce draft-only artifacts
+ok 1 - CLI and browser share one workflow, reject stale/duplicate actions, and produce draft-only artifacts
+  ---
+  duration_ms: 1371.040875
+  type: 'test'
+  ...
+# Subtest: CLI reports interrupted tasks as failure and never automatically retries them
+ok 2 - CLI reports interrupted tasks as failure and never automatically retries them
+  ---
+  duration_ms: 636.15975
+  type: 'test'
+  ...
+# Subtest: CLI refuses authority commands, remote origins and incomplete mutation options before connecting
+ok 3 - CLI refuses authority commands, remote origins and incomplete mutation options before connecting
+  ---
+  duration_ms: 172.507167
+  type: 'test'
+  ...
+# Subtest: CLI saves independent Claude and Codex preferences without starting or pairing a session
+ok 4 - CLI saves independent Claude and Codex preferences without starting or pairing a session
+  ---
+  duration_ms: 458.170833
+  type: 'test'
+  ...
+# Subtest: CLI reports uncertain native creation as failure and a repeated request does not create again
+ok 5 - CLI reports uncertain native creation as failure and a repeated request does not create again
+  ---
+  duration_ms: 248.952209
+  type: 'test'
+  ...
+# Subtest: diagnostics require explicit repo and harness config; absent, partial and unsafe values select nothing
+ok 6 - diagnostics require explicit repo and harness config; absent, partial and unsafe values select nothing
+  ---
+  duration_ms: 0.699416
+  type: 'test'
+  ...
+# Subtest: missing local refs are uncertain and remain explicitly non-authoritative
+ok 7 - missing local refs are uncertain and remain explicitly non-authoritative
+  ---
+  duration_ms: 31.397458
+  type: 'test'
+  ...
+# Subtest: even all matching cached indicators cannot authorize an unrelated exported application or dispatch
+ok 8 - even all matching cached indicators cannot authorize an unrelated exported application or dispatch
+  ---
+  duration_ms: 1229.012625
+  type: 'test'
+  ...
+# Subtest: GET /api/factory reports the route read-only and refuses to export before the review completes
+ok 9 - GET /api/factory reports the route read-only and refuses to export before the review completes
+  ---
+  duration_ms: 896.409833
+  type: 'test'
+  ...
+# Subtest: the service still has no approval or dispatch action, and the factory route is read-only
+ok 10 - the service still has no approval or dispatch action, and the factory route is read-only
+  ---
+  duration_ms: 17.203917
+  type: 'test'
+  ...
+# Subtest: HTTP and CLI report absent/partial diagnostics and never choose a story automatically
+ok 11 - HTTP and CLI report absent/partial diagnostics and never choose a story automatically
+  ---
+  duration_ms: 293.004291
+  type: 'test'
+  ...
+# Subtest: normal server entry point uses explicit environment diagnostics configuration
+ok 12 - normal server entry point uses explicit environment diagnostics configuration
+  ---
+  duration_ms: 162.149083
+  type: 'test'
+  ...
+# Subtest: export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes
+ok 13 - export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes
+  ---
+  duration_ms: 768.487708
+  type: 'test'
+  ...
+# Subtest: export refuses a story without scope, a requirement without coverage, and an unresolved gap
+ok 14 - export refuses a story without scope, a requirement without coverage, and an unresolved gap
+  ---
+  duration_ms: 1207.955833
+  type: 'test'
+  ...
+# Subtest: missing gate-3 approval or unprotected harness refuses, and launches nothing
+ok 15 - missing gate-3 approval or unprotected harness refuses, and launches nothing
+  ---
+  duration_ms: 551.444
+  type: 'test'
+  ...
+# Subtest: a changed package, revision or story refuses, and a later revision cannot reuse the old digest
+ok 16 - a changed package, revision or story refuses, and a later revision cannot reuse the old digest
+  ---
+  duration_ms: 648.868417
+  type: 'test'
+  ...
+# Subtest: one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry
+ok 17 - one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry
+  ---
+  duration_ms: 451.211083
+  type: 'test'
+  ...
+# Subtest: failure is reported as failure and success cites the factory reference and candidate
+ok 18 - failure is reported as failure and success cites the factory reference and candidate
+  ---
+  duration_ms: 464.387
+  type: 'test'
+  ...
+# Subtest: evaluateDispatch refuses by default and never reports ready on an unproven route
+ok 19 - evaluateDispatch refuses by default and never reports ready on an unproven route
+  ---
+  duration_ms: 464.452833
+  type: 'test'
+  ...
+# Subtest: tampered package content with matching claimed digests refuses before any fixture execution
+ok 20 - tampered package content with matching claimed digests refuses before any fixture execution
+  ---
+  duration_ms: 487.188959
+  type: 'test'
+  ...
+# Subtest: blocked and waiting routes cannot fall through to ready with empty or satisfied prerequisites
+ok 21 - blocked and waiting routes cannot fall through to ready with empty or satisfied prerequisites
+  ---
+  duration_ms: 311.03725
+  type: 'test'
+  ...
+# Subtest: explicit owner receives one pointer after a persisted attempt, without preparation content
+ok 22 - explicit owner receives one pointer after a persisted attempt, without preparation content
+  ---
+  duration_ms: 100.122708
+  type: 'test'
+  ...
+# Subtest: busy owner defers without a timer and explicit resume verifies readiness again
+ok 23 - busy owner defers without a timer and explicit resume verifies readiness again
+  ---
+  duration_ms: 171.159709
+  type: 'test'
+  ...
+# Subtest: wrong incarnation, wrong workspace, dead and permission targets never receive input
+ok 24 - wrong incarnation, wrong workspace, dead and permission targets never receive input
+  ---
+  duration_ms: 188.871167
+  type: 'test'
+  ...
+# Subtest: uncertain submission survives restart and never automatically or manually resends
+ok 25 - uncertain submission survives restart and never automatically or manually resends
+  ---
+  duration_ms: 158.1495
+  type: 'test'
+  ...
+# Subtest: detaching prevents pending delivery and changing ownership requires explicit detach
+ok 26 - detaching prevents pending delivery and changing ownership requires explicit detach
+  ---
+  duration_ms: 165.424209
+  type: 'test'
+  ...
+# Subtest: bounded history refuses overflow while retaining all receipts and duplicate suppression
+ok 27 - bounded history refuses overflow while retaining all receipts and duplicate suppression
+  ---
+  duration_ms: 3958.228208
+  type: 'test'
+  ...
+# Subtest: notification cannot be sent unless its attempt is durably recorded
+ok 28 - notification cannot be sent unless its attempt is durably recorded
+  ---
+  duration_ms: 45.588667
+  type: 'test'
+  ...
+# Subtest: installed CLI discovery refuses unsupported shell-fallback delivery
+ok 29 - installed CLI discovery refuses unsupported shell-fallback delivery
+  ---
+  duration_ms: 0.651875
+  type: 'test'
+  ...
+# Subtest: unsupported installed transport can pair but saves notices as pending without repeated runtime probes
+ok 30 - unsupported installed transport can pair but saves notices as pending without repeated runtime probes
+  ---
+  duration_ms: 68.559791
+  type: 'test'
+  ...
+# Subtest: task notices require a saved terminal task state, including failures
+ok 31 - task notices require a saved terminal task state, including failures
+  ---
+  duration_ms: 68.944166
+  type: 'test'
+  ...
+# Subtest: provider model preferences persist independently of the paired session and send nothing
+ok 32 - provider model preferences persist independently of the paired session and send nothing
+  ---
+  duration_ms: 44.653084
+  type: 'test'
+  ...
+# Subtest: legacy bridge state reads default preferences without rewriting until explicitly saved
+ok 33 - legacy bridge state reads default preferences without rewriting until explicitly saved
+  ---
+  duration_ms: 34.986334
+  type: 'test'
+  ...
+# Subtest: successful native launch can switch provider only through explicit detach and another start
+ok 34 - successful native launch can switch provider only through explicit detach and another start
+  ---
+  duration_ms: 95.228208
+  type: 'test'
+  ...
+# Subtest: browser save notifies exact paired owner; CLI, failed mutation and restart do not create notification loops
+ok 35 - browser save notifies exact paired owner; CLI, failed mutation and restart do not create notification loops
+  ---
+  duration_ms: 1052.190583
+  type: 'test'
+  ...
+# Subtest: explicit native start persists create/options, accepts defaults and pairs without a prompt
+ok 36 - explicit native start persists create/options, accepts defaults and pairs without a prompt
+  ---
+  duration_ms: 255.15525
+  type: 'test'
+  ...
+# Subtest: mismatched model mutation acknowledgement leaves the exact created session partial and never creates another
+ok 37 - mismatched model mutation acknowledgement leaves the exact created session partial and never creates another
+  ---
+  duration_ms: 135.897625
+  type: 'test'
+  ...
+# Subtest: idle Claude family alias pairs after exact requested model receipts with provider confirmation pending
+ok 38 - idle Claude family alias pairs after exact requested model receipts with provider confirmation pending
+  ---
+  duration_ms: 281.557792
+  type: 'test'
+  ...
+# Subtest: uncertain create and partial configuration retain requests across restart without retry
+ok 39 - uncertain create and partial configuration retain requests across restart without retry
+  ---
+  duration_ms: 226.665417
+  type: 'test'
+  ...
+# Subtest: native inventory rejects missing, stale runtime, wrong provider and wrong workspace targets
+ok 40 - native inventory rejects missing, stale runtime, wrong provider and wrong workspace targets
+  ---
+  duration_ms: 11.006083
+  type: 'test'
+  ...
+# Subtest: native notice uses exact mailbox and real captured sender, and delivered means durable enqueue only
+ok 41 - native notice uses exact mailbox and real captured sender, and delivered means durable enqueue only
+  ---
+  duration_ms: 365.244958
+  type: 'test'
+  ...
+# Subtest: absent sender stays pending and wrong sender workspace never enqueues
+ok 42 - absent sender stays pending and wrong sender workspace never enqueues
+  ---
+  duration_ms: 118.462584
+  type: 'test'
+  ...
+# Subtest: technical selection, eval/story plan and independent review yield draft-only handoff bound to exact sources
+ok 43 - technical selection, eval/story plan and independent review yield draft-only handoff bound to exact sources
+  ---
+  duration_ms: 768.315916
+  type: 'test'
+  ...
+# Subtest: selection refuses wrong digest, no selection refuses planning, and PRD changes invalidate all planning
+ok 44 - selection refuses wrong digest, no selection refuses planning, and PRD changes invalidate all planning
+  ---
+  duration_ms: 646.867542
+  type: 'test'
+  ...
+# Subtest: regenerating technical blueprint resets selection, plan and review without promoting preferences to scope
+ok 45 - regenerating technical blueprint resets selection, plan and review without promoting preferences to scope
+  ---
+  duration_ms: 734.362333
+  type: 'test'
+  ...
+# Subtest: overlayer blueprint fails durably; invalid eval refs and missing coverage fail without a handoff
+ok 46 - overlayer blueprint fails durably; invalid eval refs and missing coverage fail without a handoff
+  ---
+  duration_ms: 1047.253583
+  type: 'test'
+  ...
+# Subtest: explicit requirement gaps and independent blocking findings prevent handoff; retry receives review findings
+ok 47 - explicit requirement gaps and independent blocking findings prevent handoff; retry receives review findings
+  ---
+  duration_ms: 1026.283625
+  type: 'test'
+  ...
+# Subtest: dependency cycles, shared parallel scope, fictitious deferrals and self-resolved findings refuse
+ok 48 - dependency cycles, shared parallel scope, fictitious deferrals and self-resolved findings refuse
+  ---
+  duration_ms: 1.361208
+  type: 'test'
+  ...
+# Subtest: planning input and task are durable before invocation; matching result recovers after missed state commit
+ok 49 - planning input and task are durable before invocation; matching result recovers after missed state commit
+  ---
+  duration_ms: 276.251666
+  type: 'test'
+  ...
+# Subtest: tampered structured technical evidence cannot be selected even if artifact markdown remains unchanged
+ok 50 - tampered structured technical evidence cannot be selected even if artifact markdown remains unchanged
+  ---
+  duration_ms: 310.456583
+  type: 'test'
+  ...
+# Subtest: review cannot block on an uncited preference or claim to resolve its own finding
+ok 51 - review cannot block on an uncited preference or claim to resolve its own finding
+  ---
+  duration_ms: 364.140208
+  type: 'test'
+  ...
+# Subtest: planning serializes with product drafting and restart refuses unresolved old-instance output
+ok 52 - planning serializes with product drafting and restart refuses unresolved old-instance output
+  ---
+  duration_ms: 150.895916
+  type: 'test'
+  ...
+# Subtest: planning timeout remains unresolved across restart and never emits handoff
+ok 53 - planning timeout remains unresolved across restart and never emits handoff
+  ---
+  duration_ms: 109.516792
+  type: 'test'
+  ...
+# Subtest: provider-owned timeout is an unresolved workflow interruption, not a retryable failure
+ok 54 - provider-owned timeout is an unresolved workflow interruption, not a retryable failure
+  ---
+  duration_ms: 122.772333
+  type: 'test'
+  ...
+# Subtest: structured transport disables tools, passes schema and rejects unsuccessful or malformed output
+ok 55 - structured transport disables tools, passes schema and rejects unsuccessful or malformed output
+  ---
+  duration_ms: 308.756458
+  type: 'test'
+  ...
+# Subtest: HTTP journey retains answers, revises both artifacts and resumes after server restart
+ok 56 - HTTP journey retains answers, revises both artifacts and resumes after server restart
+  ---
+  duration_ms: 660.830125
+  type: 'test'
+  ...
+# Subtest: simultaneous starts retain exactly one active preparation and explicitly refuse the other
+ok 57 - simultaneous starts retain exactly one active preparation and explicitly refuse the other
+  ---
+  duration_ms: 68.917958
+  type: 'test'
+  ...
+# Subtest: timeout allows an explicit separate preparation, preserving the unresolved original without rerunning it
+ok 58 - timeout allows an explicit separate preparation, preserving the unresolved original without rerunning it
+  ---
+  duration_ms: 379.552209
+  type: 'test'
+  ...
+# Subtest: HTTP refuses cross-origin/missing-token mutations, has no authority endpoints and isolates mockups
+ok 59 - HTTP refuses cross-origin/missing-token mutations, has no authority endpoints and isolates mockups
+  ---
+  duration_ms: 317.869458
+  type: 'test'
+  ...
+# Subtest: saved answer and coordinated artifact revisions survive restart; packet binds exact current bytes
+ok 60 - saved answer and coordinated artifact revisions survive restart; packet binds exact current bytes
+  ---
+  duration_ms: 477.838666
+  type: 'test'
+  ...
+# Subtest: silence and encouragement cannot answer the material question; stale mutations and duplicate operations refuse
+ok 61 - silence and encouragement cannot answer the material question; stale mutations and duplicate operations refuse
+  ---
+  duration_ms: 246.461042
+  type: 'test'
+  ...
+# Subtest: task identity and exact inputs persist before provider execution; polling keeps own task running
+ok 62 - task identity and exact inputs persist before provider execution; polling keeps own task running
+  ---
+  duration_ms: 186.274417
+  type: 'test'
+  ...
+# Subtest: restart preserves unresolved execution and refuses stale output from old instance
+ok 63 - restart preserves unresolved execution and refuses stale output from old instance
+  ---
+  duration_ms: 111.673292
+  type: 'test'
+  ...
+# Subtest: matching durable result reconciles after interrupted state commit
+ok 64 - matching durable result reconciles after interrupted state commit
+  ---
+  duration_ms: 254.809375
+  type: 'test'
+  ...
+# Subtest: provider failure is durable and explicitly retryable; timeout stays unresolved
+ok 65 - provider failure is durable and explicitly retryable; timeout stays unresolved
+  ---
+  duration_ms: 503.009208
+  type: 'test'
+  ...
+# Subtest: artifact tampering and unreadable saved state refuse with actionable errors
+ok 66 - artifact tampering and unreadable saved state refuse with actionable errors
+  ---
+  duration_ms: 196.071833
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5500.493583

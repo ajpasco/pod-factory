@@ -1,0 +1,29 @@
+{
+  "export": "/var/folders/x2/dxxzn0054dbcd2qzhxjwz_hc0000gn/T/session-handoff-63g7kfik/orchestration",
+  "files": [
+    {
+      "path": "orchestration/src/session-handoff.ts",
+      "sha256": "1cd19c4cc6aae614839bf760331f40d0768b3daa696f428ddb8b058e77264a9d"
+    },
+    {
+      "path": "orchestration/test/session-handoff.test.ts",
+      "sha256": "4f93d4060693c3ecafae36f848ea426e4deaeca4bed1e323106bb68456d5ff39"
+    },
+    {
+      "path": "orchestration/SESSION-HANDOFF.md",
+      "sha256": "d30a78f9b5df0428c77e3fd4f0d9d0de63545ce62980e409598de0beff521762"
+    }
+  ],
+  "scope": "new standalone wrapper, tests and usage only; existing provider/factory/server/UI code unchanged",
+  "outputs": [
+    {
+      "path": "/var/folders/x2/dxxzn0054dbcd2qzhxjwz_hc0000gn/T/session-handoff-63g7kfik/orchestration/dist/src/session-handoff.js",
+      "sha256": "3a6d51b16c0a987168c0356a267fccebd7fb639fac8d87c8712b16b7fcedc18f"
+    },
+    {
+      "path": "/var/folders/x2/dxxzn0054dbcd2qzhxjwz_hc0000gn/T/session-handoff-63g7kfik/orchestration/dist/test/session-handoff.test.js",
+      "sha256": "7366cea661e6b40b7bc7c222b6dc542876e4401395cd92bd9a0462ec037207d3"
+    }
+  ],
+  "patchSha256": "bf711d2b4c3494a177e52c329c4317bae515622dcf58e9edc4e02dd783fdb4be"
+}

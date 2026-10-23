@@ -1,0 +1,4 @@
+# pre-existing suites only (factory files excluded)
+# tests 50
+# pass 50
+# fail 0

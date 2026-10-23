@@ -1,0 +1,110 @@
+{
+  "recordedAt": "2026-10-19T02:26:35.620Z",
+  "kind": "Real read-only factory inspection; no fixture, no write, no fetch",
+  "repoPath": "<home>/orca/workspaces/orca-software-factory/scad",
+  "harnessRoot": "docs/projects/equipment-checkout",
+  "factoryVersion": "0.0.0-m0",
+  "recordsCommit": "3d9c61cbbc476ec559e6b5bbe7c49c286249c36b",
+  "trunkCommit": "a82a857346ce07b55faaa80fce4626c5406bd9d9",
+  "observed": [
+    {
+      "story": "story-2",
+      "outcome": "blocked",
+      "summary": "3 of 8 prerequisites are unmet, so story-2 cannot be dispatched: harness-authored, harness-protected, test-command-locked.",
+      "prerequisites": [
+        {
+          "id": "gate-2-approval",
+          "satisfied": true,
+          "observed": "Gate-2 approval 5ffb95c267fd by human at 2026-10-18T19:24:19Z."
+        },
+        {
+          "id": "gate-2-lock",
+          "satisfied": true,
+          "observed": "Lock 0b0bc6b73309 covering 51 files, refs 5ffb95c267fd."
+        },
+        {
+          "id": "harness-authored",
+          "satisfied": false,
+          "observed": "No files under docs/projects/equipment-checkout/ on a82a857346ce."
+        },
+        {
+          "id": "harness-protected",
+          "satisfied": false,
+          "observed": "The active lock has no pattern under docs/projects/equipment-checkout/; its patterns cover 22 other path sets.",
+          "humanAction": "Only a human-written amendment may change a locked path: pod-factory approve amendment --pr <N> <locked path>"
+        },
+        {
+          "id": "test-command-locked",
+          "satisfied": false,
+          "observed": "No locked test command mentions docs/projects/equipment-checkout.",
+          "humanAction": "Only a human-written amendment may change a locked path: pod-factory approve amendment --pr <N> <locked path>"
+        },
+        {
+          "id": "gate-3-approval",
+          "satisfied": true,
+          "observed": "Gate-3 approval 457d804ac529 by human binding 4 plan file(s)."
+        },
+        {
+          "id": "story-authorized",
+          "satisfied": true,
+          "observed": "Bound at ea5639f09487."
+        },
+        {
+          "id": "story-bytes-match",
+          "satisfied": true,
+          "observed": "Trunk bytes match the approved hash."
+        }
+      ]
+    },
+    {
+      "story": "story-4",
+      "outcome": "blocked",
+      "summary": "5 of 8 prerequisites are unmet, so story-4 cannot be dispatched: harness-authored, harness-protected, test-command-locked, story-authorized, story-bytes-match.",
+      "prerequisites": [
+        {
+          "id": "gate-2-approval",
+          "satisfied": true,
+          "observed": "Gate-2 approval 5ffb95c267fd by human at 2026-10-18T19:24:19Z."
+        },
+        {
+          "id": "gate-2-lock",
+          "satisfied": true,
+          "observed": "Lock 0b0bc6b73309 covering 51 files, refs 5ffb95c267fd."
+        },
+        {
+          "id": "harness-authored",
+          "satisfied": false,
+          "observed": "No files under docs/projects/equipment-checkout/ on a82a857346ce."
+        },
+        {
+          "id": "harness-protected",
+          "satisfied": false,
+          "observed": "The active lock has no pattern under docs/projects/equipment-checkout/; its patterns cover 22 other path sets.",
+          "humanAction": "Only a human-written amendment may change a locked path: pod-factory approve amendment --pr <N> <locked path>"
+        },
+        {
+          "id": "test-command-locked",
+          "satisfied": false,
+          "observed": "No locked test command mentions docs/projects/equipment-checkout.",
+          "humanAction": "Only a human-written amendment may change a locked path: pod-factory approve amendment --pr <N> <locked path>"
+        },
+        {
+          "id": "gate-3-approval",
+          "satisfied": true,
+          "observed": "Gate-3 approval 457d804ac529 by human binding 4 plan file(s)."
+        },
+        {
+          "id": "story-authorized",
+          "satisfied": false,
+          "observed": "Gate-3 does not bind .factory/work/story-4/story.md; it binds .factory/work/plan/build-plan.md, .factory/work/story-1/story.md, .factory/work/story-2/story.md, .factory/work/story-3/story.md.",
+          "humanAction": "pod-factory approve 3 (after the build plan names this story)"
+        },
+        {
+          "id": "story-bytes-match",
+          "satisfied": false,
+          "observed": ".factory/work/story-4/story.md is not on a82a857346ce."
+        }
+      ]
+    }
+  ]
+}

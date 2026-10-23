@@ -1,0 +1,785 @@
+diff --git a/packages/cli/src/commands/approve.ts b/packages/cli/src/commands/approve.ts
+--- a/packages/cli/src/commands/approve.ts
++++ b/packages/cli/src/commands/approve.ts
+@@ -28,6 +28,7 @@
+   type FactoryRecord,
+   type FileBinding,
+ } from '../records/format.js';
++import { gitText } from '../records/git.js';
+ import { loadRecords } from '../records/store.js';
+ import { writeRecord } from '../records/write.js';
+ import { effectiveLock, isLockedBy } from '../lock-state.js';
+@@ -51,7 +52,9 @@
+   pod-factory approve story-1 --pr 7 gate 4: story story-1, as pull request number 7 stands now
+   pod-factory approve bootstrap 7    merge authority for bootstrap pull request number 7
+   pod-factory approve amendment --pr 7 <locked path>...
+-                                     a change to locked paths, as pull request number 7 stands now`;
++                                     a change to locked paths, as pull request number 7 stands now
++  pod-factory approve amendment --maintenance --pr 7 <every changed path>...
++                                     authorize merging only this exact reviewed PR/tree`;
+ 
+ /** What one approval binds, where it was read from, and how to describe it. */
+ interface Plan {
+@@ -200,7 +203,7 @@
+   };
+ }
+ 
+-function amendmentPlan(io: CommandIO, pr: number, paths: string[]): Plan {
++function amendmentPlan(io: CommandIO, pr: number, paths: string[], maintenance: boolean): Plan {
+   if (paths.length === 0)
+     throw new Refusal(`approve amendment needs at least one locked path.\n${APPROVE_USAGE}`);
+   const set = loadRecords(io.cwd, io.remote);
+@@ -209,18 +212,42 @@
+     throw new Refusal('There is no valid lock, so there is nothing to amend. Nothing was written.');
+   const lock = locked.lock;
+   const unlocked = paths.filter((p) => !isLockedBy(locked, p));
+-  if (unlocked.length > 0) {
++  if (!maintenance && unlocked.length > 0) {
+     throw new Refusal(
+       `${unlocked.join(', ')} ${unlocked.length === 1 ? 'is' : 'are'} not locked, so no amendment is needed. Nothing was written.`,
+     );
+   }
+   const commit = fetchPullRequest(io.cwd, pr, io.remote);
+   const files = filesAt(io.cwd, commit);
++  let baseHashes: Record<string, string> = {};
++  if (maintenance) {
++    const main = fetchTrunk(io.cwd, io.remote);
++    const base = gitText(io.cwd, ['merge-base', main, commit]);
++    const changed = gitText(io.cwd, ['diff', '--name-only', '--no-renames', '-z', base, commit])
++      .split('\0')
++      .filter((p) => p !== '');
++    if (
++      changed.length === 0 ||
++      paths.length !== new Set(paths).size ||
++      paths.length !== changed.length ||
++      changed.some((p) => !paths.includes(p))
++    ) {
++      throw new Refusal(
++        'Maintenance must name every changed path exactly once, with no extra paths, in a nonempty PR diff. Nothing was written.',
++      );
++    }
++    const baseFiles = filesAt(io.cwd, base);
++    baseHashes = hashesAt(
++      io.cwd,
++      baseFiles,
++      paths.filter((p) => baseFiles.has(p)),
++    );
++  }
+   const present = paths.filter((p) => files.has(p));
+   const after = hashesAt(io.cwd, files, present);
+   const bound: Record<string, FileBinding> = {};
+   for (const path of paths) {
+-    const before = locked.hashes.get(path) ?? null;
++    const before = (isLockedBy(locked, path) ? locked.hashes.get(path) : baseHashes[path]) ?? null;
+     const now = after[path] ?? null;
+     if (before === now) {
+       throw new Refusal(
+@@ -232,8 +259,16 @@
+   return {
+     token: 'amendment',
+     subject: `amendment-pr-${pr}`,
+-    statement: `Amendment: ${paths.length === 1 ? 'a change' : `changes`} to locked ${paths.join(', ')} as pull request ${pr} stands at commit ${commit}, against lock ${lock.record.recordId}.`,
+-    block: { kind: 'amendment', gate: null, story: null, pullRequest: pr },
++    statement: maintenance
++      ? `Maintenance amendment: authorize merging pull request ${pr} ONLY at tree ${treeOf(io.cwd, commit)} (commit ${commit}), against lock ${lock.record.recordId}, with the complete reviewed changed-file set: ${paths.join(', ')}. This does not approve a build plan for execution; gate 3 remains separate.`
++      : `Amendment: ${paths.length === 1 ? 'a change' : `changes`} to locked ${paths.join(', ')} as pull request ${pr} stands at commit ${commit}, against lock ${lock.record.recordId}.`,
++    block: {
++      kind: 'amendment',
++      gate: null,
++      story: null,
++      pullRequest: pr,
++      ...(maintenance ? { maintenance: true as const } : {}),
++    },
+     binds: { tree: treeOf(io.cwd, commit), files: bound },
+     refs: [lock.record.recordId],
+     refetch: () => fetchPullRequest(io.cwd, pr, io.remote),
+@@ -248,13 +283,19 @@
+     parsed = parseArgs({
+       args: argv,
+       allowPositionals: true,
+-      options: { pr: { type: 'string' }, classification: { type: 'string' } },
++      options: {
++        pr: { type: 'string' },
++        classification: { type: 'string' },
++        maintenance: { type: 'boolean' },
++      },
+     });
+   } catch (error) {
+     throw new Refusal(`${(error as Error).message}\n${APPROVE_USAGE}`);
+   }
+   const [target, ...rest] = parsed.positionals;
+-  const { pr, classification } = parsed.values;
++  const { pr, classification, maintenance } = parsed.values;
++  if (maintenance && target !== 'amendment')
++    throw new Refusal('--maintenance is only valid for approve amendment.');
+   const noExtra = (allowed: boolean) => {
+     if (!allowed && rest.length > 0)
+       throw new Refusal(`Unexpected "${rest.join(' ')}".\n${APPROVE_USAGE}`);
+@@ -276,7 +317,8 @@
+       throw new Refusal(`approve bootstrap takes one pull request number.\n${APPROVE_USAGE}`);
+     return pullRequestPlan(io, pullRequestNumber(rest[0], 'bootstrap'), 'bootstrap', null);
+   }
+-  if (target === 'amendment') return amendmentPlan(io, pullRequestNumber(pr, 'amendment'), rest);
++  if (target === 'amendment')
++    return amendmentPlan(io, pullRequestNumber(pr, 'amendment'), rest, maintenance === true);
+   if (target !== undefined && /^[0-9]+$/.test(target)) {
+     throw new Refusal(
+       `Gate ${target} is not approved with this command in milestone zero: approve 2, approve 3, or approve story-<n> for gate 4.`,
+@@ -304,7 +346,12 @@
+   requireHuman('approve', io.ctx);
+   finishPendingWrites(io);
+   const p = plan(io, argv);
+-  const shown = shownHashOf(p);
++  const shown = shownHashOf({
++    ...p,
++    ...(p.block.maintenance === true
++      ? { maintenance: true as const, pullRequest: p.block.pullRequest as number }
++      : {}),
++  });
+   // Idempotent: a restart after a kill must not approve the same content twice.
+   const same = active(loadRecords(io.cwd, io.remote), isApproval).find(
+     (a) => a.record.approval.shownHash === shown,
+diff --git a/packages/cli/src/check-runner/gate-check.ts b/packages/cli/src/check-runner/gate-check.ts
+--- a/packages/cli/src/check-runner/gate-check.ts
++++ b/packages/cli/src/check-runner/gate-check.ts
+@@ -1,5 +1,5 @@
+ import { active, isLock, short, type CommandIO } from '../commands/common.js';
+-import { fetchTrunk, treeOf } from '../git-tree.js';
++import { fetchTrunk, filesAt, hashesAt, treeOf } from '../git-tree.js';
+ import { gitText } from '../records/git.js';
+ import { boundStoryFile, gate3Approval, outsideScope, parseStory } from '../story.js';
+ import type { ApprovalRecord, CheckResultRecord, FactoryRecord } from '../records/format.js';
+@@ -12,6 +12,7 @@
+   reportFlagged,
+   requireRecordsBranch,
+ } from './job.js';
++import { isLockedBy, type EffectiveLock } from '../lock-state.js';
+ import { checkLockedPaths } from './lock-guard.js';
+ 
+ /** The optional hook a test uses to land a record between gate-check's two reads. */
+@@ -43,7 +44,14 @@
+   const result = results.filter((r) => r.record.outcome === 'pass').at(-1);
+ 
+   const lines: string[] = [];
+-  if (approval === undefined) {
++  const lockRule = checkLockedPaths(io, set, pr, head);
++  const maintenance = maintenanceApproval(io, lockRule.locked, pr, head, tree);
++  if (maintenance !== undefined) {
++    lines.push(
++      `Maintenance amendment ${maintenance.record.recordId} explicitly authorizes merging only pull request ${pr} at tree ${short(tree)}, with its complete reviewed changed-file set. Gate 3 execution approval remains separate.`,
++    );
++  }
++  if (approval === undefined && maintenance === undefined) {
+     const older = counted.at(-1);
+     const bootstrapOnly = forThisPr.length > 0 && counted.length === 0;
+     lines.push(
+@@ -61,14 +69,14 @@
+         : `There is no verify result for tree ${short(tree)}. "Tests passed" counts only with the verify run's own evidence bundle for this exact tree.`,
+     );
+   }
+-  if (approval !== undefined && result !== undefined) {
+-    lines.push(
+-      `Approval ${approval.record.recordId} by ${approval.record.actor.name} and verify result ${result.record.recordId} (run ${result.record.checkResult.runUrl}, bundle manifest ${short(result.record.checkResult.bundleManifestSha256 ?? '')}) bind tree ${short(tree)}, and neither is revoked.`,
++  const authority = maintenance ?? approval;
++  if (authority !== undefined && result !== undefined) {
++    lines.push(
++      `Approval ${authority.record.recordId} by ${authority.record.actor.name} and verify result ${result.record.recordId} (run ${result.record.checkResult.runUrl}, bundle manifest ${short(result.record.checkResult.bundleManifestSha256 ?? '')}) bind tree ${short(tree)}, and neither is revoked.`,
+     );
+   }
+   // The locked-path rule, applied here from this run's records rather than taken from lock-guard's
+   // check run: a re-run can supersede a check run, so a green one proves nothing after a revocation.
+-  const lockRule = checkLockedPaths(io, set, pr, head);
+   lines.push(
+     ...(lockRule.locked === null
+       ? ['Nothing is locked yet, so no locked path can change.']
+@@ -79,16 +87,79 @@
+         : lockRule.failures),
+   );
+   let inScope = true;
+-  if (approval !== undefined && approval.record.approval.kind === 'story') {
++  if (
++    maintenance === undefined &&
++    approval !== undefined &&
++    approval.record.approval.kind === 'story'
++  ) {
+     const scope = scopeCheck(io, set, approval.record.approval.story as string, head);
+     lines.push(...scope.lines);
+     inScope = scope.pass;
+   }
+   return {
+     pass:
+-      approval !== undefined && result !== undefined && lockRule.failures.length === 0 && inScope,
++      (approval !== undefined || maintenance !== undefined) &&
++      result !== undefined &&
++      lockRule.failures.length === 0 &&
++      inScope,
+     lines,
+   };
++}
++
++/** Exact-content maintenance is a separate alternative to story scope, never a scope expansion.
++ * Only an explicitly opted-in amendment that applies under the current lock may count. The
++ * complete nonempty diff is rederived from fetched main; no subset, extra path or stale base
++ * binding can grant authority. Locked before hashes already passed effectiveLock's atomic check.
++ */
++function maintenanceApproval(
++  io: CommandIO,
++  locked: EffectiveLock | null,
++  pr: number,
++  head: string,
++  tree: string,
++) {
++  if (locked === null) return undefined;
++  const candidates = locked.amendments.filter(
++    (a) =>
++      a.record.approval.maintenance === true &&
++      a.record.approval.pullRequest === pr &&
++      a.record.binds.tree === tree &&
++      a.record.refs.length === 1 &&
++      a.record.refs[0] === locked.lock.record.recordId,
++  );
++  if (candidates.length === 0) return undefined;
++  const main = fetchTrunk(io.cwd, io.remote);
++  const base = gitText(io.cwd, ['merge-base', main, head]);
++  const changed = gitText(io.cwd, ['diff', '--name-only', '--no-renames', '-z', base, head])
++    .split('\0')
++    .filter((p) => p !== '');
++  if (changed.length === 0) return undefined;
++  const beforeFiles = filesAt(io.cwd, base);
++  const afterFiles = filesAt(io.cwd, head);
++  const before = hashesAt(
++    io.cwd,
++    beforeFiles,
++    changed.filter((p) => beforeFiles.has(p)),
++  );
++  const after = hashesAt(
++    io.cwd,
++    afterFiles,
++    changed.filter((p) => afterFiles.has(p)),
++  );
++  return candidates.find((a) => {
++    const bindings = a.record.binds.files;
++    return (
++      Object.keys(bindings).length === changed.length &&
++      changed.every((path) => {
++        const pair = bindings[path];
++        return (
++          typeof pair === 'object' &&
++          pair.after === (after[path] ?? null) &&
++          (isLockedBy(locked, path) || pair.before === (before[path] ?? null))
++        );
++      })
++    );
++  });
+ }
+ 
+ /**
+diff --git a/packages/cli/src/lock-state.ts b/packages/cli/src/lock-state.ts
+--- a/packages/cli/src/lock-state.ts
++++ b/packages/cli/src/lock-state.ts
+@@ -46,10 +46,15 @@
+   };
+   for (const amendment of active(set, isAmendment)) {
+     if (!amendment.record.refs.includes(lock.record.recordId)) continue;
+-    const changes = Object.entries(amendment.record.binds.files).map(([path, binding]) => ({
+-      path,
+-      ...(binding as { before: string | null; after: string | null }),
+-    }));
++    // Explicit maintenance also binds unlocked files. Those never become lock state, nor
++    // participate in locked before-hash matching: their base is checked against the PR diff.
++    // Unmarked historical amendments keep their original whole-record semantics.
++    const changes = Object.entries(amendment.record.binds.files)
++      .filter(([path]) => amendment.record.approval.maintenance !== true || isLockedBy(state, path))
++      .map(([path, binding]) => ({
++        path,
++        ...(binding as { before: string | null; after: string | null }),
++      }));
+     const mismatch = changes.find((c) => (hashes.get(c.path) ?? null) !== c.before);
+     if (mismatch !== undefined) {
+       state.stale.push({ amendment, path: mismatch.path });
+diff --git a/packages/cli/src/records/format.ts b/packages/cli/src/records/format.ts
+--- a/packages/cli/src/records/format.ts
++++ b/packages/cli/src/records/format.ts
+@@ -53,6 +53,8 @@
+ 
+ export interface ApprovalBlock {
+   kind: 'gate' | 'story' | 'bootstrap' | 'amendment';
++  /** Explicit opt-in to exact-content maintenance merge authority; absent never grants it. */
++  maintenance?: true;
+   gate: number | null;
+   story: string | null;
+   pullRequest: number | null;
+@@ -229,6 +231,9 @@
+   out.refs = [...record.refs];
+   const blockKey = BLOCK_KEY[record.recordType];
+   const block = pick(r[blockKey] as Record<string, unknown>, BLOCK_KEYS[record.recordType]);
++  if (record.recordType === 'approval' && record.approval.maintenance === true) {
++    block.maintenance = true;
++  }
+   if (record.recordType === 'transition') {
+     const t = record.transition;
+     block.lease = t.lease === null ? null : pick(t.lease, LEASE_KEYS);
+@@ -247,13 +252,25 @@
+  * The single hash `approve` shows: SHA-256 over everything it printed above the hash, in canonical
+  * form: the statement, the bound tree and files, and the records the approval refers to.
+  */
+-export function shownHashOf(shown: { statement: string; binds: Binds; refs: string[] }): string {
++export function shownHashOf(shown: {
++  statement: string;
++  binds: Binds;
++  refs: string[];
++  maintenance?: true;
++  pullRequest?: number;
++}): string {
+   const files: Record<string, FileBinding> = {};
+   for (const path of Object.keys(shown.binds.files).sort()) {
+     const value = shown.binds.files[path] as FileBinding;
+     files[path] = typeof value === 'string' ? value : { before: value.before, after: value.after };
+   }
+   return hashText(
+-    JSON.stringify({ statement: shown.statement, tree: shown.binds.tree, files, refs: shown.refs }),
++    JSON.stringify({
++      statement: shown.statement,
++      tree: shown.binds.tree,
++      files,
++      refs: shown.refs,
++      ...(shown.maintenance === true ? { maintenance: true, pullRequest: shown.pullRequest } : {}),
++    }),
+   );
+ }
+diff --git a/packages/cli/src/records/validate.ts b/packages/cli/src/records/validate.ts
+--- a/packages/cli/src/records/validate.ts
++++ b/packages/cli/src/records/validate.ts
+@@ -17,6 +17,8 @@
+   STAGES,
+   compactTimestamp,
+   serializeRecord,
++  shownHashOf,
++  type ApprovalRecord,
+   type ActorKind,
+   type FactoryRecord,
+   type RecordType,
+@@ -199,6 +201,21 @@
+ function checkApproval(record: Obj, block: Obj): void {
+   const kind = oneOf(block.kind, ['gate', 'story', 'bootstrap', 'amendment'], 'approval.kind');
+   const binds = record.binds as { tree: unknown; files: Obj };
++  if ('maintenance' in block) {
++    if (kind !== 'amendment' || block.maintenance !== true) {
++      fail('approval.maintenance may only be true on an amendment approval');
++    }
++    if (
++      binds.tree === null ||
++      block.pullRequest === null ||
++      Object.keys(binds.files).length === 0 ||
++      (record.refs as unknown[]).length !== 1
++    ) {
++      fail(
++        'a maintenance amendment must bind a PR, tree, nonempty file set and one lock reference',
++      );
++    }
++  }
+   if (kind === 'gate') {
+     positiveInteger(block.gate, 'approval.gate');
+     if ((block.gate as number) > 5) fail('field "approval.gate" must be a gate from 1 to 5');
+@@ -223,6 +240,22 @@
+     );
+   }
+   text(block.statement, 'approval.statement');
++  if (block.maintenance === true) {
++    const approval = record as unknown as ApprovalRecord;
++    if (
++      shown !==
++      shownHashOf({
++        statement: approval.approval.statement,
++        binds: approval.binds,
++        refs: approval.refs,
++        maintenance: true,
++        pullRequest: approval.approval.pullRequest as number,
++      })
++    )
++      fail(
++        'maintenance approval shownHash does not bind its explicit maintenance intent and exact content',
++      );
++  }
+ }
+ 
+ function textList(value: unknown, field: string): string[] {
+@@ -333,7 +366,11 @@
+   }
+ 
+   const block = object(record[blockKey], blockKey);
+-  exactKeys(block, BLOCK_KEYS[type], `${blockKey}.`);
++  const blockKeys =
++    type === 'approval' && 'maintenance' in block
++      ? [...BLOCK_KEYS[type], 'maintenance']
++      : BLOCK_KEYS[type];
++  exactKeys(block, blockKeys, `${blockKey}.`);
+   checkBinds(record.binds, type, type === 'approval' && block.kind === 'amendment');
+   oneOf(record.outcome, OUTCOMES[type], 'outcome');
+   if (!Array.isArray(record.refs)) fail('field "refs" must be a list of record IDs');
+diff --git a/packages/cli/test/maintenance.test.ts b/packages/cli/test/maintenance.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/cli/test/maintenance.test.ts
+@@ -0,0 +1,361 @@
++import { describe, expect, it } from 'vitest';
++import {
++  effectiveLock,
++  gateCheck,
++  hashText,
++  loadRecords,
++  recordBase,
++  run,
++  shownHashOf,
++  validateRecord,
++  serializeRecord,
++  recordFileName,
++  type ApprovalRecord,
++  type FileBinding,
++} from '../src/index.js';
++import {
++  ciProject,
++  plantLock,
++  plantVerify,
++  treeAt,
++  ciCheck,
++  CONFIG,
++  CONFIG_V0,
++  CONFIG_V1,
++  TEST_COMMAND,
++} from './support/ci.js';
++import { confirms, human } from './support/project.js';
++import { HUMAN, SHA_A, revocation, stored } from './support/records.js';
++
++const PLAN = '.factory/work/plan/build-plan.md';
++const STORY = '.factory/work/story-4/story.md';
++const POLICY = 'packages/cli/src/lock-policy.ts';
++const CONTENT = {
++  [PLAN]: `# Equipment plan\n\n1. ${STORY}\n`,
++  [STORY]: '# Equipment story\n',
++  [POLICY]: 'export const policy = true;\n',
++  [CONFIG]: CONFIG_V1,
++};
++
++function setup(content: Record<string, string | null> = CONTENT) {
++  const f = ciProject();
++  const lock = plantLock(f);
++  const head = f.pullRequest(7, content);
++  const tree = treeAt(f, head);
++  const bindings: Record<string, FileBinding> = {};
++  for (const [path, value] of Object.entries(content)) {
++    bindings[path] = {
++      before: path === CONFIG ? hashText(CONFIG_V0) : null,
++      after: value === null ? null : hashText(value),
++    };
++  }
++  const make = (files = bindings): ApprovalRecord => {
++    const statement = 'Maintenance: explicitly authorize this exact reviewed PR/tree only.';
++    const binds = { tree, files };
++    const refs = [lock.recordId];
++    const shown = shownHashOf({ statement, binds, refs, maintenance: true, pullRequest: 7 });
++    return {
++      ...recordBase(HUMAN),
++      recordType: 'approval',
++      binds,
++      refs,
++      outcome: 'approved',
++      approval: {
++        kind: 'amendment',
++        gate: null,
++        story: null,
++        pullRequest: 7,
++        maintenance: true,
++        statement,
++        shownHash: shown,
++        typedPrefix: shown.slice(0, 8),
++      },
++    };
++  };
++  const plant = (record: ApprovalRecord) => f.plant(Object.fromEntries([stored(record)]));
++  return { f, lock, head, tree, make, plant };
++}
++
++function stateAt(c: ReturnType<typeof setup>) {
++  const state = effectiveLock(loadRecords(c.f.work));
++  if (state === null) throw new Error('fixture has no effective lock');
++  return state;
++}
++
++function lastAmendment(c: ReturnType<typeof setup>) {
++  const last = stateAt(c).amendments.at(-1);
++  if (last === undefined) throw new Error('fixture has no effective amendment');
++  return last.record;
++}
++
++function rehash(record: ApprovalRecord) {
++  const shown = shownHashOf({
++    statement: record.approval.statement,
++    binds: record.binds,
++    refs: record.refs,
++    maintenance: true,
++    pullRequest: record.approval.pullRequest as number,
++  });
++  record.approval.shownHash = shown;
++  record.approval.typedPrefix = shown.slice(0, 8);
++  return record;
++}
++
++const validate = (record: ApprovalRecord) =>
++  validateRecord(recordFileName(record, 'test'), serializeRecord(record));
++
++describe('exact-content maintenance amendments', () => {
++  it('explicit ceremony binds the full mixed diff without locking unlocked paths or approving execution', async () => {
++    const { f, lock, head, tree } = setup();
++    const io = human(f.work, confirms('amendment'));
++    expect(
++      await run(
++        ['approve', 'amendment', '--maintenance', '--pr', '7', ...Object.keys(CONTENT)],
++        io,
++      ),
++    ).toBe(0);
++    expect(io.lines.join('\n')).toMatch(/authorize merging pull request 7 ONLY at tree/);
++    expect(io.lines.join('\n')).toMatch(/gate 3 remains separate/);
++    const set = loadRecords(f.work);
++    const state = effectiveLock(set);
++    const record = state?.amendments.at(-1)?.record;
++    expect(record?.approval.maintenance).toBe(true);
++    expect(record?.binds.files[PLAN]).toEqual({ before: null, after: hashText(CONTENT[PLAN]) });
++    expect(state?.hashes.get(CONFIG)).toBe(hashText(CONFIG_V1));
++    for (const path of [PLAN, STORY, POLICY]) {
++      expect(state?.hashes.has(path)).toBe(false);
++      expect(state?.held.has(path)).toBe(false);
++    }
++    expect(state?.lock.record.lock).toEqual(lock.lock);
++    expect(state?.lock.record.lock.testCommands).toEqual([TEST_COMMAND]);
++    plantVerify(f, 7, tree);
++    expect(ciCheck(f, 'lock-guard', 7, head).status).toBe(0);
++    expect(ciCheck(f, 'gate-check', 7, head).status).toBe(0);
++    const builder = f.pullRequest(8, { 'src/equipment.js': 'export {};\n' });
++    plantVerify(f, 8, treeAt(f, builder));
++    expect(ciCheck(f, 'gate-check', 8, builder).status).toBe(1);
++    f.commitToMain(CONTENT, 'fixture-only maintenance merge');
++    const start = human(f.work);
++    expect(await run(['story', 'start', 'story-4', '--holder', 'builder'], start)).toBe(1);
++    expect(start.errors.join('\n')).toMatch(/gate.?3/i);
++  });
++
++  it('supports unlocked-only maintenance without contaminating lock state', () => {
++    const c = setup({ [PLAN]: CONTENT[PLAN], [STORY]: CONTENT[STORY] });
++    c.plant(c.make());
++    plantVerify(c.f, 7, c.tree);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(0);
++    expect([...stateAt(c).hashes.keys()]).not.toContain(PLAN);
++  });
++
++  it('old complete amendments grant no merge authority, and their original hash stays valid', () => {
++    const c = setup({ [CONFIG]: CONFIG_V1 });
++    const record = c.make();
++    delete record.approval.maintenance;
++    record.approval.shownHash = SHA_A;
++    record.approval.typedPrefix = SHA_A.slice(0, 8);
++    expect(validate(record).ok).toBe(true);
++    c.plant(record);
++    plantVerify(c.f, 7, c.tree);
++    expect(ciCheck(c.f, 'lock-guard', 7, c.head).status).toBe(0);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++    record.approval.maintenance = true;
++    expect(validate(record)).toMatchObject({
++      ok: false,
++      reason: expect.stringContaining('shownHash'),
++    });
++  });
++
++  it.each([
++    'partial',
++    'empty',
++    'extra',
++    'before',
++    'after',
++    'wrong-pr',
++    'wrong-tree',
++    'wrong-lock',
++    'stale-locked',
++  ])('refuses %s maintenance coverage', (scenario) => {
++    const c = setup();
++    const record = c.make();
++    if (scenario === 'partial') Reflect.deleteProperty(record.binds.files, POLICY);
++    if (scenario === 'empty') record.binds.files = {};
++    if (scenario === 'extra')
++      record.binds.files['unreviewed.txt'] = { before: null, after: hashText('extra') };
++    if (scenario === 'before')
++      record.binds.files[PLAN] = { before: hashText('wrong'), after: hashText(CONTENT[PLAN]) };
++    if (scenario === 'after') record.binds.files[PLAN] = { before: null, after: hashText('wrong') };
++    if (scenario === 'wrong-pr') record.approval.pullRequest = 8;
++    if (scenario === 'wrong-tree') record.binds.tree = treeAt(c.f, c.f.main);
++    if (scenario === 'wrong-lock') record.refs = ['f'.repeat(12)];
++    if (scenario === 'stale-locked')
++      record.binds.files[CONFIG] = { before: hashText('wrong'), after: hashText(CONFIG_V1) };
++    c.plant(rehash(record));
++    plantVerify(c.f, 7, c.tree);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++  });
++
++  it('refuses without a current passing verify, including revoked or moved content', () => {
++    const c = setup();
++    c.plant(c.make());
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++    const failed = plantVerify(c.f, 7, c.tree, { outcome: 'fail' });
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++    const result = plantVerify(c.f, 7, c.tree);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(0);
++    c.f.plant(Object.fromEntries([stored(revocation(result.recordId))]));
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++    expect(failed.outcome).toBe('fail');
++    const moved = c.f.pullRequest(7, { ...CONTENT, [POLICY]: 'changed again\n' });
++    plantVerify(c.f, 7, treeAt(c.f, moved));
++    expect(ciCheck(c.f, 'gate-check', 7, moved).status).toBe(1);
++  });
++
++  it('revocation during the records reread removes maintenance authority', () => {
++    const c = setup();
++    const record = c.make();
++    c.plant(record);
++    plantVerify(c.f, 7, c.tree);
++    const io = human(c.f.work);
++    expect(
++      gateCheck(['--pr', '7', '--head', c.head], io, {
++        afterRead: (attempt) => {
++          if (attempt === 0) c.f.plant(Object.fromEntries([stored(revocation(record.recordId))]));
++        },
++      }),
++    ).toBe(1);
++    expect(io.lines.join('\n')).toMatch(/records branch moved/);
++  });
++
++  it('CLI refuses partial, extra, duplicate and empty path sets before prompting', async () => {
++    const c = setup();
++    for (const paths of [
++      [PLAN],
++      [...Object.keys(CONTENT), 'extra.txt'],
++      [...Object.keys(CONTENT), PLAN],
++      [],
++    ]) {
++      const io = human(c.f.work, confirms('amendment'));
++      expect(await run(['approve', 'amendment', '--maintenance', '--pr', '7', ...paths], io)).toBe(
++        1,
++      );
++      expect(io.questions).toEqual([]);
++    }
++  });
++
++  it('CLI refuses a moved PR during confirmation', async () => {
++    const c = setup();
++    const io = human(c.f.work, (shown) => {
++      c.f.pullRequest(7, { ...CONTENT, [POLICY]: 'moved\n' });
++      return confirms('amendment')(shown);
++    });
++    expect(
++      await run(
++        ['approve', 'amendment', '--maintenance', '--pr', '7', ...Object.keys(CONTENT)],
++        io,
++      ),
++    ).toBe(1);
++    expect(io.errors.join('\n')).toMatch(/moved from/);
++  });
++
++  it('binds the PR number and marker in the confirmed hash and rejects invalid marker use', () => {
++    const c = setup();
++    const record = c.make();
++    expect(validate(record).ok).toBe(true);
++    record.approval.pullRequest = 8;
++    expect(validate(record).ok).toBe(false);
++    record.approval.pullRequest = 7;
++    const bytes = serializeRecord(record).replace('"maintenance": true', '"maintenance": false');
++    expect(validateRecord(recordFileName(record, 'test'), bytes).ok).toBe(false);
++    record.approval.kind = 'story';
++    record.approval.story = 'story-1';
++    expect(validate(record).ok).toBe(false);
++  });
++
++  it('an empty PR diff, revoked lock, or replacement lock cannot reuse maintenance authority', () => {
++    const empty = setup({});
++    const emptyRecord = empty.make({ [PLAN]: { before: null, after: hashText(CONTENT[PLAN]) } });
++    empty.plant(emptyRecord);
++    plantVerify(empty.f, 7, empty.tree);
++    expect(ciCheck(empty.f, 'gate-check', 7, empty.head).status).toBe(1);
++    const c = setup();
++    c.plant(c.make());
++    plantVerify(c.f, 7, c.tree);
++    c.f.plant(Object.fromEntries([stored(revocation(c.lock.recordId))]));
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++    plantLock(c.f);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(1);
++  });
++
++  it('unlocked edits and deletions bind their actual merge-base content', async () => {
++    const c = setup({ 'src/result.txt': null, 'package.json': '{"name":"changed"}\n' });
++    const io = human(c.f.work, confirms('amendment'));
++    expect(
++      await run(
++        ['approve', 'amendment', '--maintenance', '--pr', '7', 'src/result.txt', 'package.json'],
++        io,
++      ),
++    ).toBe(0);
++    const record = lastAmendment(c);
++    expect(record.binds.files['src/result.txt']).toEqual({
++      before: hashText('pass\n'),
++      after: null,
++    });
++    plantVerify(c.f, 7, c.tree);
++    expect(ciCheck(c.f, 'gate-check', 7, c.head).status).toBe(0);
++  });
++
++  it('maintenance still refuses an agent session before reading or prompting', async () => {
++    const c = setup();
++    const io = human(c.f.work, confirms('amendment'), {
++      env: { CLAUDECODE: '1' },
++      stdinIsTTY: true,
++      stdoutIsTTY: true,
++    });
++    expect(
++      await run(
++        ['approve', 'amendment', '--maintenance', '--pr', '7', ...Object.keys(CONTENT)],
++        io,
++      ),
++    ).toBe(1);
++    expect(io.errors.join('\n')).toMatch(/agent session/);
++    expect(io.questions).toEqual([]);
++  });
++
++  it('unmarked historical amendments retain whole-record hash and held semantics outside patterns', () => {
++    const c = setup({ [POLICY]: CONTENT[POLICY] });
++    const record = c.make();
++    delete record.approval.maintenance;
++    c.plant(record);
++    const state = stateAt(c);
++    expect(state.hashes.get(POLICY)).toBe(hashText(CONTENT[POLICY]));
++    expect(state.held.get(POLICY)).toEqual([null, hashText(CONTENT[POLICY])]);
++  });
++
++  it('maintenance flag refuses non-amendment targets before any prompt', async () => {
++    const c = setup();
++    const io = human(c.f.work);
++    expect(await run(['approve', '3', '--maintenance'], io)).toBe(1);
++    expect(io.errors.join('\n')).toMatch(/only valid for approve amendment/);
++    expect(io.questions).toEqual([]);
++  });
++
++  it('repeated mixed approval safely refuses without prompting or writing, and revocation permits a fresh review', async () => {
++    const c = setup();
++    const args = ['approve', 'amendment', '--maintenance', '--pr', '7', ...Object.keys(CONTENT)];
++    expect(await run(args, human(c.f.work, confirms('amendment')))).toBe(0);
++    const count = c.f.commitCount();
++    const again = human(c.f.work, confirms('amendment'));
++    expect(await run(args, again)).toBe(1);
++    expect(again.errors.join('\n')).toMatch(/is the same in pull request 7 as in the lock/);
++    expect(again.questions).toEqual([]);
++    expect(c.f.commitCount()).toBe(count);
++    const record = lastAmendment(c);
++    c.f.plant(Object.fromEntries([stored(revocation(record.recordId))]));
++    const fresh = human(c.f.work, confirms('amendment'));
++    expect(await run(args, fresh)).toBe(0);
++    expect(fresh.questions).toHaveLength(1);
++    expect(lastAmendment(c).recordId).not.toBe(record.recordId);
++  });
++});

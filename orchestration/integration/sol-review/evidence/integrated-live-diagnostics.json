@@ -1,0 +1,89 @@
+{
+  "story": "story-4",
+  "package": null,
+  "exportRefusal": "Complete the planning review before exporting to the factory.",
+  "configuration": {
+    "status": "configured",
+    "summary": "Read-only diagnostics use locally cached refs only; package authorization is unverified."
+  },
+  "route": {
+    "readOnly": true,
+    "source": "locally-cached-factory-records",
+    "authority": "non-authoritative",
+    "packageBinding": "unverified",
+    "observedAt": "2026-10-19T03:27:36.271Z",
+    "factoryVersion": null,
+    "recordsCommit": "3d9c61cbbc476ec559e6b5bbe7c49c286249c36b",
+    "trunkCommit": "a82a857346ce07b55faaa80fce4626c5406bd9d9",
+    "outcome": "blocked",
+    "prerequisites": [
+      {
+        "id": "exact-package-authority",
+        "satisfied": false,
+        "requirement": "The factory validates its records and binds the exact exported application package.",
+        "observed": "Not connected: these diagnostics validate neither factory record history/writer rules/effective amendments nor this package contract, scope, harness or runner bytes."
+      },
+      {
+        "id": "dispatch-supported",
+        "satisfied": false,
+        "requirement": "A supported submission path is connected.",
+        "observed": "Real dispatch is not implemented; no builder is launched."
+      }
+    ],
+    "observations": [
+      {
+        "id": "gate-2-record",
+        "satisfied": true,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Cached candidate 5ffb95c267fd, actor field human; not factory-validated."
+      },
+      {
+        "id": "lock-record",
+        "satisfied": true,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Cached candidate 0b0bc6b73309, actor field human; not factory-validated."
+      },
+      {
+        "id": "test-directory-present",
+        "satisfied": false,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "0 cached trunk path(s) under docs/projects/equipment-checkout; presence does not prove executable acceptance tests."
+      },
+      {
+        "id": "lock-pattern-match",
+        "satisfied": false,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Candidate lock patterns compared to cached paths only; effective amendments and protected file bytes are unverified."
+      },
+      {
+        "id": "lock-command-mentions-root",
+        "satisfied": false,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Substring comparison only; runner executability, runner hash and protection are unverified."
+      },
+      {
+        "id": "gate-3-record",
+        "satisfied": true,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Cached candidate 457d804ac529, actor field human; not factory-validated."
+      },
+      {
+        "id": "story-hash-mentioned",
+        "satisfied": false,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Cached candidate record does not mention .factory/work/story-4/story.md; this does not bind the exported application package."
+      },
+      {
+        "id": "story-hash-matches-trunk",
+        "satisfied": false,
+        "requirement": "Diagnostic observation only; not proof of approval, executable harness or protection.",
+        "observed": "Comparison is only the cached story file and candidate hash; unrelated story records supply no application package authority."
+      }
+    ],
+    "summary": "Locally cached observations for story-4; exact exported package authorization is unverified and real dispatch is blocked."
+  },
+  "dispatch": {
+    "implemented": false,
+    "note": "Read-only diagnostics and draft export only. Cached observations do not authorize this package; real dispatch is blocked."
+  }
+}

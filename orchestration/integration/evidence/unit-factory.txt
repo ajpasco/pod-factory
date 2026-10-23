@@ -1,0 +1,13 @@
+# node --test dist/test/factory*.test.js
+ok 1 - GET /api/factory reports the route read-only and refuses to export before the review completes
+ok 2 - the service still has no approval or dispatch action, and the factory route is read-only
+ok 3 - export carries every requirement, eval, coverage row and story scope entry, and binds its own bytes
+ok 4 - export refuses a story without scope, a requirement without coverage, and an unresolved gap
+ok 5 - missing gate-3 approval or unprotected harness refuses, and launches nothing
+ok 6 - a changed package, revision or story refuses, and a later revision cannot reuse the old digest
+ok 7 - one request yields one execution, a replay reports the same result, and an uncertain attempt refuses a retry
+ok 8 - failure is reported as failure and success cites the factory reference and candidate
+ok 9 - evaluateDispatch refuses by default and never reports ready on an unproven route
+# tests 9
+# pass 9
+# fail 0

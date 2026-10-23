@@ -46,6 +46,38 @@ The authority for what S1 owns and what it must turn green is
   `node projects/equipment-checkout/harness/api/run-eval.mjs`, and every other locked command
   still passes. The builder's prose is not evidence; the verify run on its pull request is.
 
+## The rest of equipment-checkout, named but not authorised
+
+Eval plan 8.1 splits this project into four stories. Only S1 is in the table above, because only
+S1's acceptance tests exist on the trunk: gate 7 was run for S1 alone. The other three are recorded
+here so the ownership split is reviewable now and so no later story has to invent it, but **this
+plan authorises none of them and they are deliberately not named by story file**: `approve 3`
+refuses a plan naming a story file the trunk does not have, so each one joins the table only when
+it is ready.
+
+| Story | Owns, and may write | Frozen and gating it | Depends on | Cases |
+|---|---|---|---|---|
+| S2 API routes and start-up | `api/app/config.py`, `api/app/routes.py`, `api/app/main.py` | `api/tests/api/**` | S1 | 55 |
+| S3 The whole web client | `web/package.json`, `web/package-lock.json`, `web/index.html`, `web/vite.config.js`, everything under `web/src/` | `harness/web/**`, `web/tests/component/**`, `web/tests/browser/**`, `web/playwright.config.js` | none for code: it builds against blueprint section 12 and mocks `fetch` | 151 |
+| S4 Compose and the journey | `docker-compose.yml`, `.env.example`, `.gitignore`, `api/Dockerfile`, `api/.dockerignore`, `web/Dockerfile`, `web/nginx.conf`, `web/.dockerignore`, and the `evidence/review/**` directory only | `harness/e2e/**`, `e2e/**` | S2, S3 | 34 |
+
+All paths are under `projects/equipment-checkout/`. The split is disjoint: the four sets share no
+file, and `api/`, `web/` and `harness/` are divided file by file or by subfolder. S3 owns every path
+under `web/` except the three files S4 owns. S4's four review rows pass only on the user's record,
+which follows an agent pre-review that the S4 builder does not run, so its builder cannot turn them
+green by itself.
+
+**What each one needs before it can be dispatched**, in order: its acceptance tests written and
+reviewed; a gate-7 run of its own; those tests landed on the trunk and covered by a new lock, which
+takes a revoke window because they sit under `projects/` and so fall outside every story's declared
+scope; this plan amended to name its story file; and `approve 3` run again. The window is the cost
+of freezing an exam, not of editing this plan — the plan edit is one extra command inside a window
+that has to happen anyway.
+
+A story file's `Tests:` list must name exact paths that exist on the trunk. A glob there can never
+match, so it would stop that story from ever starting. That is why these three have no story file
+yet: their test file names are not known until their freeze.
+
 ## What this plan does not authorise
 
 - No application implementation beyond S1's five files. A change outside the story's Scope list

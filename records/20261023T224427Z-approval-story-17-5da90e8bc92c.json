@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "5da90e8bc92c",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T22:44:27Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "91703539c22f17496293a57a06bcfa12629dd6ab",
+    "files": {}
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "story",
+    "gate": null,
+    "story": "story-17",
+    "pullRequest": 31,
+    "shownHash": "49f7ad62bf516c8629023e3a4439175ceda28dd818a0c29de7321c7450542686",
+    "typedPrefix": "49f7ad62",
+    "statement": "Gate 4: story-17, as pull request 31 stands at 6c39525cb14496cb43150cb6d5ce0710268e570c.\n\nWhy this one needs you\n  An agent wrote this code. The checks prove its tests pass; no check can tell you the result is what you wanted.\n  That judgement is the one thing the factory cannot make for you, so it stops here until you make it.\n\nWhat it covers\n  every file in pull request 31   not only the ones story-17 named\n  the whole of that content       the tree key below; nothing in the pull request is outside it\n\nWhat approving does\n  Allows pull request 31 to merge once its checks are green.\n  Allows this exact version only. A new commit voids the approval and the builder has to ask again.\n\nThe exact content this covers. The key below is taken over all of it."
+  }
+}

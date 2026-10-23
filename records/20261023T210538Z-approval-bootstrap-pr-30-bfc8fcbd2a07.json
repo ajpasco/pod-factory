@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "recordType": "approval",
+  "recordId": "bfc8fcbd2a07",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T21:05:38Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": "2ab88906775aad4109281f4a038e041d81eeaa4c",
+    "files": {}
+  },
+  "outcome": "approved",
+  "refs": [],
+  "approval": {
+    "kind": "bootstrap",
+    "gate": null,
+    "story": null,
+    "pullRequest": 30,
+    "shownHash": "fb25eee1f5c74b485668e33574ca725ea61a77311ae4c39b471ab7df72d9915f",
+    "typedPrefix": "fb25eee1",
+    "statement": "Bootstrap merge: pull request 30 as it stands at ccf8252b126033890c3efa146243882f45843317.\n\nWhy this one needs you\n  This is the one route that merges without a gate behind it, so none of the usual checking applies.\n  It exists for preparation the gate sequence cannot yet describe, and a person has to agree that this is such a case.\n\nWhat it covers\n  every file in pull request 30   whatever it contains\n  no gate                         nothing here was classified, planned or scoped\n\nWhat approving does\n  Allows pull request 30 to merge with no gate approval behind it.\n  Grants no standing authority. It names this pull request at this commit and nothing further.\n\nThe exact content this covers. The key below is taken over all of it."
+  }
+}

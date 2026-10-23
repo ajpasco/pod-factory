@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "recordType": "revocation",
+  "recordId": "ee31997e3df8",
+  "factoryVersion": "0.0.0-m0",
+  "hashAlgorithm": "sha256-lf",
+  "createdAt": "2026-10-23T02:31:48Z",
+  "actor": {
+    "name": "Allan Pasco",
+    "email": "ajpasco@gmail.com",
+    "kind": "human"
+  },
+  "binds": {
+    "tree": null,
+    "files": {}
+  },
+  "outcome": "revoked",
+  "refs": [
+    "d8a3f8aa7aae"
+  ],
+  "revocation": {
+    "revokes": "d8a3f8aa7aae",
+    "reason": "Run the equipment API rows: add the protected runner and its locked command, and record both in the eval plan"
+  }
+}

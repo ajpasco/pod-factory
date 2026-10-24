@@ -1,0 +1,18 @@
+{
+  "name": "equipment-checkout-web-harness",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Frozen test tools for the C and B mechanisms of the equipment-checkout eval plan. Read-only to every builder. One copy of React 18.3 lives here and the frozen vitest.config.js aliases the client's imports to it, because two copies of React in one module graph break hooks at run time with a failure that names neither copy. @playwright/test is here, not in web/, because command C9 runs harness/web/node_modules/.bin/playwright.",
+  "devDependencies": {
+    "@playwright/test": "~1.48.0",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jsdom": "^25.0.0",
+    "react": "~18.3.0",
+    "react-dom": "~18.3.0",
+    "vitest": "~2.1.0"
+  }
+}

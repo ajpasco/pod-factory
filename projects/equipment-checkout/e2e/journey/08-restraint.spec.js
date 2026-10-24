@@ -113,7 +113,6 @@ test('T-017-N3 the browser keeps nothing after a session in which every action w
       canListWorkers,
       localStorageKeys: scope.localStorage.length,
       sessionStorageKeys: scope.sessionStorage.length,
-      cookie: scope.document.cookie,
       databases: canListDatabases
         ? (await scope.indexedDB.databases()).map((one) => one.name ?? '')
         : [],
@@ -123,6 +122,12 @@ test('T-017-N3 the browser keeps nothing after a session in which every action w
     };
   });
 
+  // Cookies are read from the browser context, not from `document.cookie`. That is
+  // required, not a preference: a cookie marked HttpOnly — which is the kind a server
+  // sets, and so the kind this row is most likely to catch — is invisible to
+  // `document.cookie`, so reading it there would pass on a build that keeps one.
+  const cookies = await page.context().cookies();
+
   // A browser that cannot report its databases or its service workers would
   // make the two assertions below vacuous, so the row fails instead of passing
   // on an unanswered question.
@@ -131,7 +136,7 @@ test('T-017-N3 the browser keeps nothing after a session in which every action w
 
   expect(kept.localStorageKeys).toBe(0);
   expect(kept.sessionStorageKeys).toBe(0);
-  expect(kept.cookie).toBe('');
+  expect(cookies).toEqual([]);
   expect(kept.databases).toEqual([]);
   expect(kept.serviceWorkers).toBe(0);
 });

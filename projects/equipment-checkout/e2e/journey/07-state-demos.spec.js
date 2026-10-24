@@ -108,7 +108,17 @@ test('T-013-P17 REQ-013.18 an Add made from the Show empty list view is kept', a
   await expect(addCard(page)).toBeVisible();
 
   const added = uniqueName('Sieve');
+  // The page is reloaded next, so the Add's own answer has to have arrived first. A
+  // navigation that commits while the POST is still in flight cancels it, and whether
+  // the item survives then depends on how the API treats a client disconnect, which no
+  // requirement pins: a correct build could lose it and fail this row. Neither the
+  // status nor the body is read here — this waits, it does not assert. That a confirmed
+  // Add ends the view is REQ-013.19, which is T-013-P19's claim and not this row's.
+  const posted = page.waitForResponse(
+    (answer) => answer.request().method() === 'POST' && answer.url().includes('/api/equipment'),
+  );
   await typeAndEnter(page, added);
+  await posted;
 
   await openApp(page);
   await pickUser(page, ADA.id);

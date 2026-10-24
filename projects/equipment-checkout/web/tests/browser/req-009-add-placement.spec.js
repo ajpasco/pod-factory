@@ -27,53 +27,51 @@ async function expectPlacement(page, expectedText) {
   expect(facts.alertdialogs, 'no element with the alertdialog role exists').toBe(0);
 }
 
-test.describe('REQ-009 the placement of the inline validation message', () => {
-  test('T-009-N14 REQ-009.4 REQ-009.5 an empty name shows the required message in its place, by Enter and by the icon', async ({
-    page,
-  }) => {
-    for (const activate of ['Enter', 'the Add icon']) {
-      await installFakeApi(page, THREE_STATUSES());
-      await showListAs(page, ADA, 3);
-      // Found first: the Add card and the Add field.
-      await expect(page.getByTestId('add-card')).toBeVisible();
-      await expect(page.getByTestId('add-input')).toBeVisible();
+test('T-009-N14 REQ-009.4 REQ-009.5 an empty name shows the required message in its place, by Enter and by the icon', async ({
+  page,
+}) => {
+  for (const activate of ['Enter', 'the Add icon']) {
+    await installFakeApi(page, THREE_STATUSES());
+    await showListAs(page, ADA, 3);
+    // Found first: the Add card and the Add field.
+    await expect(page.getByTestId('add-card')).toBeVisible();
+    await expect(page.getByTestId('add-input')).toBeVisible();
 
-      if (activate === 'Enter') {
-        await page.getByTestId('add-input').click();
-        await page.keyboard.press('Enter');
-      } else {
-        await page.getByTestId('btn-add').click();
-      }
-
-      await expect(page.getByTestId('add-validation')).toBeVisible();
-      await expectPlacement(page, S.nameRequired);
-      // The next case starts on a freshly loaded page.
-      await page.unrouteAll({ behavior: 'ignoreErrors' });
-    }
-  });
-
-  test('T-009-N15 REQ-009.8 REQ-009.11 every name the client will not send shows its message in the same place', async ({
-    page,
-  }) => {
-    const attempts = [
-      ['an empty field', '', S.nameRequired],
-      ['only spaces', '   ', S.nameRequired],
-      ['101 characters after trimming', nameOfLength(101), S.nameTooLong],
-    ];
-    for (const [what, typed, expected] of attempts) {
-      await installFakeApi(page, THREE_STATUSES());
-      await showListAs(page, ADA, 3);
-      await expect(page.getByTestId('add-card')).toBeVisible();
-
-      const field = page.getByTestId('add-input');
-      await field.click();
-      if (typed !== '') await field.fill(typed);
+    if (activate === 'Enter') {
+      await page.getByTestId('add-input').click();
       await page.keyboard.press('Enter');
-
-      await expect(page.getByTestId('add-validation'), what).toBeVisible();
-      await expectPlacement(page, expected);
-      await expect(page.getByTestId('modal-api-failure'), what).toHaveCount(0);
-      await page.unrouteAll({ behavior: 'ignoreErrors' });
+    } else {
+      await page.getByTestId('btn-add').click();
     }
-  });
+
+    await expect(page.getByTestId('add-validation')).toBeVisible();
+    await expectPlacement(page, S.nameRequired);
+    // The next case starts on a freshly loaded page.
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+  }
+});
+
+test('T-009-N15 REQ-009.8 REQ-009.11 every name the client will not send shows its message in the same place', async ({
+  page,
+}) => {
+  const attempts = [
+    ['an empty field', '', S.nameRequired],
+    ['only spaces', '   ', S.nameRequired],
+    ['101 characters after trimming', nameOfLength(101), S.nameTooLong],
+  ];
+  for (const [what, typed, expected] of attempts) {
+    await installFakeApi(page, THREE_STATUSES());
+    await showListAs(page, ADA, 3);
+    await expect(page.getByTestId('add-card')).toBeVisible();
+
+    const field = page.getByTestId('add-input');
+    await field.click();
+    if (typed !== '') await field.fill(typed);
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByTestId('add-validation'), what).toBeVisible();
+    await expectPlacement(page, expected);
+    await expect(page.getByTestId('modal-api-failure'), what).toHaveCount(0);
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+  }
 });

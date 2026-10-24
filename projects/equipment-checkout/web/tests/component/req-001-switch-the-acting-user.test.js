@@ -22,9 +22,7 @@ import { eachState } from './_states.js';
 
 /** The user entries of the switcher, in document order. */
 const userEntries = () =>
-  Array.from(
-    screen.getByTestId('switcher').querySelectorAll('[data-testid^="switcher-option-"]'),
-  );
+  Array.from(screen.getByTestId('switcher').querySelectorAll('[data-testid^="switcher-option-"]'));
 
 describe('REQ-001 switch the acting user', () => {
   it('T-001-P1 REQ-001.1 REQ-001.2 the switcher has exactly the three seeded users, in order, each with its role', async () => {

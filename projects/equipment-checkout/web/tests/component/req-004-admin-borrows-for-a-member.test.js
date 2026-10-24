@@ -117,10 +117,7 @@ describe('REQ-004 an admin borrows on behalf of a member', () => {
 
     expect(memberButtonIds()).toEqual(whenNobodyHolds);
     expect(
-      memberButtons().map((each) => [
-        each.getAttribute('title'),
-        each.getAttribute('aria-label'),
-      ]),
+      memberButtons().map((each) => [each.getAttribute('title'), each.getAttribute('aria-label')]),
     ).toEqual(labelsWhenNobodyHolds);
     for (const member of [MIA, SAM]) {
       const button = screen.getByTestId(`member-button-${member.id}`);
@@ -130,10 +127,9 @@ describe('REQ-004 an admin borrows on behalf of a member', () => {
   });
 
   it('T-004-P9 REQ-004.8 a second loan to the same member leaves her first one standing', async () => {
-    const server = new FakeServer([
-      onLoan(1, 'Laptop', MIA),
-      available(2, 'Projector'),
-    ]).hold('borrow');
+    const server = new FakeServer([onLoan(1, 'Laptop', MIA), available(2, 'Projector')]).hold(
+      'borrow',
+    );
     const { user } = await showList(server, ADA);
 
     await lendTo(user, 2, MIA);

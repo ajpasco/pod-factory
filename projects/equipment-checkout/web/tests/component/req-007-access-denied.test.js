@@ -3,15 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  ADA,
-  FakeServer,
-  MIA,
-  REFUSE,
-  available,
-  onLoan,
-  outOfService,
-} from './_fake-server.js';
+import { ADA, FakeServer, MIA, REFUSE, available, onLoan, outOfService } from './_fake-server.js';
 import {
   S,
   anyLoader,
@@ -85,9 +77,7 @@ describe('REQ-007 the Access denied modal', () => {
     const modal = await screen.findByTestId('modal-access-denied');
 
     expect(within(modal).getByTestId('btn-ok')).toBeInTheDocument();
-    expect(Array.from(modal.querySelectorAll('button')).map(testidOf)).toEqual([
-      'btn-ok',
-    ]);
+    expect(Array.from(modal.querySelectorAll('button')).map(testidOf)).toEqual(['btn-ok']);
     expect(within(modal).queryByTestId('btn-close')).toBeNull();
     expect(within(modal).queryByTestId('btn-retry')).toBeNull();
   });

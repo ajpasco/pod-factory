@@ -141,9 +141,7 @@ describe('REQ-010 out-of-service status', () => {
       // The Available row is found with the control a member does have.
       expect(rowHas(1, 'btn-borrow'), member.name).toBe(true);
       for (const row of rowsShown()) {
-        expect(rowHas(row.id, 'btn-out-of-service'), `${member.name}, row ${row.id}`).toBe(
-          false,
-        );
+        expect(rowHas(row.id, 'btn-out-of-service'), `${member.name}, row ${row.id}`).toBe(false);
         expect(rowHas(row.id, 'btn-restore'), `${member.name}, row ${row.id}`).toBe(false);
       }
     }

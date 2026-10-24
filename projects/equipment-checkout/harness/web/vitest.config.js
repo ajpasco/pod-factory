@@ -68,8 +68,7 @@ const toolFile = (specifier) => {
   }
   const manifestPath = path.join(folder, 'package.json');
   const manifest = require(manifestPath);
-  const entry =
-    manifest.exports === undefined ? null : esmEntry(manifest.exports[subpath] ?? null);
+  const entry = manifest.exports === undefined ? null : esmEntry(manifest.exports[subpath] ?? null);
   if (entry !== null) return path.join(path.dirname(manifestPath), entry);
   return require.resolve(specifier, { paths: [here] });
 };

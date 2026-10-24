@@ -85,8 +85,7 @@ const ALLOWED_HEADINGS = [
   S.accessDeniedTitle,
 ];
 
-const headings = () =>
-  Array.from(globalThis.document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+const headings = () => Array.from(globalThis.document.querySelectorAll('h1, h2, h3, h4, h5, h6'));
 
 describe('REQ-017 restraint on the non-goals', () => {
   it('T-017-P1 REQ-017.1 REQ-017.2 REQ-017.8 REQ-017.9 REQ-017.10 REQ-017.11 REQ-017.12 REQ-017.14 REQ-017.15 REQ-017.16 REQ-017.18 the page holds no control the PRD does not name', async () => {
@@ -104,8 +103,7 @@ describe('REQ-017 restraint on the non-goals', () => {
           // An item named after a feature is data: its name is never a control.
           for (const row of rowsShown()) {
             const name = within(rowOf(row.id)).getByTestId('row-name');
-            expect(name.closest('button, a, [role="button"]'), `${where}: ${row.name}`)
-              .toBeNull();
+            expect(name.closest('button, a, [role="button"]'), `${where}: ${row.name}`).toBeNull();
           }
         },
         { items: FEATURE_NAMED },
@@ -196,9 +194,11 @@ describe('REQ-017 restraint on the non-goals', () => {
     // Each modal opened and closed.
     await user.click(within(rowOf(1)).getByTestId('btn-borrow'));
     await screen.findByTestId('modal-borrower');
-    expect(headings().map(textOf).every((text) => ALLOWED_HEADINGS.includes(text))).toBe(
-      true,
-    );
+    expect(
+      headings()
+        .map(textOf)
+        .every((text) => ALLOWED_HEADINGS.includes(text)),
+    ).toBe(true);
     await user.click(screen.getByTestId('btn-close'));
 
     await user.click(within(rowOf(1)).getByTestId('btn-delete'));
@@ -217,9 +217,11 @@ describe('REQ-017 restraint on the non-goals', () => {
       ['demo-access-denied', 'btn-ok'],
     ]) {
       await user.click(screen.getByTestId(demo));
-      expect(headings().map(textOf).every((text) => ALLOWED_HEADINGS.includes(text))).toBe(
-        true,
-      );
+      expect(
+        headings()
+          .map(textOf)
+          .every((text) => ALLOWED_HEADINGS.includes(text)),
+      ).toBe(true);
       await user.click(screen.getByTestId(closes));
     }
 
@@ -235,9 +237,7 @@ describe('REQ-017 restraint on the non-goals', () => {
     expect(globalThis.document.querySelectorAll('a')).toHaveLength(0);
     expect(screen.queryAllByTestId('equipment-list').length).toBeLessThanOrEqual(1);
     for (const heading of headings()) {
-      expect(ALLOWED_HEADINGS, `the heading "${textOf(heading)}"`).toContain(
-        textOf(heading),
-      );
+      expect(ALLOWED_HEADINGS, `the heading "${textOf(heading)}"`).toContain(textOf(heading));
     }
   });
 

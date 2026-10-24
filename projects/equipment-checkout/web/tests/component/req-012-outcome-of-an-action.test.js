@@ -258,10 +258,10 @@ describe('REQ-012 the outcome of a server-call action', () => {
     ];
     for (const [what, action, rejection] of cases) {
       const where = `${what}, rejected: ${rejection}`;
-      const server = new FakeServer([
-        available(1, 'Projector'),
-        outOfService(2, 'Camera'),
-      ]).answer(action, rejection);
+      const server = new FakeServer([available(1, 'Projector'), outOfService(2, 'Camera')]).answer(
+        action,
+        rejection,
+      );
       const { user, unmount } = await showList(server, ADA);
       const rowsBefore = rowsShown();
       expect(statusOf(1), where).toBe(S.available);
@@ -311,10 +311,7 @@ describe('REQ-012 the outcome of a server-call action', () => {
     expect(statusOf(1)).toBe(S.outOfService);
     second.unmount();
 
-    const restoring = new FakeServer([outOfService(1, 'Camera')]).answer(
-      'restore',
-      REJECT_ERROR,
-    );
+    const restoring = new FakeServer([outOfService(1, 'Camera')]).answer('restore', REJECT_ERROR);
     const third = await showList(restoring, ADA);
     await third.user.click(within(rowOf(1)).getByTestId('btn-restore'));
     await screen.findByTestId('modal-api-failure');

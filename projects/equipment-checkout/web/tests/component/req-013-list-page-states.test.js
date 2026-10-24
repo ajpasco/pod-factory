@@ -100,9 +100,9 @@ describe('REQ-013 list page states', () => {
     const server = new FakeServer([]);
     await showEmpty(server, ADA);
 
-    expect(
-      comesBefore(screen.getByTestId('add-input'), screen.getByTestId('empty-state')),
-    ).toBe(true);
+    expect(comesBefore(screen.getByTestId('add-input'), screen.getByTestId('empty-state'))).toBe(
+      true,
+    );
   });
 
   it('T-013-P5 REQ-013.5 the state demos panel is the first thing in the document', async () => {
@@ -267,9 +267,10 @@ describe('REQ-013 list page states', () => {
       // A fresh render reads the list the server now holds.
       cleanup();
       await showList(server, ADA);
-      expect(rowsShown().filter((row) => row.name === 'Lectern'), activate).toEqual([
-        { id: expect.any(Number), name: 'Lectern', status: S.available },
-      ]);
+      expect(
+        rowsShown().filter((row) => row.name === 'Lectern'),
+        activate,
+      ).toEqual([{ id: expect.any(Number), name: 'Lectern', status: S.available }]);
       cleanup();
     }
   });
@@ -541,18 +542,27 @@ describe('REQ-013 list page states', () => {
     const dataBefore = server.data();
 
     const attempts = [
-      ['Enter with the field empty', async () => {
-        await user.click(field);
-        await user.keyboard('{Enter}');
-      }],
-      ['the Add icon with the field empty', async () => {
-        await user.click(screen.getByTestId('btn-add'));
-      }],
-      ['Enter with only spaces and a tab', async () => {
-        fireEvent.change(field, { target: { value: ' \t ' } });
-        await user.click(field);
-        await user.keyboard('{Enter}');
-      }],
+      [
+        'Enter with the field empty',
+        async () => {
+          await user.click(field);
+          await user.keyboard('{Enter}');
+        },
+      ],
+      [
+        'the Add icon with the field empty',
+        async () => {
+          await user.click(screen.getByTestId('btn-add'));
+        },
+      ],
+      [
+        'Enter with only spaces and a tab',
+        async () => {
+          fireEvent.change(field, { target: { value: ' \t ' } });
+          await user.click(field);
+          await user.keyboard('{Enter}');
+        },
+      ],
     ];
 
     for (const [what, attempt] of attempts) {

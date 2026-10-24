@@ -3,14 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  ADA,
-  FakeServer,
-  MIA,
-  SAM,
-  available,
-  outOfService,
-} from './_fake-server.js';
+import { ADA, FakeServer, MIA, SAM, available, outOfService } from './_fake-server.js';
 import {
   S,
   memberButtons,
@@ -82,9 +75,7 @@ describe('REQ-005 admins cannot borrow for themselves', () => {
       }
       for (const held of server.data()) {
         expect(held.borrowerId, `${step}: item ${held.id} in the data`).not.toBe(ADA.id);
-        expect(held.borrowerName, `${step}: item ${held.id} in the data`).not.toBe(
-          ADA.name,
-        );
+        expect(held.borrowerName, `${step}: item ${held.id} in the data`).not.toBe(ADA.name);
       }
     };
 

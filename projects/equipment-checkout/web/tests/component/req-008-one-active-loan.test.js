@@ -4,23 +4,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { FakeServer, MIA, REJECT_STATE, available, onLoan } from './_fake-server.js';
-import {
-  S,
-  rowOf,
-  rowsShown,
-  screen,
-  settle,
-  showList,
-  statusOf,
-  within,
-} from './_harness.js';
+import { S, rowOf, rowsShown, screen, settle, showList, statusOf, within } from './_harness.js';
 
 describe('REQ-008 one active loan per item', () => {
   it('T-008-P2 REQ-008.5 a Borrow of an item that is no longer available fails and changes nothing', async () => {
-    const server = new FakeServer([
-      available(1, 'Projector'),
-      onLoan(2, 'Laptop', MIA),
-    ]).answer('borrow', REJECT_STATE);
+    const server = new FakeServer([available(1, 'Projector'), onLoan(2, 'Laptop', MIA)]).answer(
+      'borrow',
+      REJECT_STATE,
+    );
     const { user } = await showList(server, MIA);
     // Found first: the Available row the person is about to borrow.
     const rowsBefore = rowsShown();

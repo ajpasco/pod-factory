@@ -102,8 +102,7 @@ describe('REQ-002 name and status on every row', () => {
     expect(oddRow.querySelectorAll('img')).toHaveLength(0);
     expect(globalThis.document.querySelectorAll('img')).toHaveLength(0);
     // The odd row offers the same buttons as an ordinary Available row and no extra one.
-    const buttonsOf = (row) =>
-      Array.from(row.querySelectorAll('button')).map(testidOf).sort();
+    const buttonsOf = (row) => Array.from(row.querySelectorAll('button')).map(testidOf).sort();
     expect(buttonsOf(oddRow)).toEqual(buttonsOf(rowOf(1)));
     // The row's text was never executed: nothing asked the page to alert.
     expect(alerted).not.toHaveBeenCalled();
@@ -111,9 +110,7 @@ describe('REQ-002 name and status on every row', () => {
 
   it('T-002-N3 REQ-002.5 the word "Borrowed" appears nowhere, and when an item is named with it, only in that name', async () => {
     const visited = await eachState(MIA, ({ label }) => {
-      expect(readableText().toLowerCase(), `"borrowed" in: ${label}`).not.toContain(
-        'borrowed',
-      );
+      expect(readableText().toLowerCase(), `"borrowed" in: ${label}`).not.toContain('borrowed');
     });
     expect(visited.length).toBeGreaterThanOrEqual(9);
 

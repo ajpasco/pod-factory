@@ -88,8 +88,7 @@ export const FIFTEEN_ICON_BUTTONS = [
 ];
 
 /** Every selector that can hold something a person operates (blueprint 12.8.3). */
-export const CONTROL_SELECTOR =
-  'button, input, select, a, textarea, [tabindex], [role="button"]';
+export const CONTROL_SELECTOR = 'button, input, select, a, textarea, [tabindex], [role="button"]';
 
 /** The data-testids the control inventory of REQ-017.18 allows. */
 export const ALLOWED_CONTROL_TESTIDS = [
@@ -155,8 +154,7 @@ export const statusOf = (itemId) => textOf(within(rowOf(itemId)).getByTestId('ro
 export const nameOf = (itemId) => textOf(within(rowOf(itemId)).getByTestId('row-name'));
 
 /** Does that row offer the control? */
-export const rowHas = (itemId, testid) =>
-  within(rowOf(itemId)).queryByTestId(testid) !== null;
+export const rowHas = (itemId, testid) => within(rowOf(itemId)).queryByTestId(testid) !== null;
 
 /** Every row as a person sees it: its name and its one status, in document order. */
 export const rowsShown = () =>
@@ -182,10 +180,10 @@ export const testidOf = (element) =>
   element.getAttribute('data-testid') ??
   `<${element.tagName.toLowerCase()}> with no data-testid: ${textOf(element)}`;
 
-export const anyModal = () =>
-  globalThis.document.querySelector('[role="alertdialog"]');
+export const anyModal = () => globalThis.document.querySelector('[role="alertdialog"]');
 
-export const modalBody = (testid) => textOf(within(screen.getByTestId(testid)).getByTestId('modal-body'));
+export const modalBody = (testid) =>
+  textOf(within(screen.getByTestId(testid)).getByTestId('modal-body'));
 
 export const modalTitle = (testid) =>
   textOf(within(screen.getByTestId(testid)).getByTestId('modal-title'));
@@ -296,9 +294,8 @@ export function watchLoadersWhileFailureShows() {
     const modal = globalThis.document.querySelector('[data-testid="modal-api-failure"]');
     if (modal === null) return;
     seen.push(
-      globalThis.document.querySelectorAll(
-        '[data-testid="row-loader"], [data-testid="add-loader"]',
-      ).length,
+      globalThis.document.querySelectorAll('[data-testid="row-loader"], [data-testid="add-loader"]')
+        .length,
     );
   });
   observer.observe(globalThis.document.body, {

@@ -32,8 +32,7 @@ const textNodesOf = (element) =>
     .filter((node) => node.nodeType === 3 && node.textContent.trim() !== '')
     .map((node) => node.textContent);
 
-const isInlineGraphic = (node) =>
-  node.nodeType === 1 && node.tagName.toLowerCase() === 'svg';
+const isInlineGraphic = (node) => node.nodeType === 1 && node.tagName.toLowerCase() === 'svg';
 
 /** Every element of the control, wherever it appears in the page right now. */
 const everyInstanceOf = (testid) =>
@@ -70,9 +69,7 @@ describe('REQ-014 labelled icon buttons and operable modals', () => {
   });
 
   it('T-014-P2 REQ-014.2 every icon button carries the pinned tooltip of its control', async () => {
-    const pinned = new Map(
-      FIFTEEN_ICON_BUTTONS.map((each) => [each.testid, each.label]),
-    );
+    const pinned = new Map(FIFTEEN_ICON_BUTTONS.map((each) => [each.testid, each.label]));
     for (const demo of FOUR_DEMOS) pinned.set(demo.testid, demo.tooltip);
     const everFound = new Set();
 

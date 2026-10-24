@@ -4,15 +4,7 @@
 import { fireEvent } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import {
-  ADA,
-  FakeServer,
-  MIA,
-  REJECT_ERROR,
-  REJECT_NAME,
-  SAM,
-  available,
-} from './_fake-server.js';
+import { ADA, FakeServer, MIA, REJECT_ERROR, REJECT_NAME, SAM, available } from './_fake-server.js';
 import {
   S,
   anyModal,
@@ -124,9 +116,7 @@ describe('REQ-009 add equipment', () => {
       if (activate === 'Enter') await user.keyboard('{Enter}');
       else await user.click(screen.getByTestId('btn-add'));
 
-      expect(textOf(await screen.findByTestId('add-validation')), activate).toBe(
-        S.nameTooLong,
-      );
+      expect(textOf(await screen.findByTestId('add-validation')), activate).toBe(S.nameTooLong);
       unmount();
     }
   });
@@ -206,9 +196,7 @@ describe('REQ-009 add equipment', () => {
         await user.click(screen.getByTestId('btn-add'));
       }
 
-      expect(textOf(await screen.findByTestId('add-validation')), activate).toBe(
-        S.nameRequired,
-      );
+      expect(textOf(await screen.findByTestId('add-validation')), activate).toBe(S.nameRequired);
       expect(rowsShown(), activate).toEqual(rowsBefore);
       expect(server.data(), activate).toEqual(dataBefore);
       unmount();

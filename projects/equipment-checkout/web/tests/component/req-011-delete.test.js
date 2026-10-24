@@ -3,15 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  ADA,
-  FakeServer,
-  MIA,
-  SAM,
-  available,
-  onLoan,
-  outOfService,
-} from './_fake-server.js';
+import { ADA, FakeServer, MIA, SAM, available, onLoan, outOfService } from './_fake-server.js';
 import {
   S,
   anyLoader,
@@ -28,11 +20,7 @@ import {
   within,
 } from './_harness.js';
 
-const MIXED = () => [
-  available(1, 'Tripod'),
-  onLoan(2, 'Laptop', MIA),
-  outOfService(3, 'Camera'),
-];
+const MIXED = () => [available(1, 'Tripod'), onLoan(2, 'Laptop', MIA), outOfService(3, 'Camera')];
 
 describe('REQ-011 delete equipment with confirmation', () => {
   it('T-011-P1 REQ-011.1 the Delete x icon is on every row that is not on loan', async () => {

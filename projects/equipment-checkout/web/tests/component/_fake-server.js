@@ -159,9 +159,7 @@ export class FakeServer {
    * (eval plan 1.3, for the list request).
    */
   answerOnlyFor(action, identityId, outcome = CONFIRM) {
-    return this.answer(action, (request) =>
-      request.actorId === identityId ? outcome : REFUSE,
-    );
+    return this.answer(action, (request) => (request.actorId === identityId ? outcome : REFUSE));
   }
 
   /** Keep back the answer to `action`, or to every action when called with no argument. */
@@ -295,7 +293,10 @@ export class FakeServer {
 
   #carryOut(request, actor) {
     if (request.action === 'users') {
-      return new FakeResponse(200, this.users.map((each) => ({ ...each })));
+      return new FakeResponse(
+        200,
+        this.users.map((each) => ({ ...each })),
+      );
     }
     if (request.action === 'list') {
       return new FakeResponse(200, this.data());

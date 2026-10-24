@@ -10,7 +10,6 @@ import {
   memberButtons,
   modalBody,
   pick,
-  renderPage,
   rowHas,
   rowOf,
   screen,
@@ -62,9 +61,7 @@ describe('REQ-003 a member borrows for themselves', () => {
       const { user, unmount } = await showList(server, member);
       await user.click(within(rowOf(1)).getByTestId('btn-borrow'));
       await settle(server);
-      expect(statusOf(1), `the row after ${member.name} borrowed`).toBe(
-        S.onLoan(member.name),
-      );
+      expect(statusOf(1), `the row after ${member.name} borrowed`).toBe(S.onLoan(member.name));
       unmount();
     }
   });
@@ -111,9 +108,7 @@ describe('REQ-003 a member borrows for themselves', () => {
     expect(memberButtons()).toHaveLength(0);
     const selects = Array.from(globalThis.document.querySelectorAll('select'));
     expect(selects).toEqual([screen.getByTestId('switcher')]);
-    expect(globalThis.document.querySelectorAll('input[type="text"], textarea')).toHaveLength(
-      0,
-    );
+    expect(globalThis.document.querySelectorAll('input[type="text"], textarea')).toHaveLength(0);
     await settle(server);
   });
 

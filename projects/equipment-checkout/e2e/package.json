@@ -1,0 +1,10 @@
+{
+  "name": "equipment-checkout-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Frozen journey (J) rows of the equipment-checkout eval plan. Read-only to every builder.",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "1.48.2"
+  }
+}

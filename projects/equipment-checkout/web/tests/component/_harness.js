@@ -41,11 +41,11 @@ export const S = {
   nameRequired: 'Name is required.',
   nameTooLong: 'Name must be 100 characters or fewer.',
   available: 'Available',
-  // "–" is U+2013 (eval plan 1.1, the string rule).
-  onLoan: (name) => `On loan – ${name}`,
+  // "\u2013" is U+2013 (eval plan 1.1, the string rule).
+  onLoan: (name) => `On loan \u2013 ${name}`,
   outOfService: 'Out of service',
-  // "…" is U+2026.
-  loading: 'Loading equipment…',
+  // "\u2026" is U+2026.
+  loading: 'Loading equipment\u2026',
   empty: 'No equipment yet',
   borrowerTitle: 'Who is borrowing?',
   borrowerBody: (itemName) => `Choose a member for ${itemName}.`,
@@ -256,6 +256,18 @@ export function readableText(root = globalThis.document.body) {
     parts.push(element.getAttribute('placeholder') ?? '');
   }
   return parts.join('\n');
+}
+
+/**
+ * Everything a person can read on the page except inside the top bar. Several rows say
+ * that the acting admin's name appears nowhere but there, where the switcher and the role
+ * badge legitimately show it. The page is cloned and the top bar taken out of the copy, so
+ * the row never alters the page it is reading.
+ */
+export function readableTextOutsideTopBar() {
+  const copy = globalThis.document.body.cloneNode(true);
+  for (const bar of copy.querySelectorAll('[data-testid="top-bar"]')) bar.remove();
+  return readableText(copy);
 }
 
 /**

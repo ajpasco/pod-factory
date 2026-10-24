@@ -155,5 +155,8 @@ export async function eachState(actingUser, visit, options = {}) {
     });
   }
 
+  // The last state's render is taken down here, so that a row which renders the page
+  // again after the sweep does not find two of everything.
+  cleanup();
   return visited;
 }

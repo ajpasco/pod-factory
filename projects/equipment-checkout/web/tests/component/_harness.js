@@ -271,6 +271,49 @@ export function readableTextOutsideTopBar() {
 }
 
 /**
+ * Everything a person can read on the page except inside the equipment list and the
+ * modals. REQ-012.4 and REQ-012.15 say that a confirmed action shows its result in the
+ * list and says nothing anywhere else, so the row compares this before and after.
+ */
+export function readableTextOutsideListAndModals() {
+  const copy = globalThis.document.body.cloneNode(true);
+  for (const part of copy.querySelectorAll(
+    '[data-testid="equipment-list"], [role="alertdialog"]',
+  )) {
+    part.remove();
+  }
+  return readableText(copy).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Watch every render until `stop` is called, recording for each rendered page that holds
+ * the API failure modal how many loaders it held. REQ-012.14 is about the *first* such
+ * page, which a check made after the fact cannot see.
+ */
+export function watchLoadersWhileFailureShows() {
+  const seen = [];
+  const observer = new globalThis.MutationObserver(() => {
+    const modal = globalThis.document.querySelector('[data-testid="modal-api-failure"]');
+    if (modal === null) return;
+    seen.push(
+      globalThis.document.querySelectorAll(
+        '[data-testid="row-loader"], [data-testid="add-loader"]',
+      ).length,
+    );
+  });
+  observer.observe(globalThis.document.body, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    characterData: true,
+  });
+  return {
+    seen,
+    stop: () => observer.disconnect(),
+  };
+}
+
+/**
  * The elements holding a word, searched in the text and in the readable attributes. Used
  * by the rows that allow a word in one place only (a word that is an item's name is data).
  */

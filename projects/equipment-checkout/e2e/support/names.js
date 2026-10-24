@@ -21,8 +21,14 @@ let made = 0;
 /**
  * A name no other row and no earlier run can hold. `tag` is a readable word
  * with no "Ada" and no "Admin" in it, so a failure's screenshot can be read.
+ *
+ * The counter is padded to a fixed width, which is required and not cosmetic. A
+ * row finds its own row in the list by the name it gave the item, and that match
+ * is a substring match: with a bare counter the first name would be a prefix of
+ * the thirteenth ("... -1" inside "... -13") and a row could assert against
+ * another row's item. Names of equal length cannot contain one another.
  */
 export function uniqueName(tag) {
   made += 1;
-  return `${tag} ${run}-${made}`;
+  return `${tag} ${run}-${String(made).padStart(4, '0')}`;
 }

@@ -175,12 +175,13 @@ test("T-005-N5 REQ-005.2 no sequence of an admin's actions ever puts a loan in h
     await expect(iconIn(row, 'btn-borrow')).toBeVisible();
     await iconIn(row, 'btn-borrow').click();
 
-    // The modal first listed the member buttons for Mia and Sam, and no third:
-    // the admin is not offered as a borrower at all.
+    // The modal first listed the member buttons for Mia and Sam, which is the
+    // row's own Given. That no third member button exists is REQ-005.1's claim
+    // and belongs to the rows that bracket it (T-004-P8, T-004-P9, story S3), so
+    // it is deliberately not asserted here: this row's criterion is REQ-005.2.
     await expect(borrowerModal(page)).toBeVisible();
     await expect(borrowerModal(page).getByTestId(`member-button-${MIA.id}`)).toBeVisible();
     await expect(borrowerModal(page).getByTestId(`member-button-${SAM.id}`)).toBeVisible();
-    await expect(borrowerModal(page).locator('[data-testid^="member-button-"]')).toHaveCount(2);
 
     await borrowerModal(page).getByTestId(`member-button-${member.id}`).click();
     await expect(statusOf(page, lent.name)).toHaveText(onLoanTo(member.name));

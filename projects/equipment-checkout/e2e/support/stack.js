@@ -18,7 +18,7 @@
  * cannot leave a path behind.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { expect } from '@playwright/test';
@@ -33,24 +33,38 @@ const envFile = 'harness/e2e/eval.env';
  * One `docker compose` call. A non-zero exit throws, with the command and the
  * output in the message: a restart that did not happen must not leave a row
  * asserting against the stack it was trying to replace.
+ *
+ * It is awaited rather than run synchronously, and that is required rather than
+ * stylistic. `docker compose up --build` can take minutes, and a synchronous
+ * child would hold Node's event loop for all of it; the row's own browser is
+ * connected over that loop, so the page it is about to reload would be sitting
+ * behind a connection nothing was servicing. The three production rows are the
+ * only rows that call this, and each has a browser page open while it does.
  */
-export function compose(...args) {
+export async function compose(...args) {
   const argv = ['compose', '--env-file', envFile, ...args];
-  const result = spawnSync('docker', argv, {
-    cwd: projectRoot,
-    encoding: 'utf8',
-    timeout: 360_000,
-  });
   const shown = `docker ${argv.join(' ')}`;
-  if (result.error) {
-    throw new Error(`${shown} could not start: ${result.error.message}`);
-  }
-  if (result.status !== 0) {
-    throw new Error(
-      `${shown} exited ${result.status}\n${result.stdout ?? ''}\n${result.stderr ?? ''}`.trim(),
+  const child = spawn('docker', argv, { cwd: projectRoot });
+  let out = '';
+  let err = '';
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stdout.on('data', (chunk) => {
+    out += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    err += chunk;
+  });
+  const status = await new Promise((resolve, reject) => {
+    child.on('error', (failure) =>
+      reject(new Error(`${shown} could not start: ${failure.message}`)),
     );
+    child.on('close', resolve);
+  });
+  if (status !== 0) {
+    throw new Error(`${shown} exited ${status}\n${out}\n${err}`.trim());
   }
-  return result.stdout ?? '';
+  return out;
 }
 
 /**

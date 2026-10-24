@@ -83,8 +83,8 @@ test('T-016-P3 REQ-016.1 a first start seeds one admin and two members, each onc
   test.setTimeout(600_000);
 
   // No database volume from an earlier run: the row is about a first start.
-  compose('down', '-v');
-  compose('up', '-d', '--build', '--wait', '--wait-timeout', '300');
+  await compose('down', '-v');
+  await compose('up', '-d', '--build', '--wait', '--wait-timeout', '300');
   await waitForTheStack(request);
 
   await openApp(page);
@@ -124,8 +124,8 @@ test('T-016-P4 REQ-016.2 every committed change survives a restart', async ({ pa
   madeByTheRestartRow.lent = toLend.name;
 
   // Stopped without -v, so the named volume the data directory lives on is kept.
-  compose('down');
-  compose('up', '-d');
+  await compose('down');
+  await compose('up', '-d');
   await waitForTheStack(request);
 
   await openApp(page);
@@ -147,8 +147,8 @@ test('T-016-N3 REQ-016.3 a second restart does not seed the users again', async 
     );
   }
 
-  compose('down');
-  compose('up', '-d');
+  await compose('down');
+  await compose('up', '-d');
   await waitForTheStack(request);
 
   await openApp(page);

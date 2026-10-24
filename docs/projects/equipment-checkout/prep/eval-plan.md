@@ -931,10 +931,16 @@ env PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
 docker rm -f eval-pg
 deactivate
 
-# C8  C: Vitest, React Testing Library, jsdom, with the frozen tools and configuration
+# C8  C: Vitest, React Testing Library, jsdom, with the frozen tools and configuration.
+#     The configuration path is absolute, and that is load-bearing rather than tidiness:
+#     Vitest resolves a relative --config against --root, so the relative form looked for
+#     web/harness/web/vitest.config.js, printed "Could not resolve", exited 1 and wrote no
+#     report at all -- leaving every C row with nothing to be evidenced by. Observed, not
+#     hypothetical.
 if [ -f web/package.json ]; then npm --prefix web ci; fi
 npm --prefix harness/web ci
-harness/web/node_modules/.bin/vitest run --root web --config harness/web/vitest.config.js \
+harness/web/node_modules/.bin/vitest run --root web \
+  --config "$PWD/harness/web/vitest.config.js" \
   --reporter=junit --outputFile="$PWD/web/reports/component.xml"
 
 # C9  B: Chromium on the production build served by vite preview, the API faked with page.route.

@@ -1,0 +1,30 @@
+# Project metadata for the Shared Equipment Checkout API.
+#
+# It carries no test configuration on purpose. Eval-plan command C2 runs pytest
+# with `-c harness/api/pytest.ini` and `--rootdir api`, so this file is never
+# consulted for how the exam runs and nothing put here could change it. The
+# frozen pytest.ini says the same from its side.
+#
+# `requirements.txt` beside this file is the lockfile: it pins every
+# distribution, transitive ones included, to one version. The dependency lines
+# below are the major.minor lines blueprint 12.10 fixes, which a builder may not
+# change.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "equipment-checkout-api"
+version = "0.1.0"
+description = "Shared Equipment Checkout (trial): API, rules and data store"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115,<0.116",
+    "uvicorn>=0.32,<0.33",
+    "SQLAlchemy>=2.0,<2.1",
+    "psycopg[binary]>=3.2,<3.3",
+]
+
+[tool.setuptools]
+packages = ["app"]
